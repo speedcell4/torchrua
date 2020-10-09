@@ -139,12 +139,12 @@ def unstack_packed_data(pack: PackedSequence, num_packs: int) -> List[Tensor]:
 @torch.no_grad()
 def unstack_packed_batch_sizes(pack: PackedSequence, num_packs: int) -> \
         Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
-    if pack.sorted_indices is None:
+    if pack.sorted_indices is not None:
         sorted_indices = pack.sorted_indices[::num_packs]
     else:
         sorted_indices = None
 
-    if pack.unsorted_indices is None:
+    if pack.unsorted_indices is not None:
         unsorted_indices = pack.unsorted_indices[::num_packs] // num_packs
     else:
         unsorted_indices = None
