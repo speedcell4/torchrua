@@ -14,6 +14,7 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         'numpy',
+        'einops',
     ],
     extras_require={
         'dev': [
