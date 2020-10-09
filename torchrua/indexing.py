@@ -1,42 +1,8 @@
 import torch
 from torch import Tensor
-import sys
-import logging
-from collections import Counter
-from logging import Logger
-import math
-import random
-from pathlib import Path
-
-from typing import Union, Optional, List, Tuple, NamedTuple, Set, Dict, Callable
-from typing import Generator, Iterable, KeysView, ValuesView, ItemsView, Any, Type, NewType
-
-import numpy as np
-from colorlog import colorlog
-from einops import rearrange, reduce
-from einops.layers.torch import Rearrange, Reduce
-
-import torch
-from torch import Tensor
-from torch.nn import init
 from torch.nn import functional as F
-from torch.nn.init import calculate_gain
-from torch.utils.checkpoint import checkpoint, checkpoint_sequential
-from torch import nn, jit, cuda, initial_seed, autograd, optim, distributions
-from torch.nn.utils.rnn import PackedSequence, pack_sequence, pack_padded_sequence
-from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence
-
-from torchglyph.vocab import Vocab, Vectors
-from torchglyph.dataset import Dataset, DataLoader
-from torchglyph.pipe import Pipe, RawPipe, SeqLengthTensorPipe, PaddedTokLengthPipe
-from torchglyph.pipe import IdxTensorPipe, PackedIdxSeqPipe, PackedIdxBlockPipe, PaddedIdxSeqPipe, PaddedIdxBlockPipe
-from torchglyph.pipe import TokTensorPipe, PackedTokSeqPipe, PackedTokBlockPipe, PaddedTokSeqPipe, PaddedTokBlockPipe
-from torchglyph.pipe import PackedPtrSeqPipe, PackedTokPtrSeqPipe, PackedSeqPtrSeqPipe
-
-from hypothesis import given, strategies as st
-from string import ascii_letters, digits
-
 from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import pad_packed_sequence
 
 from torchrua.utils import pack_to_lengths
 
@@ -100,11 +66,22 @@ def select_init(pack: PackedSequence) -> PackedSequence:
 
 
 def tail_indices(pack: PackedSequence) -> Tensor:
-    raise NotImplementedError
+    assert pack.batch_sizes[0] == pack.batch_sizes[1], \
+        'some sequences contain only one element, truncating is not allowed.'
+
+    return torch.arange(pack.batch_sizes[0].item(), pack.batch_sizes.sum().item(), dtype=torch.long)
 
 
 def select_tail(pack: PackedSequence) -> PackedSequence:
-    raise NotImplementedError
+    assert pack.batch_sizes[0] == pack.batch_sizes[1], \
+        'some sequences contain only one element, truncating is not allowed.'
+
+    return PackedSequence(
+        data=pack.data[pack.batch_sizes[0]:],
+        batch_sizes=pack.batch_sizes[1:],
+        sorted_indices=pack.sorted_indices,
+        unsorted_indices=pack.unsorted_indices,
+    )
 
 
 def reverse_indices(pack: PackedSequence) -> Tensor:
@@ -118,7 +95,9 @@ def flip_packed_sequence(pack: PackedSequence) -> PackedSequence:
 if __name__ == '__main__':
     x = pack_sequence([
         torch.arange(5),
-        torch.arange(2) + 5,
-        torch.arange(3) + 5 + 2,
+        torch.arange(2),
+        torch.arange(3),
     ], enforce_sorted=False)
-    print(select_last(x))
+    print(init_indices(x))
+    x, _ = pad_packed_sequence(select_init(x), batch_first=True)
+    print(f'x => {x}')
