@@ -1,9 +1,9 @@
 import torch
-from hypothesis import given
+from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence
 
-from tests.strategies import list_of_sentences
-from torchrua.indexing import batch_indices, token_indices
+from tests.strategies import list_of_sentences, ATOL, RTOL
+from torchrua.indexing import batch_indices, token_indices, select_head, select_last
 
 
 @given(
@@ -36,3 +36,33 @@ def test_token_indices(sentences_and_lengths):
     ], enforce_sorted=False).data
 
     assert torch.equal(x, y), f'{x} != {y}'
+
+
+@given(
+    sentences=list_of_sentences(),
+    unsort=st.booleans(),
+)
+def test_select_head(sentences, unsort):
+    pack = pack_sequence(sentences, enforce_sorted=False)
+    x = select_head(pack=pack, unsort=unsort)
+
+    y = torch.stack([s[0] for s in sentences], dim=0)
+    if not unsort:
+        y = y[pack.sorted_indices]
+
+    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+
+
+@given(
+    sentences=list_of_sentences(),
+    unsort=st.booleans(),
+)
+def test_select_last(sentences, unsort):
+    pack = pack_sequence(sentences, enforce_sorted=False)
+    x = select_last(pack=pack, unsort=unsort)
+
+    y = torch.stack([s[-1] for s in sentences], dim=0)
+    if not unsort:
+        y = y[pack.sorted_indices]
+
+    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'

@@ -35,10 +35,13 @@ def token_indices(pack: PackedSequence, reverse: bool = False) -> Tensor:
 
 
 @torch.no_grad()
-def head_indices(pack: PackedSequence, unsort: bool = True) -> Tensor:
+def head_indices(pack: PackedSequence, unsort: bool = True, *,
+                 dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+    if device is None:
+        device = pack.data.device
     if unsort and pack.unsorted_indices is not None:
         return pack.unsorted_indices
-    return torch.arange(0, pack.batch_sizes[0].item(), dtype=torch.long, device=pack.data.device)
+    return torch.arange(0, pack.batch_sizes[0].item(), dtype=dtype, device=device)
 
 
 def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
@@ -46,13 +49,19 @@ def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
 
 
 @torch.no_grad()
-def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None) -> Tensor:
+def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None, *,
+                 dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+    if device is None:
+        device = pack.data.device
     if lengths is None:
         lengths = pack_to_lengths(pack=pack, unsort=False)
 
-    indices = F.pad(pack.batch_sizes.cumsum(dim=0), [2, 0], value=0)[lengths]
+    indices = pack.batch_sizes.to(dtype=dtype, device=device).cumsum(dim=0)
+    indices = F.pad(indices, [2, 0], value=0)[lengths]
     if unsort and pack.unsorted_indices is not None:
-        indices = indices[pack.unsorted_indices]
+        indices = indices[pack.unsorted_indices] + pack.unsorted_indices
+    else:
+        indices = indices + torch.arange(indices.size(0), dtype=dtype, device=device)
     return indices
 
 
