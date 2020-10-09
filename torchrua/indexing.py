@@ -8,9 +8,9 @@ from torchrua.utils import pack_to_lengths
 
 
 @torch.no_grad()
-def batch_indices(pack: PackedSequence) -> Tensor:
+def batch_indices(pack: PackedSequence, unsort: bool = False) -> Tensor:
     indices = torch.arange(1, pack.batch_sizes[0].item() + 1)
-    if pack.sorted_indices is not None:
+    if not unsort and pack.sorted_indices is not None:
         indices = indices[pack.sorted_indices]
     indices = indices[None, :].expand((pack.batch_sizes[0].item(), -1)).tril(0)
     indices = indices[pack.batch_sizes - 1]
@@ -18,7 +18,7 @@ def batch_indices(pack: PackedSequence) -> Tensor:
 
 
 @torch.no_grad()
-def token_indices(pack: PackedSequence) -> Tensor:
+def token_indices(pack: PackedSequence, reverse: bool = False) -> Tensor:
     indices = torch.arange(1, pack.batch_sizes.size(0) + 1)
     indices = indices[:, None].expand((-1, pack.batch_sizes[0].item()))
 
@@ -27,6 +27,9 @@ def token_indices(pack: PackedSequence) -> Tensor:
         mask = mask[pack.sorted_indices]
     mask = mask[None, :].expand((pack.batch_sizes[0].item(), -1)).tril(0)
     mask = mask[pack.batch_sizes - 1]
+
+    if reverse:
+        indices = indices.flip(dims=[0]) - (~mask).long().sum(dim=0, keepdim=True)
 
     return torch.masked_select(indices, mask) - 1
 
@@ -85,11 +88,19 @@ def select_tail(pack: PackedSequence) -> PackedSequence:
 
 
 def reverse_indices(pack: PackedSequence) -> Tensor:
-    raise NotImplementedError
+    indices = F.pad(pack.batch_sizes.cumsum(dim=0), [1, 0], value=0)
+    batch_ptr = batch_indices(pack=pack, unsort=True)
+    token_ptr = token_indices(pack=pack, reverse=True)
+    return indices[token_ptr] + batch_ptr
 
 
-def flip_packed_sequence(pack: PackedSequence) -> PackedSequence:
-    raise NotImplementedError
+def reverse_packed_sequence(pack: PackedSequence) -> PackedSequence:
+    return PackedSequence(
+        data=pack.data[reverse_indices(pack)],
+        batch_sizes=pack.batch_sizes,
+        sorted_indices=pack.sorted_indices,
+        unsorted_indices=pack.unsorted_indices,
+    )
 
 
 if __name__ == '__main__':
@@ -98,6 +109,5 @@ if __name__ == '__main__':
         torch.arange(2),
         torch.arange(3),
     ], enforce_sorted=False)
-    print(init_indices(x))
-    x, _ = pad_packed_sequence(select_init(x), batch_first=True)
+    x, _ = pad_packed_sequence(reverse_packed_sequence(x), batch_first=True, padding_value=-1)
     print(f'x => {x}')
