@@ -2,7 +2,6 @@ import torch
 from torch import Tensor
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence, pack_sequence
-from torch.nn.utils.rnn import pad_packed_sequence
 
 from torchrua.utils import pack_to_lengths
 
@@ -110,13 +109,3 @@ def reverse_packed_sequence(pack: PackedSequence) -> PackedSequence:
         sorted_indices=pack.sorted_indices,
         unsorted_indices=pack.unsorted_indices,
     )
-
-
-if __name__ == '__main__':
-    x = pack_sequence([
-        torch.arange(5),
-        torch.arange(2),
-        torch.arange(3),
-    ], enforce_sorted=False)
-    x, _ = pad_packed_sequence(reverse_packed_sequence(x), batch_first=True, padding_value=-1)
-    print(f'x => {x}')
