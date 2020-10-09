@@ -1,6 +1,44 @@
 import torch
 from torch import Tensor
+import sys
+import logging
+from collections import Counter
+from logging import Logger
+import math
+import random
+from pathlib import Path
+
+from typing import Union, Optional, List, Tuple, NamedTuple, Set, Dict, Callable
+from typing import Generator, Iterable, KeysView, ValuesView, ItemsView, Any, Type, NewType
+
+import numpy as np
+from colorlog import colorlog
+from einops import rearrange, reduce
+from einops.layers.torch import Rearrange, Reduce
+
+import torch
+from torch import Tensor
+from torch.nn import init
+from torch.nn import functional as F
+from torch.nn.init import calculate_gain
+from torch.utils.checkpoint import checkpoint, checkpoint_sequential
+from torch import nn, jit, cuda, initial_seed, autograd, optim, distributions
+from torch.nn.utils.rnn import PackedSequence, pack_sequence, pack_padded_sequence
+from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence
+
+from torchglyph.vocab import Vocab, Vectors
+from torchglyph.dataset import Dataset, DataLoader
+from torchglyph.pipe import Pipe, RawPipe, SeqLengthTensorPipe, PaddedTokLengthPipe
+from torchglyph.pipe import IdxTensorPipe, PackedIdxSeqPipe, PackedIdxBlockPipe, PaddedIdxSeqPipe, PaddedIdxBlockPipe
+from torchglyph.pipe import TokTensorPipe, PackedTokSeqPipe, PackedTokBlockPipe, PaddedTokSeqPipe, PaddedTokBlockPipe
+from torchglyph.pipe import PackedPtrSeqPipe, PackedTokPtrSeqPipe, PackedSeqPtrSeqPipe
+
+from hypothesis import given, strategies as st
+from string import ascii_letters, digits
+
 from torch.nn.utils.rnn import PackedSequence, pack_sequence
+
+from torchrua.utils import pack_to_lengths
 
 
 @torch.no_grad()
@@ -38,12 +76,19 @@ def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
     return pack.data[head_indices(pack=pack, unsort=unsort)]
 
 
-def last_indices(pack: PackedSequence) -> Tensor:
-    raise NotImplementedError
+@torch.no_grad()
+def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None) -> Tensor:
+    if lengths is None:
+        lengths = pack_to_lengths(pack=pack, unsort=False)
+
+    indices = F.pad(pack.batch_sizes.cumsum(dim=0), [2, 0], value=0)[lengths]
+    if unsort and pack.unsorted_indices is not None:
+        indices = indices[pack.unsorted_indices]
+    return indices
 
 
-def select_last(pack: PackedSequence) -> Tensor:
-    raise NotImplementedError
+def select_last(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None) -> Tensor:
+    return pack.data[last_indices(pack=pack, unsort=unsort, lengths=lengths)]
 
 
 def init_indices(pack: PackedSequence) -> Tensor:
@@ -72,8 +117,8 @@ def flip_packed_sequence(pack: PackedSequence) -> PackedSequence:
 
 if __name__ == '__main__':
     x = pack_sequence([
-        torch.randn(5),
-        torch.randn(2) + 5,
-        torch.randn(3) + 5 + 2,
+        torch.arange(5),
+        torch.arange(2) + 5,
+        torch.arange(3) + 5 + 2,
     ], enforce_sorted=False)
-    print(token_indices(x))
+    print(select_last(x))

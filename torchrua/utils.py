@@ -7,9 +7,9 @@ from torch.nn.utils.rnn import pad_packed_sequence
 
 
 @torch.no_grad()
-def packed_sequence_to_mask(pack: PackedSequence, unsort: bool = True, *,
-                            padding_value: Union[int, float, bool] = False, batch_first: bool = False,
-                            dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
+def pack_to_mask(pack: PackedSequence, unsort: bool = True, *,
+                 padding_value: Union[int, float, bool] = False, batch_first: bool = False,
+                 dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     if device is None:
         device = pack.data.device
 
@@ -34,8 +34,8 @@ def packed_sequence_to_mask(pack: PackedSequence, unsort: bool = True, *,
 
 
 @torch.no_grad()
-def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool = True, *,
-                               dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+def pack_to_lengths(pack: PackedSequence, unsort: bool = True, *,
+                    dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     if device is None:
         device = pack.data.device
 
