@@ -1,3 +1,5 @@
+from typing import Union
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
@@ -6,7 +8,7 @@ from torch.nn.utils.rnn import pad_packed_sequence
 
 @torch.no_grad()
 def packed_sequence_to_mask(pack: PackedSequence, unsort: bool = True, *,
-                            batch_first: bool = False, padding_value=False,
+                            padding_value: Union[int, float, bool] = False, batch_first: bool = False,
                             dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     if device is None:
         device = pack.data.device
@@ -48,7 +50,8 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool = True, *,
 
 @torch.no_grad()
 def lengths_to_mask(lengths: Tensor, filling_mask: bool = True, *,
-                    batch_first: bool = False, dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
+                    batch_first: bool = False,
+                    dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     indices = torch.arange(lengths.max().item(), dtype=lengths.dtype, device=lengths.device)
 
     if filling_mask:
