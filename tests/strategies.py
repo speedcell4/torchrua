@@ -23,7 +23,8 @@ def embedding_dim_integer(draw, max_value: int = 13):
 
 
 @st.composite
-def list_of_sentence_lengths(draw, batch_size: int = None, max_sent_length: int = None):
+def list_of_sentence_lengths(
+        draw, batch_size: int = None, max_sent_length: int = None):
     if batch_size is None:
         batch_size = draw(batch_size_integer())
     if max_sent_length is None:
@@ -32,7 +33,8 @@ def list_of_sentence_lengths(draw, batch_size: int = None, max_sent_length: int 
 
 
 @st.composite
-def list_of_sentences(draw, embedding_dim: int = None, sentence_lengths: List[int] = None):
+def list_of_sentences(
+        draw, embedding_dim: int = None, sentence_lengths: List[int] = None):
     if embedding_dim is None:
         embedding_dim = draw(embedding_dim_integer())
     if sentence_lengths is None:
@@ -45,7 +47,8 @@ def list_of_sentences(draw, embedding_dim: int = None, sentence_lengths: List[in
 
 
 @st.composite
-def homo_lists_of_sentences(draw, num: int = None, embedding_dim: int = None, sentence_lengths: List[int] = None):
+def list_of_homo_lists_of_sentences(
+        draw, num: int = None, embedding_dim: int = None, sentence_lengths: List[int] = None):
     if num is None:
         num = draw(batch_size_integer())
     if embedding_dim is None:
