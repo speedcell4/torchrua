@@ -14,6 +14,20 @@ def batch_indices(pack: PackedSequence) -> Tensor:
 
 
 @torch.no_grad()
+def token_indices(pack: PackedSequence) -> Tensor:
+    indices = torch.arange(1, pack.batch_sizes.size(0) + 1)
+    indices = indices[:, None].expand((-1, pack.batch_sizes[0].item()))
+
+    mask = torch.full((pack.batch_sizes[0].item(),), fill_value=True, dtype=torch.bool)
+    if pack.sorted_indices is not None:
+        mask = mask[pack.sorted_indices]
+    mask = mask[None, :].expand((pack.batch_sizes[0].item(), -1)).tril(0)
+    mask = mask[pack.batch_sizes - 1]
+
+    return torch.masked_select(indices, mask != 0) - 1
+
+
+@torch.no_grad()
 def head_indices(pack: PackedSequence, unsort: bool = True) -> Tensor:
     if unsort and pack.unsorted_indices is not None:
         return pack.unsorted_indices
@@ -62,4 +76,4 @@ if __name__ == '__main__':
         torch.randn(2) + 5,
         torch.randn(3) + 5 + 2,
     ], enforce_sorted=False)
-    print(batch_indices(x))
+    print(token_indices(x))
