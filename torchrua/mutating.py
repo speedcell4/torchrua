@@ -66,17 +66,17 @@ def stack_packed_batch_sizes(pack: PackedSequence, num_packs: int) -> Tuple[Tens
 
     if pack.sorted_indices is not None:
         sorted_indices = torch.stack([
-            pack.sorted_indices * num_packs + index
+            pack.sorted_indices + num_batches * index
             for index in range(num_packs)
         ], dim=1).view(-1)
     else:
         sorted_indices = None
 
     if pack.unsorted_indices is not None:
-        unsorted_indices = torch.cat([
-            pack.unsorted_indices + num_batches * index
+        unsorted_indices = torch.stack([
+            pack.unsorted_indices * num_packs + index
             for index in range(num_packs)
-        ], dim=0)
+        ], dim=1).view(-1)
     else:
         unsorted_indices = None
 
