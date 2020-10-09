@@ -65,13 +65,13 @@ def uncat_packed_data(pack: PackedSequence, num_packs: int) -> List[Tensor]:
 @torch.no_grad()
 def uncat_packed_batch_sizes(pack: PackedSequence, num_packs: int) -> \
         Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
-    if pack.sorted_indices is None:
+    if pack.sorted_indices is not None:
         sorted_indices = pack.sorted_indices[::num_packs]
     else:
         sorted_indices = None
 
-    num_batches = pack.batch_sizes[0].item()
-    if pack.unsorted_indices is None:
+    num_batches = pack.batch_sizes[0].item() // num_packs
+    if pack.unsorted_indices is not None:
         unsorted_indices = pack.unsorted_indices[:num_batches] // num_packs
     else:
         unsorted_indices = None
