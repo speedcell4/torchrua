@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import pad_packed_sequence
 
 
@@ -44,3 +44,21 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool = True, *,
     if unsort and pack.unsorted_indices is not None:
         lengths = lengths[pack.unsorted_indices]
     return lengths
+
+
+@torch.no_grad()
+def lengths_to_mask(lengths: Tensor, filling_mask: bool = False, *,
+                    batch_first: bool = False, dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
+    indices = torch.arange(lengths.max().item(), dtype=lengths.dtype, device=lengths.device)
+
+    if filling_mask:
+        op = torch.ge
+    else:
+        op = torch.lt
+
+    if batch_first:
+        mask = op(indices[None, :], lengths[:, None])
+    else:
+        mask = op(indices[:, None], lengths[None, :])
+
+    return mask.to(dtype=dtype, device=device)
