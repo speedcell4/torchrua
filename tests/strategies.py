@@ -8,17 +8,17 @@ ATOL = 1e-5
 
 
 @st.composite
-def batch_size_integer(draw, max_value: int = 5):
+def batch_size_integer(draw, max_value: int = 7):
     return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def max_sentence_length_integer(draw, max_value: int = 7):
+def max_sentence_length_integer(draw, max_value: int = 11):
     return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def embedding_dim_integer(draw, max_value: int = 11):
+def embedding_dim_integer(draw, max_value: int = 13):
     return draw(st.integers(min_value=1, max_value=max_value))
 
 
