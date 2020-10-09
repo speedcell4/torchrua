@@ -24,7 +24,7 @@ def token_indices(pack: PackedSequence) -> Tensor:
     mask = mask[None, :].expand((pack.batch_sizes[0].item(), -1)).tril(0)
     mask = mask[pack.batch_sizes - 1]
 
-    return torch.masked_select(indices, mask != 0) - 1
+    return torch.masked_select(indices, mask) - 1
 
 
 @torch.no_grad()
