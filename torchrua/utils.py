@@ -47,14 +47,14 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool = True, *,
 
 
 @torch.no_grad()
-def lengths_to_mask(lengths: Tensor, filling_mask: bool = False, *,
+def lengths_to_mask(lengths: Tensor, filling_mask: bool = True, *,
                     batch_first: bool = False, dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     indices = torch.arange(lengths.max().item(), dtype=lengths.dtype, device=lengths.device)
 
     if filling_mask:
-        op = torch.ge
-    else:
         op = torch.lt
+    else:
+        op = torch.ge
 
     if batch_first:
         mask = op(indices[None, :], lengths[:, None])
