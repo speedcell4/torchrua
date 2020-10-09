@@ -1,11 +1,13 @@
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import PackedSequence, pack_sequence
 
 
 @torch.no_grad()
 def batch_indices(pack: PackedSequence) -> Tensor:
     indices = torch.arange(1, pack.batch_sizes[0].item() + 1)
+    if pack.sorted_indices is not None:
+        indices = indices[pack.sorted_indices]
     indices = indices[None, :].expand((pack.batch_sizes[0].item(), -1)).tril(0)
     indices = indices[pack.batch_sizes - 1]
     return torch.masked_select(indices, indices != 0) - 1
@@ -52,3 +54,12 @@ def reverse_indices(pack: PackedSequence) -> Tensor:
 
 def flip_packed_sequence(pack: PackedSequence) -> PackedSequence:
     raise NotImplementedError
+
+
+if __name__ == '__main__':
+    x = pack_sequence([
+        torch.randn(5),
+        torch.randn(2) + 5,
+        torch.randn(3) + 5 + 2,
+    ], enforce_sorted=False)
+    print(batch_indices(x))
