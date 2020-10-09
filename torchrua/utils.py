@@ -40,8 +40,8 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool = True, *,
         device = pack.data.device
 
     batch_size = pack.batch_sizes[0].item()
-    mask = torch.ones((batch_size, batch_size), dtype=dtype, device=torch.device('cpu')).tril(0)
-    lengths = mask[pack.batch_sizes - 1].sum(dim=0).to(device=device)
+    mask = torch.ones((batch_size, batch_size), dtype=dtype, device=device).tril(0)
+    lengths = mask[pack.batch_sizes - 1].sum(dim=0)
 
     if unsort and pack.unsorted_indices is not None:
         lengths = lengths[pack.unsorted_indices]
