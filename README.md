@@ -10,6 +10,8 @@
 
 ## performance
 
-* `reverse_packed_sequence`: O(1) forward and O(n) backward.
+* `reverse_packed_sequence`: O(1) forward and O(n) backward with much smaller constant factor than naive implementation.
 
-![reverse_pack](assets/reverse_pack.jpg)
+<p align="center">
+  <img src="assets/reverse_pack.jpg">
+</p>
