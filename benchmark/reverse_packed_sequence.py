@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 
 from benchmark.naive_indexing import naive_reverse_packed_sequence
-from benchmark.utils import Timer, gen_data
+from benchmark.utils import Timer, gen_pack
 from torchrua.indexing import reverse_packed_sequence
 
 
@@ -17,7 +17,7 @@ def reverse_pack_fn(num_epoch: int = 5000, batch_size: int = 32,
     rua_forward_timer = Timer()
     rua_backward_timer = Timer()
     for length in tqdm(lengths):
-        pack = gen_data(
+        pack = gen_pack(
             lengths=length,
             embedding_dim=embedding_dim,
             device=device,
@@ -31,7 +31,7 @@ def reverse_pack_fn(num_epoch: int = 5000, batch_size: int = 32,
     naive_forward_timer = Timer()
     naive_backward_timer = Timer()
     for length in tqdm(lengths):
-        pack = gen_data(
+        pack = gen_pack(
             lengths=length,
             embedding_dim=embedding_dim,
             device=device,

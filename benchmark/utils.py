@@ -18,7 +18,7 @@ class Timer(object):
         del self.start_tm
 
 
-def gen_data(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:
+def gen_pack(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:
     return pack_sequence([
         torch.randn((length, embedding_dim), dtype=torch.float32, device=device, requires_grad=True)
         for length in lengths.detach().cpu().tolist()
