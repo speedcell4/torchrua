@@ -3,7 +3,8 @@ from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence
 from torch.nn.utils.rnn import pad_packed_sequence
 
-from tests.strategies import list_of_sentences, ATOL, RTOL
+from tests.strategies import list_of_sentences
+from tests.utils import assert_equal
 from torchrua.indexing import batch_indices, token_indices, select_head, select_last, reverse_packed_sequence
 
 
@@ -20,7 +21,7 @@ def test_batch_indices(sentences_and_lengths):
         for index, length in enumerate(lengths)
     ], enforce_sorted=False).data
 
-    assert torch.equal(x, y), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
 
 
 @given(
@@ -36,7 +37,7 @@ def test_token_indices(sentences_and_lengths):
         for length in lengths
     ], enforce_sorted=False).data
 
-    assert torch.equal(x, y), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
 
 
 @given(
@@ -51,7 +52,7 @@ def test_select_head(sentences, unsort):
     if not unsort:
         y = y[pack.sorted_indices]
 
-    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
 
 
 @given(
@@ -66,7 +67,7 @@ def test_select_last(sentences, unsort):
     if not unsort:
         y = y[pack.sorted_indices]
 
-    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
 
 
 @given(
@@ -80,4 +81,4 @@ def test_reverse_packed_sequence(sentences):
     y = pack_sequence([s.flip(dims=[0]) for s in sentences], enforce_sorted=False)
     y, _ = pad_packed_sequence(y, batch_first=True)
 
-    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)

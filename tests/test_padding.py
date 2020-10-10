@@ -3,6 +3,7 @@ from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence
 
 from tests.strategies import list_of_sentences
+from tests.utils import assert_equal
 from torchrua.padding import pack_to_lengths, pack_to_mask, lengths_to_mask, lengths_to_batch_sizes
 
 
@@ -18,7 +19,7 @@ def test_pack_to_lengths(sentences_and_lengths):
         unsort=True, dtype=torch.long,
     )
 
-    assert torch.equal(x, y), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
 
 
 @given(
@@ -35,7 +36,7 @@ def test_lengths_to_mask(sentences, unsort, batch_first):
     lengths = pack_to_lengths(pack=pack, unsort=unsort, dtype=torch.long)
     y = lengths_to_mask(lengths, filling_mask=True, batch_first=batch_first, dtype=torch.bool)
 
-    assert torch.equal(x, y), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
 
 
 @given(
@@ -46,6 +47,6 @@ def test_lengths_to_batch_sizes(sentences):
     batch_sizes, sorted_indices, unsorted_indices = lengths_to_batch_sizes(lengths=lengths, device=sentences[0].device)
     y = pack_sequence(sentences, enforce_sorted=False)
 
-    assert torch.equal(batch_sizes, y.batch_sizes)
-    assert torch.equal(sorted_indices, y.sorted_indices)
-    assert torch.equal(unsorted_indices, y.unsorted_indices)
+    assert_equal(batch_sizes, y.batch_sizes)
+    assert_equal(sorted_indices, y.sorted_indices)
+    assert_equal(unsorted_indices, y.unsorted_indices)
