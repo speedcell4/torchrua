@@ -1,36 +1,25 @@
-from typing import Union, Tuple
+from typing import Tuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
-from torch.nn.utils.rnn import pad_packed_sequence
 
 
 @torch.no_grad()
-def pack_to_mask(pack: PackedSequence, unsort: bool = True, *,
-                 padding_value: Union[int, float, bool] = False, batch_first: bool = False,
+def pack_to_mask(pack: PackedSequence, unsort: bool = True, batch_first: bool = False, *,
                  dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     if device is None:
         device = pack.data.device
+    batch_size = pack.batch_sizes[0].item()
 
-    sorted_indices = None
-    if unsort and pack.sorted_indices is not None:
-        sorted_indices = pack.sorted_indices
-
-    unsorted_indices = None
+    mask = torch.ones((batch_size, batch_size), dtype=dtype, device=device).triu(0)
     if unsort and pack.unsorted_indices is not None:
-        unsorted_indices = pack.unsorted_indices
+        mask = mask[pack.unsorted_indices]
+    mask = mask[:, pack.batch_sizes - 1]
 
-    mask, _ = pad_packed_sequence(
-        PackedSequence(
-            data=torch.ones(pack.data.size()[:1], dtype=dtype, device=device),
-            batch_sizes=pack.batch_sizes,
-            sorted_indices=sorted_indices,
-            unsorted_indices=unsorted_indices,
-        ),
-        batch_first=batch_first, padding_value=padding_value,
-    )
+    if not batch_first:
+        mask = mask.transpose(0, 1)
     return mask
 
 
@@ -39,8 +28,8 @@ def pack_to_lengths(pack: PackedSequence, unsort: bool = True, *,
                     dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     if device is None:
         device = pack.data.device
-
     batch_size = pack.batch_sizes[0].item()
+
     mask = torch.ones((batch_size, batch_size), dtype=dtype, device=device).tril(0)
     lengths = mask[pack.batch_sizes - 1].sum(dim=0)
 
@@ -50,8 +39,7 @@ def pack_to_lengths(pack: PackedSequence, unsort: bool = True, *,
 
 
 @torch.no_grad()
-def lengths_to_mask(lengths: Tensor, filling_mask: bool = True, *,
-                    batch_first: bool = False,
+def lengths_to_mask(lengths: Tensor, filling_mask: bool = True, batch_first: bool = False, *,
                     dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     max_sent_length = lengths.max().item()
     if device is None:
@@ -78,8 +66,7 @@ def lengths_to_batch_sizes(lengths: Tensor, *, device: torch.device = None) -> T
     if device is None:
         device = lengths.device
 
-    mask = torch.ones((max_sent_length,), dtype=torch.long, device=device)
-    mask = mask[:, None].expand((-1, max_sent_length)).tril(0)
+    mask = torch.ones((max_sent_length, max_sent_length), dtype=torch.long, device=device).tril(0)
 
     batch_sizes = mask[lengths - 1].sum(dim=0)
     sorted_indices = lengths.argsort(dim=0, descending=True)
