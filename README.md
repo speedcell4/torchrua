@@ -18,12 +18,12 @@ import torch
 from torch.nn.utils.rnn import pack_sequence
 from torch.nn.utils.rnn import pad_packed_sequence
 
-from torchrua.indexing import reverse_packed_sequence
+from torchrua import reverse_packed_sequence
 
 x = pack_sequence([
-    torch.arange(5) + 1,
-    torch.arange(2) + 1,
-    torch.arange(3) + 1,
+    torch.arange(1, 6),
+    torch.arange(1, 3),
+    torch.arange(1, 4),
 ], enforce_sorted=False)
 y = reverse_packed_sequence(x)
 
