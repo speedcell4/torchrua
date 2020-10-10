@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 from torch.nn import functional as F
-from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.utils import pack_to_lengths
 
@@ -68,6 +68,7 @@ def select_last(pack: PackedSequence, unsort: bool = True, lengths: Tensor = Non
     return pack.data[last_indices(pack=pack, unsort=unsort, lengths=lengths)]
 
 
+@torch.no_grad()
 def init_indices(pack: PackedSequence) -> Tensor:
     raise NotImplementedError
 
@@ -76,6 +77,7 @@ def select_init(pack: PackedSequence) -> PackedSequence:
     raise NotImplementedError
 
 
+@torch.no_grad()
 def tail_indices(pack: PackedSequence) -> Tensor:
     assert pack.batch_sizes[0] == pack.batch_sizes[1], \
         'some sequences contain only one element, truncating is not allowed.'
@@ -95,6 +97,7 @@ def select_tail(pack: PackedSequence) -> PackedSequence:
     )
 
 
+@torch.no_grad()
 def reverse_indices(pack: PackedSequence) -> Tensor:
     indices = F.pad(pack.batch_sizes.cumsum(dim=0), [1, 0], value=0)
     batch_ptr = batch_indices(pack=pack, unsort=True)
