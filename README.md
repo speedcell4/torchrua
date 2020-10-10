@@ -31,7 +31,6 @@ x, _ = pad_packed_sequence(x, batch_first=True)
 y, _ = pad_packed_sequence(y, batch_first=True)
 
 print(x)
-
 # tensor([[1, 2, 3, 4, 5],
 #         [1, 2, 0, 0, 0],
 #         [1, 2, 3, 0, 0]])
