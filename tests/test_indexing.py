@@ -16,11 +16,11 @@ def test_batch_indices(sentences_and_lengths):
     x = batch_indices(pack=pack)
 
     y = pack_sequence([
-        torch.full((length,), fill_value=index, dtype=torch.long)
+        torch.full((length,), fill_value=index, dtype=torch.long, device=x.device)
         for index, length in enumerate(lengths)
     ], enforce_sorted=False).data
 
-    assert torch.equal(x, y), f'{x} != {y}'
+    assert torch.equal(x, y), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
 
 
 @given(
@@ -32,11 +32,11 @@ def test_token_indices(sentences_and_lengths):
     x = token_indices(pack=pack)
 
     y = pack_sequence([
-        torch.arange(length, dtype=torch.long)
+        torch.arange(length, dtype=torch.long, device=x.device)
         for length in lengths
     ], enforce_sorted=False).data
 
-    assert torch.equal(x, y), f'{x} != {y}'
+    assert torch.equal(x, y), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
 
 
 @given(

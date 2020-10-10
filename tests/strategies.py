@@ -8,6 +8,14 @@ ATOL = 1e-5
 
 
 @st.composite
+def devices(draw):
+    if torch.cuda.is_available():
+        return torch.device('cuda:0')
+    else:
+        return torch.device('cpu')
+
+
+@st.composite
 def batch_size_integer(draw, max_value: int = 7):
     return draw(st.integers(min_value=1, max_value=max_value))
 
@@ -29,7 +37,7 @@ def list_of_sentence_lengths(
         batch_size = draw(batch_size_integer())
     if max_sent_length is None:
         max_sent_length = draw(max_sentence_length_integer())
-    return torch.randint(0, max_sent_length, (batch_size,), dtype=torch.long) + 1
+    return torch.randint(0, max_sent_length, (batch_size,), dtype=torch.long, device=draw(devices())) + 1
 
 
 @st.composite
@@ -41,7 +49,7 @@ def list_of_sentences(
         sentence_lengths = draw(list_of_sentence_lengths()).detach().cpu().tolist()
 
     sentences = [
-        torch.randn((length, embedding_dim), dtype=torch.float32)
+        torch.randn((length, embedding_dim), dtype=torch.float32, device=draw(devices()))
         for index, length in enumerate(sentence_lengths)
     ]
     if not return_lengths:
