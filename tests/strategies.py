@@ -34,16 +34,19 @@ def list_of_sentence_lengths(
 
 @st.composite
 def list_of_sentences(
-        draw, embedding_dim: int = None, sentence_lengths: List[int] = None):
+        draw, embedding_dim: int = None, sentence_lengths: List[int] = None, *, return_lengths: bool = False):
     if embedding_dim is None:
         embedding_dim = draw(embedding_dim_integer())
     if sentence_lengths is None:
         sentence_lengths = draw(list_of_sentence_lengths()).detach().cpu().tolist()
 
-    return [
+    sentences = [
         torch.randn((length, embedding_dim), dtype=torch.float32)
         for index, length in enumerate(sentence_lengths)
     ]
+    if not return_lengths:
+        return sentences
+    return sentences, sentence_lengths
 
 
 @st.composite
