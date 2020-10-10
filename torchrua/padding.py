@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import invert_permutation
 
 
 @torch.no_grad()
-def pack_to_mask(pack: PackedSequence, unsort: bool = True, batch_first: bool = False, *,
+def pack_to_mask(pack: PackedSequence, unsort: bool = True, filling_mask: bool = True, batch_first: bool = False, *,
                  dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     if device is None:
         device = pack.data.device
@@ -20,6 +20,8 @@ def pack_to_mask(pack: PackedSequence, unsort: bool = True, batch_first: bool = 
 
     if not batch_first:
         mask = mask.transpose(0, 1)
+    if not filling_mask:
+        mask = ~mask
     return mask
 
 
