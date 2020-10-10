@@ -74,4 +74,4 @@ def lengths_to_batch_sizes(lengths: Tensor, *, device: torch.device = None) -> T
     sorted_indices = lengths.argsort(dim=0, descending=True)
     unsorted_indices = invert_permutation(sorted_indices)
 
-    return batch_sizes, sorted_indices, unsorted_indices
+    return batch_sizes.to(device=torch.device('cpu')), sorted_indices, unsorted_indices
