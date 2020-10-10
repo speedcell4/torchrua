@@ -82,7 +82,7 @@ def reverse_pack_fn(num_epoch: int = 5000, batch_size: int = 32,
 # ax1.plot(x, y4, label='naive.backward')
 #
 # ax1.set_xlim(50, 1000)
-# # ax1.set_ylim(0, 320)
+# ax1.set_ylim(0, 0.07)
 # ax1.set_xlabel('max sentence length')
 # ax1.set_ylabel('time (sec)')
 # ax1.grid()
