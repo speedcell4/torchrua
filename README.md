@@ -11,7 +11,9 @@
 
 ## Performance
 
-* `reverse_packed_sequence`: O(1) forward and O(n) backward with a much smaller constant factor than the naive implementation.
+#### `reverse_packed_sequence`
+
+O(1) forward and O(n) backward with a much smaller constant factor than the naive implementation.
 
 ```python
 import torch
