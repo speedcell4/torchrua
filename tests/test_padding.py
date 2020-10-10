@@ -1,6 +1,7 @@
 import torch
 from hypothesis import given, strategies as st
-from torch.nn.utils.rnn import pack_sequence
+from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence
 
 from tests.strategies import list_of_sentences
 from tests.utils import assert_equal
@@ -45,8 +46,23 @@ def test_lengths_to_mask(sentences, unsort, batch_first, filling_mask):
 def test_lengths_to_batch_sizes(sentences):
     lengths = torch.tensor([s.size(0) for s in sentences], dtype=torch.long, device=sentences[0].device)
     batch_sizes, sorted_indices, unsorted_indices = lengths_to_batch_sizes(lengths=lengths, device=sentences[0].device)
-    y = pack_sequence(sentences, enforce_sorted=False)
+    sorted_sentences = pad_sequence([
+        sentences[sorted_index]
+        for sorted_index in sorted_indices.detach().cpu().tolist()
+    ], batch_first=True)
 
-    assert_equal(batch_sizes, y.batch_sizes)
-    assert_equal(sorted_indices, y.sorted_indices)
-    assert_equal(unsorted_indices, y.unsorted_indices)
+    data = torch.cat([
+        sorted_sentences[:batch_size, index]
+        for index, batch_size in enumerate(batch_sizes.detach().cpu().tolist())
+    ], dim=0)
+
+    x = PackedSequence(
+        data=data, batch_sizes=batch_sizes,
+        sorted_indices=sorted_indices,
+        unsorted_indices=unsorted_indices,
+    )
+    x, _ = pad_packed_sequence(x, batch_first=True)
+
+    y = pad_sequence(sentences, batch_first=True)
+
+    assert_equal(x, y)
