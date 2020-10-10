@@ -3,7 +3,6 @@ from tqdm import tqdm
 
 from benchmark.naive_indexing import naive_reverse_packed_sequence
 from benchmark.utils import Timer, gen_data
-import numpy as np
 from torchrua.indexing import reverse_packed_sequence
 
 
@@ -47,7 +46,6 @@ def reverse_pack_fn(num_epoch: int = 5000, batch_size: int = 32,
     print(f'naive.seconds => {naive_forward_timer.seconds + naive_backward_timer.seconds:.4f} '
           f'({naive_forward_timer.seconds:.4f}, {naive_backward_timer.seconds:.4f})')
 
-
 # def data1():
 #     rua_f = np.array([6.6274, 6.2852, 6.1364, 7.0133, 8.9791]) / 5000
 #     rua_b = np.array([11.5218, 12.6473, 18.2495, 34.9357, 70.8818]) / 5000
@@ -73,6 +71,7 @@ def reverse_pack_fn(num_epoch: int = 5000, batch_size: int = 32,
 #
 #
 # from matplotlib import pyplot as plt
+# import numpy as np
 #
 # fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True)  # type:(plt.Figure, (plt.Axes,plt.Axes))
 # x, y1, y2, y3, y4 = data1()
@@ -99,4 +98,4 @@ def reverse_pack_fn(num_epoch: int = 5000, batch_size: int = 32,
 # ax2.grid()
 # ax2.legend()
 #
-# plt.savefig('../assets/reverse_pack.jpg', bbox_inches='tight', transparent="True")
+# plt.savefig('..docs/assets/reverse_pack.jpg', bbox_inches='tight', transparent="True")

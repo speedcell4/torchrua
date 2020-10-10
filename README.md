@@ -42,5 +42,5 @@ print(y)
 ```
 
 <p align="center">
-  <img src="assets/reverse_pack.jpg">
+  <img src="docs/assets/reverse_pack.jpg">
 </p>
