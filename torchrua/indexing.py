@@ -9,12 +9,14 @@ from torchrua.padding import pack_to_lengths
 @torch.no_grad()
 def batch_indices(pack: PackedSequence, unsort: bool = False, *,
                   dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+    batch_size = pack.batch_sizes[0].item()
     if device is None:
         device = pack.data.device
-    indices = torch.arange(1, pack.batch_sizes[0].item() + 1, dtype=dtype, device=device)
+
+    indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
     if not unsort and pack.sorted_indices is not None:
         indices = indices[pack.sorted_indices]
-    indices = indices[None, :].expand((pack.batch_sizes[0].item(), -1)).tril(0)
+    indices = indices[None, :].expand((batch_size, -1)).tril(0)
     indices = indices[pack.batch_sizes - 1]
     return torch.masked_select(indices, indices != 0) - 1
 
@@ -22,15 +24,18 @@ def batch_indices(pack: PackedSequence, unsort: bool = False, *,
 @torch.no_grad()
 def token_indices(pack: PackedSequence, reverse: bool = False, *,
                   dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+    batch_size = pack.batch_sizes[0].item()
+    max_sent_length = pack.batch_sizes.size(0)
     if device is None:
         device = pack.data.device
-    indices = torch.arange(1, pack.batch_sizes.size(0) + 1, dtype=dtype, device=device)
-    indices = indices[:, None].expand((-1, pack.batch_sizes[0].item()))
 
-    mask = torch.ones((pack.batch_sizes[0].item(),), dtype=torch.bool, device=device)
+    indices = torch.arange(1, max_sent_length + 1, dtype=dtype, device=device)
+    indices = indices[:, None].expand((-1, batch_size))
+
+    mask = torch.ones((batch_size,), dtype=torch.bool, device=device)
     if pack.sorted_indices is not None:
         mask = mask[pack.sorted_indices]
-    mask = mask[None, :].expand((pack.batch_sizes[0].item(), -1)).tril(0)
+    mask = mask[None, :].expand((batch_size, -1)).tril(0)
     mask = mask[pack.batch_sizes - 1]
 
     if reverse:
@@ -42,11 +47,13 @@ def token_indices(pack: PackedSequence, reverse: bool = False, *,
 @torch.no_grad()
 def head_indices(pack: PackedSequence, unsort: bool = True, *,
                  dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+    batch_size = pack.batch_sizes[0].item()
     if device is None:
         device = pack.data.device
+
     if unsort and pack.unsorted_indices is not None:
         return pack.unsorted_indices
-    return torch.arange(0, pack.batch_sizes[0].item(), dtype=dtype, device=device)
+    return torch.arange(0, batch_size, dtype=dtype, device=device)
 
 
 def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
@@ -100,7 +107,7 @@ def select_tail(pack: PackedSequence) -> PackedSequence:
         'some sequences contain only one element, truncating is not allowed.'
 
     return PackedSequence(
-        data=pack.data[pack.batch_sizes[0]:],
+        data=pack.data[pack.batch_sizes[0].item():],
         batch_sizes=pack.batch_sizes[1:],
         sorted_indices=pack.sorted_indices,
         unsorted_indices=pack.unsorted_indices,
