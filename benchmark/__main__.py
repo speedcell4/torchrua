@@ -1,7 +1,7 @@
 from aku import App
 
-from benchmark.reverse_packed_sequence import reverse_pack_fn
 from benchmark.cat_packed_sequence import cat_packed_sequence_fn
+from benchmark.reverse_packed_sequence import reverse_pack_fn
 
 app = App()
 
