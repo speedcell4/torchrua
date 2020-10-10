@@ -3,7 +3,7 @@ from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence
 
 from tests.strategies import list_of_sentences
-from torchrua.utils import pack_to_lengths, pack_to_mask, lengths_to_mask
+from torchrua.padding import pack_to_lengths, pack_to_mask, lengths_to_mask
 
 
 @given(
