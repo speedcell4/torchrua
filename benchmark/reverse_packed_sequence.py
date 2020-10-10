@@ -1,27 +1,9 @@
 import torch
-from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, pack_sequence
-from torch.nn.utils.rnn import pad_packed_sequence
 from tqdm import tqdm
 
-from benchmark.utils import Timer
+from benchmark.naive_indexing import naive_reverse_packed_sequence
+from benchmark.utils import Timer, gen_data
 from torchrua.indexing import reverse_packed_sequence
-
-
-def naive_reverse_packed_sequence(pack: PackedSequence) -> PackedSequence:
-    data, lengths = pad_packed_sequence(pack, batch_first=True)
-    data = [
-        data[index, :length].flip(dims=[0])
-        for index, length in enumerate(lengths.detach().cpu().tolist())
-    ]
-    return pack_sequence(data, enforce_sorted=False)
-
-
-def gen_data(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:
-    return pack_sequence([
-        torch.randn((length, embedding_dim), dtype=torch.float32, device=device, requires_grad=True)
-        for length in lengths.detach().cpu().tolist()
-    ], enforce_sorted=False)
 
 
 def reverse_pack_fn(num_epoch: int = 5000, batch_size: int = 32,
