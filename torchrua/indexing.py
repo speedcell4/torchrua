@@ -3,7 +3,7 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.utils import pack_to_lengths
+from torchrua.padding import pack_to_lengths
 
 
 @torch.no_grad()

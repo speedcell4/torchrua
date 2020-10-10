@@ -1,9 +1,9 @@
-import torch
 from hypothesis import given
 from torch.nn.utils.rnn import pack_sequence
 from torch.nn.utils.rnn import pad_packed_sequence
 
-from tests.strategies import list_of_homo_lists_of_sentences, RTOL, ATOL
+from tests.strategies import list_of_homo_lists_of_sentences
+from tests.utils import assert_equal
 from torchrua.joining import cat_packed_sequences, stack_packed_sequences
 
 
@@ -23,7 +23,7 @@ def test_cat_packed_sequences(lists_of_sentences):
     ], enforce_sorted=False)
     y, _ = pad_packed_sequence(y, batch_first=True)
 
-    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
 
 
 @given(
@@ -42,4 +42,4 @@ def test_stack_packed_sequences(lists_of_sentences):
     ], enforce_sorted=False)
     y, _ = pad_packed_sequence(y, batch_first=True)
 
-    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x.contiguous().view(-1)} != {y.contiguous().view(-1)}'
+    assert_equal(x, y)
