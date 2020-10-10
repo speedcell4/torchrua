@@ -23,6 +23,7 @@ setup(
         ],
         'benchmark': [
             'aku',
+            'tqdm',
         ]
     }
 )
