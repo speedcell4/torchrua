@@ -10,8 +10,6 @@
 
 ## performance
 
-### `reverse_packed_sequence`
-
-* O(1) forward and O(n) backward.
+* `reverse_packed_sequence`: O(1) forward and O(n) backward.
 
 ![reverse_pack](assets/reverse_pack.jpg)
