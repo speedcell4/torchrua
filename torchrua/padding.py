@@ -41,15 +41,17 @@ def pack_to_lengths(pack: PackedSequence, unsort: bool = True, *,
 
 
 @torch.no_grad()
-def lengths_to_mask(lengths: Tensor, filling_mask: bool = True, batch_first: bool = False, *,
+def lengths_to_mask(lengths: Tensor, filling_mask: bool = True,
+                    batch_first: bool = False, max_sent_length: int = None, *,
                     dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
-    max_sent_length = lengths.max().item()
     if device is None:
         device = lengths.device
+    if max_sent_length is None:
+        max_sent_length = lengths.max().item()
 
-    indices = torch.arange(max_sent_length, dtype=lengths.dtype, device=lengths.device)
+    token_indices = torch.arange(max_sent_length, dtype=lengths.dtype, device=lengths.device)
+    mask = token_indices[None, :] < lengths[:, None]
 
-    mask = indices[None, :] < lengths[:, None]
     if not filling_mask:
         mask = ~mask
     if not batch_first:
