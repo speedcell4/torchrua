@@ -2,43 +2,9 @@ import torch
 from torch import Tensor
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
-import sys
-import logging
-from collections import Counter
-from logging import Logger
-import math
-import random
-from pathlib import Path
 
-from typing import Union, Optional, List, Tuple, NamedTuple, Set, Dict, Callable
-from typing import Generator, Iterable, KeysView, ValuesView, ItemsView, Any, Type, NewType
-
-import numpy as np
-from colorlog import colorlog
-from einops import rearrange, reduce
-from einops.layers.torch import Rearrange, Reduce
-
-import torch
-from torch import Tensor
-from torch.nn import init
-from torch.nn import functional as F
-from torch.nn.init import calculate_gain
-from torch.utils.checkpoint import checkpoint, checkpoint_sequential
-from torch import nn, jit, cuda, initial_seed, autograd, optim, distributions
-from torch.nn.utils.rnn import PackedSequence, pack_sequence, pack_padded_sequence
-from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence
-
-from torchglyph.vocab import Vocab, Vectors
-from torchglyph.dataset import Dataset, DataLoader
-from torchglyph.pipe import Pipe, RawPipe, SeqLengthTensorPipe, PaddedTokLengthPipe
-from torchglyph.pipe import IdxTensorPipe, PackedIdxSeqPipe, PackedIdxBlockPipe, PaddedIdxSeqPipe, PaddedIdxBlockPipe
-from torchglyph.pipe import TokTensorPipe, PackedTokSeqPipe, PackedTokBlockPipe, PaddedTokSeqPipe, PaddedTokBlockPipe
-from torchglyph.pipe import PackedPtrSeqPipe, PackedTokPtrSeqPipe, PackedSeqPtrSeqPipe
-
-from hypothesis import given, strategies as st
-from string import ascii_letters, digits
-
-from torchrua.padding import pack_to_lengths, pack_to_mask
+from torchrua.padding import pack_to_lengths
+from torchrua.utils import packed_sequence_to_mask
 
 
 @torch.no_grad()
@@ -119,14 +85,14 @@ def select_last(pack: PackedSequence, unsort: bool = True, lengths: Tensor = Non
 @torch.no_grad()
 def init_indices(pack: PackedSequence, *,
                  dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    mask = pack_to_mask(pack, unsort=False, batch_first=True, dtype=torch.long, device=device)
+    mask = packed_sequence_to_mask(pack, unsort=False, dtype=torch.long, device=device or pack.data.device)
     shifted_mask = F.pad(mask[:, 1:], [0, 1])
     init_mask = torch.masked_select(shifted_mask.bool(), mask.bool())
     return torch.arange(0, init_mask.size(0), dtype=dtype, device=device)[init_mask]
 
 
 def select_init(pack: PackedSequence) -> PackedSequence:
-    mask = pack_to_mask(pack, unsort=False, batch_first=True, dtype=torch.long)
+    mask = packed_sequence_to_mask(pack, unsort=False, dtype=torch.long, device=pack.data.device)
     shifted_mask = F.pad(mask[:, 1:], [0, 1])
     init_mask = torch.masked_select(shifted_mask.bool(), mask.bool())
     return PackedSequence(
