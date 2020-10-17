@@ -21,8 +21,8 @@ def batch_size_integer(draw, max_value: int = 7):
 
 
 @st.composite
-def max_sentence_length_integer(draw, max_value: int = 11):
-    return draw(st.integers(min_value=1, max_value=max_value))
+def total_length_integer(draw, min_value: int = 1, max_value: int = 11):
+    return draw(st.integers(min_value=min_value, max_value=max_value))
 
 
 @st.composite
@@ -32,21 +32,22 @@ def embedding_dim_integer(draw, max_value: int = 13):
 
 @st.composite
 def list_of_sentence_lengths(
-        draw, batch_size: int = None, total_length: int = None):
+        draw, batch_size: int = None, min_value: int = 1, total_length: int = None):
     if batch_size is None:
         batch_size = draw(batch_size_integer())
     if total_length is None:
-        total_length = draw(max_sentence_length_integer())
-    return torch.randint(0, total_length, (batch_size,), dtype=torch.long, device=draw(devices())) + 1
+        total_length = draw(total_length_integer(min_value=min_value))
+    return torch.randint(min_value, total_length + 1, (batch_size,), dtype=torch.long, device=draw(devices()))
 
 
 @st.composite
 def list_of_sentences(
-        draw, embedding_dim: int = None, sentence_lengths: List[int] = None, *, return_lengths: bool = False):
+        draw, embedding_dim: int = None, min_value: int = 1,
+        sentence_lengths: List[int] = None, *, return_lengths: bool = False):
     if embedding_dim is None:
         embedding_dim = draw(embedding_dim_integer())
     if sentence_lengths is None:
-        sentence_lengths = draw(list_of_sentence_lengths()).detach().cpu().tolist()
+        sentence_lengths = draw(list_of_sentence_lengths(min_value=min_value)).detach().cpu().tolist()
 
     sentences = [
         torch.randn((length, embedding_dim), dtype=torch.float32, device=draw(devices()))
@@ -59,15 +60,16 @@ def list_of_sentences(
 
 @st.composite
 def list_of_homo_lists_of_sentences(
-        draw, num: int = None, embedding_dim: int = None, sentence_lengths: List[int] = None):
+        draw, num: int = None, embedding_dim: int = None, min_value: int = 1,
+        sentence_lengths: List[int] = None):
     if num is None:
         num = draw(batch_size_integer())
     if embedding_dim is None:
         embedding_dim = draw(embedding_dim_integer())
     if sentence_lengths is None:
-        sentence_lengths = draw(list_of_sentence_lengths())
+        sentence_lengths = draw(list_of_sentence_lengths(min_value=min_value)).detach().cpu().tolist()
 
     return [
-        draw(list_of_sentences(embedding_dim, sentence_lengths))
+        draw(list_of_sentences(embedding_dim=embedding_dim, sentence_lengths=sentence_lengths))
         for _ in range(num)
     ]
