@@ -1,9 +1,45 @@
 import torch
 from torch import Tensor
 from torch.nn import functional as F
-from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import PackedSequence, pack_sequence
 
 from torchrua.padding import pack_to_lengths
+import sys
+import logging
+from collections import Counter
+from logging import Logger
+import math
+import random
+from pathlib import Path
+
+from typing import Union, Optional, List, Tuple, NamedTuple, Set, Dict, Callable
+from typing import Generator, Iterable, KeysView, ValuesView, ItemsView, Any, Type, NewType
+
+import numpy as np
+from colorlog import colorlog
+from einops import rearrange, reduce
+from einops.layers.torch import Rearrange, Reduce
+
+import torch
+from torch import Tensor
+from torch.nn import init
+from torch.nn import functional as F
+from torch.nn.init import calculate_gain
+from torch.utils.checkpoint import checkpoint, checkpoint_sequential
+from torch import nn, jit, cuda, initial_seed, autograd, optim, distributions
+from torch.nn.utils.rnn import PackedSequence, pack_sequence, pack_padded_sequence
+from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence
+
+from torchglyph.vocab import Vocab, Vectors
+from torchglyph.dataset import Dataset, DataLoader
+from torchglyph.pipe import Pipe, RawPipe, SeqLengthTensorPipe, PaddedTokLengthPipe
+from torchglyph.pipe import IdxTensorPipe, PackedIdxSeqPipe, PackedIdxBlockPipe, PaddedIdxSeqPipe, PaddedIdxBlockPipe
+from torchglyph.pipe import TokTensorPipe, PackedTokSeqPipe, PackedTokBlockPipe, PaddedTokSeqPipe, PaddedTokBlockPipe
+from torchglyph.pipe import PackedPtrSeqPipe, PackedTokPtrSeqPipe, PackedSeqPtrSeqPipe
+
+from hypothesis import given, strategies as st
+from string import ascii_letters, digits
+
 from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, \
     fetch_batch_size
 
@@ -87,7 +123,7 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, *,
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device, total_length=total_length)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device, total_length=total_length)
-    indices = F.pad(pack.batch_sizes.to(dtype=dtype, device=device).cumsum(dim=0), [1, 0], value=0)
+    indices = accumulated_batch_sizes(pack)
     return indices[token_ptr] + batch_ptr
 
 
@@ -130,9 +166,9 @@ def reverse_indices(pack: PackedSequence, *,
                     dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     device = fetch_device(pack, device=device)
 
-    batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device)
-    token_ptr = token_indices(pack=pack, reverse=True, dtype=dtype, device=device)
-    indices = F.pad(pack.batch_sizes.to(dtype=dtype, device=device).cumsum(dim=0), [1, 0], value=0)
+    batch_ptr = batch_indices(pack, unsort=True, dtype=dtype, device=device)
+    token_ptr = token_indices(pack, reverse=True, dtype=dtype, device=device)
+    indices = accumulated_batch_sizes(pack)
     return indices[token_ptr] + batch_ptr
 
 
@@ -143,3 +179,10 @@ def reverse_packed_sequence(pack: PackedSequence) -> PackedSequence:
         sorted_indices=pack.sorted_indices,
         unsorted_indices=pack.unsorted_indices,
     )
+
+
+@torch.no_grad()
+def accumulated_batch_sizes(pack: PackedSequence) -> Tensor:
+    batch_sizes = pack.batch_sizes.cumsum(dim=0).roll(1)
+    batch_sizes[0] = 0
+    return batch_sizes
