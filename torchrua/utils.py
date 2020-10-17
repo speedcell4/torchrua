@@ -5,10 +5,10 @@ from torch.nn.utils.rnn import PackedSequence
 
 
 @torch.no_grad()
-def packed_sequence_to_mask(pack: PackedSequence, unsort: bool, max_length: int = None,
+def packed_sequence_to_mask(pack: PackedSequence, unsort: bool, total_length: int = None,
                             dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     mask = batch_sizes_to_mask(
-        batch_sizes=pack.batch_sizes, max_length=max_length,
+        batch_sizes=pack.batch_sizes, total_length=total_length,
         dtype=dtype, device=device or pack.data.device,
     )
     if unsort and pack.unsorted_indices is not None:
@@ -29,13 +29,13 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool,
 
 
 @torch.no_grad()
-def batch_sizes_to_mask(batch_sizes: Tensor, max_length: int = None,
+def batch_sizes_to_mask(batch_sizes: Tensor, total_length: int = None,
                         dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
-    if max_length is not None:
-        if max_length > batch_sizes.size(0):
-            batch_sizes = F.pad(batch_sizes, [0, max_length - batch_sizes.size(0)], value=0)
-        elif max_length < batch_sizes.size(0):
-            batch_sizes = batch_sizes[:max_length]
+    if total_length is not None:
+        if total_length > batch_sizes.size(0):
+            batch_sizes = F.pad(batch_sizes, [0, total_length - batch_sizes.size(0)], value=0)
+        elif total_length < batch_sizes.size(0):
+            batch_sizes = batch_sizes[:total_length]
 
     batch_size = batch_sizes[0].item()
     return torch.ones(
@@ -61,12 +61,12 @@ def mask_to_batch_sizes(mask: Tensor, dtype: torch.dtype = torch.long, device: t
 
 
 @torch.no_grad()
-def lengths_to_mask(lengths: Tensor, max_length: int = None,
+def lengths_to_mask(lengths: Tensor, total_length: int = None,
                     dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
-    if max_length is None:
-        max_length = lengths.max().item()
+    if total_length is None:
+        total_length = lengths.max().item()
 
-    return torch.ones((max_length, max_length), dtype=dtype, device=device or lengths.device).tril(0)[lengths - 1]
+    return torch.ones((total_length, total_length), dtype=dtype, device=device or lengths.device).tril(0)[lengths - 1]
 
 
 @torch.no_grad()
