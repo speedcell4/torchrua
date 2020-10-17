@@ -4,14 +4,15 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.padding import pack_to_lengths
-from torchrua.utils import packed_sequence_to_mask, fetch_batch_sizes, fetch_device, fetch_batch_size
+from torchrua.utils import packed_sequence_to_mask, fetch_batch_sizes, fetch_device, fetch_total_length, \
+    fetch_batch_size
 
 
 @torch.no_grad()
 def batch_indices(pack: PackedSequence, unsort: bool = False, total_length: int = None, *,
                   dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    batch_size = fetch_batch_size(pack)
     device = fetch_device(pack, device=device)
+    batch_size = fetch_batch_size(pack)
 
     indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
     if not unsort and pack.sorted_indices is not None:
@@ -22,21 +23,20 @@ def batch_indices(pack: PackedSequence, unsort: bool = False, total_length: int 
 
 
 @torch.no_grad()
-def token_indices(pack: PackedSequence, reverse: bool = False, *,
+def token_indices(pack: PackedSequence, reverse: bool = False, total_length: int = None, *,
                   dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    batch_size = pack.batch_sizes[0].item()
-    max_sent_length = pack.batch_sizes.size(0)
-    if device is None:
-        device = pack.data.device
+    device = fetch_device(pack, device=device)
+    batch_size = fetch_batch_size(pack)
+    total_length = fetch_total_length(pack, total_length=total_length)
 
-    indices = torch.arange(1, max_sent_length + 1, dtype=dtype, device=device)
+    indices = torch.arange(1, total_length + 1, dtype=dtype, device=device)
     indices = indices[:, None].expand((-1, batch_size))
 
     mask = torch.ones((batch_size,), dtype=torch.bool, device=device)
     if pack.sorted_indices is not None:
         mask = mask[pack.sorted_indices]
     mask = mask[None, :].expand((batch_size, -1)).tril(0)
-    mask = mask[pack.batch_sizes - 1]
+    mask = mask[fetch_batch_sizes(pack, total_length=total_length) - 1]
 
     if reverse:
         indices = indices.flip(dims=[0]) - (~mask).long().sum(dim=0, keepdim=True)
@@ -47,9 +47,8 @@ def token_indices(pack: PackedSequence, reverse: bool = False, *,
 @torch.no_grad()
 def head_indices(pack: PackedSequence, unsort: bool = True, *,
                  dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    batch_size = pack.batch_sizes[0].item()
-    if device is None:
-        device = pack.data.device
+    device = fetch_device(pack, device=device)
+    batch_size = fetch_batch_size(pack)
 
     if unsort and pack.unsorted_indices is not None:
         return pack.unsorted_indices
@@ -63,8 +62,7 @@ def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
 @torch.no_grad()
 def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None, *,
                  dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    if device is None:
-        device = pack.data.device
+    device = fetch_device(pack, device=device)
     if lengths is None:
         lengths = pack_to_lengths(pack=pack, unsort=False)
 
@@ -108,8 +106,7 @@ def tail_indices(pack: PackedSequence, *,
     assert pack.batch_sizes[0] == pack.batch_sizes[1], \
         'some sequences contain only one element, truncating is not allowed.'
 
-    if device is None:
-        device = pack.data.device
+    device = fetch_device(pack, device=device)
     return torch.arange(pack.batch_sizes[0].item(), pack.batch_sizes.sum().item(), dtype=dtype, device=device)
 
 
@@ -128,8 +125,7 @@ def select_tail(pack: PackedSequence) -> PackedSequence:
 @torch.no_grad()
 def reverse_indices(pack: PackedSequence, *,
                     dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    if device is None:
-        device = pack.data.device
+    device = fetch_device(pack, device=device)
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device)
     token_ptr = token_indices(pack=pack, reverse=True, dtype=dtype, device=device)

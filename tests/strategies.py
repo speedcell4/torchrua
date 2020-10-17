@@ -32,12 +32,12 @@ def embedding_dim_integer(draw, max_value: int = 13):
 
 @st.composite
 def list_of_sentence_lengths(
-        draw, batch_size: int = None, max_sent_length: int = None):
+        draw, batch_size: int = None, total_length: int = None):
     if batch_size is None:
         batch_size = draw(batch_size_integer())
-    if max_sent_length is None:
-        max_sent_length = draw(max_sentence_length_integer())
-    return torch.randint(0, max_sent_length, (batch_size,), dtype=torch.long, device=draw(devices())) + 1
+    if total_length is None:
+        total_length = draw(max_sentence_length_integer())
+    return torch.randint(0, total_length, (batch_size,), dtype=torch.long, device=draw(devices())) + 1
 
 
 @st.composite

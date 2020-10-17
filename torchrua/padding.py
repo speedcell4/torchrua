@@ -42,14 +42,14 @@ def pack_to_lengths(pack: PackedSequence, unsort: bool = True, *,
 
 @torch.no_grad()
 def lengths_to_mask(lengths: Tensor, filling_mask: bool = True,
-                    batch_first: bool = False, max_sent_length: int = None, *,
+                    batch_first: bool = False, total_length: int = None, *,
                     dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     if device is None:
         device = lengths.device
-    if max_sent_length is None:
-        max_sent_length = lengths.max().item()
+    if total_length is None:
+        total_length = lengths.max().item()
 
-    token_indices = torch.arange(max_sent_length, dtype=lengths.dtype, device=lengths.device)
+    token_indices = torch.arange(total_length, dtype=lengths.dtype, device=lengths.device)
     mask = token_indices[None, :] < lengths[:, None]
 
     if not filling_mask:
@@ -61,11 +61,11 @@ def lengths_to_mask(lengths: Tensor, filling_mask: bool = True,
 
 @torch.no_grad()
 def lengths_to_batch_sizes(lengths: Tensor, *, device: torch.device = None) -> Tuple[Tensor, Tensor, Tensor]:
-    max_sent_length = lengths.max().item()
+    total_length = lengths.max().item()
     if device is None:
         device = lengths.device
 
-    mask = torch.ones((max_sent_length, max_sent_length), dtype=torch.long, device=device).tril(0)
+    mask = torch.ones((total_length, total_length), dtype=torch.long, device=device).tril(0)
 
     batch_sizes = mask[lengths - 1].sum(dim=0)
     sorted_indices = lengths.argsort(dim=0, descending=True)

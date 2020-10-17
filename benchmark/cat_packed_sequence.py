@@ -35,11 +35,11 @@ def naive_forward(rnn: nn.LSTM, pack: PackedSequence, nun_chunks: int):
 
 
 def cat_packed_sequence_fn(num_epoch: int = 1000, batch_size: int = 32, num_chunks: int = 1,
-                           max_sent_length: int = 120,
+                           total_length: int = 120,
                            embedding_dim: int = 200, hidden_dim: int = 300, device: int = -1) -> None:
     device = torch.device('cpu') if device < 0 else torch.device(f'cuda:{device}')
     lengths = [
-        torch.randint(0, max_sent_length, (batch_size,), device=device) + 1
+        torch.randint(0, total_length, (batch_size,), device=device) + 1
         for _ in range(num_epoch)
     ]
     rnn = nn.LSTM(

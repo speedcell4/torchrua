@@ -83,7 +83,9 @@ def fetch_batch_size(pack: PackedSequence) -> int:
 
 
 @torch.no_grad()
-def fetch_total_length(pack: PackedSequence) -> int:
+def fetch_total_length(pack: PackedSequence, total_length: int = None) -> int:
+    if total_length is not None:
+        return total_length
     return pack.batch_sizes.size(0)
 
 
@@ -110,7 +112,7 @@ def fetch_device(x: Union[Tensor, PackedSequence], device: torch.device = None) 
 
 
 @torch.no_grad()
-def fetch_batch_sizes(x: Union[Tensor,PackedSequence], total_length: int = None) -> Tensor:
+def fetch_batch_sizes(x: Union[Tensor, PackedSequence], total_length: int = None) -> Tensor:
     batch_sizes = x
     if not torch.is_tensor(x):
         batch_sizes = x.batch_sizes
