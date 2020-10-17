@@ -4,8 +4,7 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.padding import pack_to_lengths
-from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, \
-    fetch_batch_size, cum_batch_sizes
+from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, fetch_batch_size, cum_batch_sizes
 
 
 @torch.no_grad()
@@ -155,7 +154,7 @@ def rolled_indices(pack: PackedSequence, offset: int, *,
     lengths = pack_to_lengths(pack, unsort=False)[batch_ptr]
 
     indices = cum_batch_sizes(pack)
-    return indices[(token_ptr + offset + lengths) % lengths] + batch_ptr
+    return indices[(token_ptr - offset + lengths) % lengths] + batch_ptr
 
 
 def roll_packed_sequence(pack: PackedSequence, offset: int) -> PackedSequence:

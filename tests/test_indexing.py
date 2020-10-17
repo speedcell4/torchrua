@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import pad_packed_sequence
 from tests.strategies import list_of_sentences
 from tests.utils import assert_equal
 from torchrua.indexing import batch_indices, token_indices, select_head, select_last, select_init, select_tail, \
-    reverse_packed_sequence
+    reverse_packed_sequence, roll_packed_sequence
 
 
 @given(
@@ -112,6 +112,21 @@ def test_reverse_packed_sequence(sentences):
     x, _ = pad_packed_sequence(x, batch_first=True)
 
     y = pack_sequence([s.flip(dims=[0]) for s in sentences], enforce_sorted=False)
+    y, _ = pad_packed_sequence(y, batch_first=True)
+
+    assert_equal(x, y)
+
+
+@given(
+    sentences=list_of_sentences(),
+    offset=st.integers(-5, +5),
+)
+def test_roll_packed_sequence(sentences, offset):
+    pack = pack_sequence(sentences, enforce_sorted=False)
+    x = roll_packed_sequence(pack=pack, offset=offset)
+    x, _ = pad_packed_sequence(x, batch_first=True)
+
+    y = pack_sequence([s.roll(offset, dims=[0]) for s in sentences], enforce_sorted=False)
     y, _ = pad_packed_sequence(y, batch_first=True)
 
     assert_equal(x, y)
