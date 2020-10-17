@@ -73,3 +73,21 @@ def lengths_to_mask(lengths: Tensor, max_length: int = None,
 def lengths_to_batch_sizes(lengths: Tensor, dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     mask = lengths_to_mask(lengths=lengths, dtype=torch.bool, device=device)
     return mask_to_batch_sizes(mask=mask, dtype=dtype, device=device)
+
+
+@torch.no_grad()
+def fetch_batch_sizes(pack: PackedSequence, total_length: int = None) -> Tensor:
+    batch_sizes = pack.batch_sizes
+    if total_length is not None:
+        if total_length < batch_sizes.size(0):
+            assert batch_sizes[0].item() == batch_sizes[-total_length].item(), \
+                f'some sequences contain only less than {total_length} elements, truncating is not allowed.'
+            batch_sizes = batch_sizes[-total_length:]
+        elif total_length > batch_sizes.size(0):
+            batch_sizes = torch.cat([
+                torch.full(
+                    (total_length - batch_sizes.size(0),), fill_value=batch_sizes[0],
+                    dtype=batch_sizes.dtype, device=batch_sizes.device,
+                ), batch_sizes,
+            ], dim=0)
+    return batch_sizes

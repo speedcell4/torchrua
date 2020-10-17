@@ -4,21 +4,23 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.padding import pack_to_lengths
-from torchrua.utils import packed_sequence_to_mask
+from torchrua.utils import packed_sequence_to_mask, fetch_batch_sizes
 
 
 @torch.no_grad()
-def batch_indices(pack: PackedSequence, unsort: bool = False, *,
+def batch_indices(pack: PackedSequence, unsort: bool = False, total_length: int = None, *,
                   dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     batch_size = pack.batch_sizes[0].item()
     if device is None:
         device = pack.data.device
 
+    batch_sizes = fetch_batch_sizes(pack=pack, total_length=total_length)
+
     indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
     if not unsort and pack.sorted_indices is not None:
         indices = indices[pack.sorted_indices]
     indices = indices[None, :].expand((batch_size, -1)).tril(0)
-    indices = indices[pack.batch_sizes - 1]
+    indices = indices[batch_sizes - 1]
     return torch.masked_select(indices, indices != 0) - 1
 
 
