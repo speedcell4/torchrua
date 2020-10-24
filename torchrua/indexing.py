@@ -86,7 +86,7 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, *,
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device, total_length=total_length)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device, total_length=total_length)
-    indices = cum_batch_sizes(pack)
+    indices = cum_batch_sizes(pack, device=device)
     return indices[token_ptr] + batch_ptr
 
 
@@ -131,7 +131,7 @@ def reversed_indices(pack: PackedSequence, *,
 
     batch_ptr = batch_indices(pack, unsort=True, dtype=dtype, device=device)
     token_ptr = token_indices(pack, reverse=True, dtype=dtype, device=device)
-    indices = cum_batch_sizes(pack)
+    indices = cum_batch_sizes(pack, device=device)
     return indices[token_ptr] + batch_ptr
 
 
@@ -151,9 +151,9 @@ def rolled_indices(pack: PackedSequence, offset: int, *,
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device)
-    lengths = pack_to_lengths(pack, unsort=False)[batch_ptr]
+    lengths = pack_to_lengths(pack, unsort=False, device=device)[batch_ptr]
 
-    indices = cum_batch_sizes(pack)
+    indices = cum_batch_sizes(pack, device=device)
     return indices[(token_ptr - offset + lengths) % lengths] + batch_ptr
 
 

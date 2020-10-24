@@ -133,7 +133,7 @@ def fetch_batch_sizes(x: Union[Tensor, PackedSequence], total_length: int = None
 
 
 @torch.no_grad()
-def cum_batch_sizes(pack: PackedSequence) -> Tensor:
-    batch_sizes = pack.batch_sizes.cumsum(dim=0).roll(1, dims=[0])
+def cum_batch_sizes(pack: PackedSequence, device: torch.device = None) -> Tensor:
+    batch_sizes = pack.batch_sizes.to(device=device).cumsum(dim=0).roll(1, dims=[0])
     batch_sizes[0] = 0
     return batch_sizes
