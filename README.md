@@ -196,6 +196,16 @@ print(w)
 #         [2, 3, 1, 0, 0]])
 ```
 
+```shell script
+~ python -m benchmark reverse_pack --device 0
+torchrua (sec) => 13.9069 = 3.2287 (forward) + 10.6782 (backward)
+naive (sec) => 43.9063 = 8.6442 (forward) + 35.2621 (backward)
+
+~ python -m benchmark roll_pack --device 0
+torchrua (sec) => 14.5345 = 3.3659 (forward) + 11.1686 (backward)
+naive (sec) => 46.0561 = 8.9097 (forward) + 37.1464 (backward)
+```
+
 ### Joining & Slicing
 
 * `cat_packed_sequences` (`uncat_packed_sequences`)
@@ -274,9 +284,26 @@ print(z)
 #         [21, 22, 23,  0,  0]])
 ```
 
+```shell script
+~ python -m benchmark cat_pack --device 0
+torchrua (sec) => 23.5499 = 8.6669 (forward) + 14.8830 (backward)
+naive (sec) => 72.9520 = 30.8352 (forward) + 42.1168 (backward)
+```
+
 ### Packing
 
 * `pack_padded_sequence`
 * `pad_packed_sequence`
 
 These two functions are the same as `torch.nn.utils.rnn.pack_padded_sequence` and `torch.nn.utils.rnn.pad_packed_sequence`, with sightly lower speed on forward pass but much higher speed on backward pass.
+
+
+```shell script
+~ python -m benchmark pack_padded --device 0
+torchrua (sec) => 9.2755 = 2.4933 (forward) + 6.7822 (backward)
+naive (sec) => 11.9262 = 1.9409 (forward) + 9.9852 (backward)
+
+~ python -m benchmark pad_packed --device 0
+torchrua (sec) => 14.1087 = 2.5054 (forward) + 11.6034 (backward)
+naive (sec) => 21.5252 = 2.5133 (forward) + 19.0119 (backward)
+```
