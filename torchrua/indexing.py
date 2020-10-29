@@ -9,6 +9,25 @@ from torchrua.utils import packed_sequence_to_lengths
 
 
 @torch.no_grad()
+def _batch_token_indices(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
+    batch_size = fetch_batch_size(batch_sizes)
+    total_length = fetch_total_length(batch_sizes)
+
+    if sorted_indices is None:
+        sorted_indices = ...
+
+    batch_ptr = torch.arange(1, 1 + batch_size, dtype=torch.long, device=device)
+    batch_ptr = batch_ptr[None, sorted_indices].expand((batch_size, -1)).tril(0)
+    batch_ptr = batch_ptr[batch_sizes - 1]
+
+    token_ptr = torch.arange(total_length, dtype=torch.long, device=device)
+    token_ptr = token_ptr[:, None].expand((-1, batch_size))
+
+    mask = batch_ptr != 0
+    return torch.masked_select(batch_ptr, mask) - 1, torch.masked_select(token_ptr, mask)
+
+
+@torch.no_grad()
 def batch_indices(pack: PackedSequence, unsort: bool = False, total_length: int = None, *,
                   dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     device = fetch_device(pack, device=device)
