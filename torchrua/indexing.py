@@ -13,12 +13,17 @@ def batch_indices(pack: PackedSequence, unsort: bool = False, total_length: int 
     device = fetch_device(pack, device=device)
     batch_size = fetch_batch_size(pack)
 
-    indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
     if not unsort and pack.sorted_indices is not None:
-        indices = indices[pack.sorted_indices]
-    indices = indices[None, :].expand((batch_size, -1)).tril(0)
+        sorted_indices = pack.sorted_indices
+    else:
+        sorted_indices = ...
+
+    indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
+    indices = indices[None, sorted_indices].expand((batch_size, -1)).tril(0)
     indices = indices[fetch_batch_sizes(pack, total_length=total_length) - 1]
-    return torch.masked_select(indices, indices != 0) - 1
+
+    mask = indices != 0
+    return torch.masked_select(indices, mask) - 1
 
 
 @torch.no_grad()
@@ -31,10 +36,7 @@ def token_indices(pack: PackedSequence, reverse: bool = False, total_length: int
     indices = torch.arange(1, total_length + 1, dtype=dtype, device=device)
     indices = indices[:, None].expand((-1, batch_size))
 
-    mask = torch.ones((batch_size,), dtype=torch.bool, device=device)
-    if pack.sorted_indices is not None:
-        mask = mask[pack.sorted_indices]
-    mask = mask[None, :].expand((batch_size, -1)).tril(0)
+    mask = torch.ones((batch_size, batch_size), dtype=torch.bool, device=device).tril(0)
     mask = mask[fetch_batch_sizes(pack, total_length=total_length) - 1]
 
     if reverse:
@@ -84,7 +86,8 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, *,
     device = fetch_device(pack, device=device)
     total_length = fetch_total_length(pack) - drop_last_n
 
-    batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device, total_length=total_length)
+    batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device,
+                              total_length=total_length)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device, total_length=total_length)
     indices = cum_batch_sizes(pack, device=device)
     return indices[token_ptr] + batch_ptr
