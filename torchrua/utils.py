@@ -75,8 +75,10 @@ def lengths_to_mask(lengths: Tensor, total_length: int = None,
 
 @torch.no_grad()
 def lengths_to_batch_sizes(lengths: Tensor, dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    mask = lengths_to_mask(lengths=lengths, dtype=torch.bool, device=device)
-    return mask_to_batch_sizes(mask=mask, dtype=dtype, device=device)
+    total_length = lengths.max().item()
+
+    indices = torch.ones((total_length, total_length), dtype=dtype, device=device).tril(0)
+    return indices[lengths - 1].sum(dim=0)
 
 
 @torch.no_grad()
