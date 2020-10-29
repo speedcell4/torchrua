@@ -10,7 +10,7 @@ from torchrua.utils import lengths_to_batch_sizes, packed_sequence_to_lengths, f
 
 
 def pack_padded_sequence(input: Tensor, lengths: Tensor,
-                         batch_first: bool = False, enforce_sorted: bool = True) -> Tensor:
+                         batch_first: bool = False, enforce_sorted: bool = True) -> PackedSequence:
     batch_sizes = lengths_to_batch_sizes(lengths=lengths, dtype=torch.long, device=torch.device('cpu'))
 
     if not enforce_sorted:
@@ -53,14 +53,14 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
 
     if batch_first:
         data = torch.full(
-            (batch_size, total_length), fill_value=padding_value,
-            device=pack.data.device, requires_grad=False,
+            (batch_size, total_length, *pack.data.size()[1:]),
+            fill_value=padding_value, device=pack.data.device, requires_grad=False,
         )
         data[batch_ptr, token_ptr] = pack.data
     else:
         data = torch.full(
-            (total_length, batch_size), fill_value=padding_value,
-            device=pack.data.device, requires_grad=False,
+            (total_length, batch_size, *pack.data.size()[1:]),
+            fill_value=padding_value, device=pack.data.device, requires_grad=False,
         )
         data[token_ptr, batch_ptr] = pack.data
 
