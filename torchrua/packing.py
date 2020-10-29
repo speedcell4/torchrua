@@ -38,7 +38,7 @@ def pack_padded_sequence(input: Tensor, lengths: Tensor,
 
 
 def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
-                        padding_value: Union[int, float, bool] = 0.0,
+                        padding_value: Union[int, float, bool] = 0,
                         total_length: int = None) -> Tuple[Tensor, Tensor]:
     device = fetch_device(pack)
     batch_size = fetch_batch_size(pack)
@@ -50,13 +50,13 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
     if batch_first:
         data = torch.full(
             (batch_size, total_length, *pack.data.size()[1:]),
-            fill_value=padding_value, device=device, requires_grad=False,
+            fill_value=padding_value, dtype=pack.data.dtype, device=device, requires_grad=False,
         )
         data[batch_ptr, token_ptr] = pack.data
     else:
         data = torch.full(
             (total_length, batch_size, *pack.data.size()[1:]),
-            fill_value=padding_value, device=device, requires_grad=False,
+            fill_value=padding_value, dtype=pack.data.dtype, device=device, requires_grad=False,
         )
         data[token_ptr, batch_ptr] = pack.data
 
