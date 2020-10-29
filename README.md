@@ -28,24 +28,36 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import packed_fn, pad_packed_sequence
+from torchrua import packed_fn, packed_method, Packed, pad_packed_sequence
 
-layer = nn.Linear(7, 13)
+linear = nn.Linear(7, 13)
 
-x = pack_sequence([
+pack = pack_sequence([
     torch.randn((5, 7)),
     torch.randn((2, 7)),
     torch.randn((3, 7)),
 ], enforce_sorted=False)
 
-y = packed_fn(layer)(x)
-
-x, _ = pad_packed_sequence(x, batch_first=True)
+x, _ = pad_packed_sequence(pack, batch_first=True)
 print(x.size())
 # torch.Size([3, 5, 7])
 
-y, _ = pad_packed_sequence(y, batch_first=True)
+print(packed_fn(linear))
+# <function packed_fn.<locals>.wrap at 0x10f9524d0>
+y, _ = pad_packed_sequence(packed_fn(linear)(pack), batch_first=True)
 print(y.size())
+# torch.Size([3, 5, 13])
+
+print(packed_method(nn.Linear.forward))
+# <function Linear.forward at 0x10f9524d0>
+z, _ = pad_packed_sequence(packed_method(nn.Linear.forward)(linear, pack), batch_first=True)
+print(z.size())
+# torch.Size([3, 5, 13])
+
+print(Packed(linear))
+# PackedLinear(in_features=7, out_features=13, bias=True)
+w, _ = pad_packed_sequence(Packed(linear)(pack), batch_first=True)
+print(w.size())
 # torch.Size([3, 5, 13])
 ```
 
@@ -62,7 +74,7 @@ from torch.nn import functional as F
 from torch.nn import init
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import PackedMeta, pad_packed_sequence
+from torchrua import PackedMeta, pad_packed_sequence, PackedSequential
 
 
 class MyLinear(nn.Module, metaclass=PackedMeta):
@@ -88,23 +100,29 @@ class MyLinear(nn.Module, metaclass=PackedMeta):
         return F.linear(input, self.weight, self.bias)
 
 
-layer = MyLinear(7, 13)
+linear = MyLinear(7, 13)
+sequential = PackedSequential(
+    nn.Linear(7, 13),
+    nn.Linear(13, 17),
+)
 
-x = pack_sequence([
+pack = pack_sequence([
     torch.randn((5, 7)),
     torch.randn((2, 7)),
     torch.randn((3, 7)),
 ], enforce_sorted=False)
 
-y = layer(x)
-
-x, _ = pad_packed_sequence(x, batch_first=True)
+x, _ = pad_packed_sequence(pack, batch_first=True)
 print(x.size())
 # torch.Size([3, 5, 7])
 
-y, _ = pad_packed_sequence(y, batch_first=True)
+y, _ = pad_packed_sequence(linear(pack), batch_first=True)
 print(y.size())
 # torch.Size([3, 5, 13])
+
+z, _ = pad_packed_sequence(sequential(pack), batch_first=True)
+print(z.size())
+# torch.Size([3, 5, 17])
 ```
 
 ### Indexing
