@@ -18,6 +18,18 @@ class Timer(object):
         del self.start_tm
 
 
+def report_performance(rua_f, rua_b, naive_f, naive_b):
+    rua_f = rua_f.seconds
+    rua_b = rua_b.seconds
+    print(f'torchrua (sec) => {rua_f + rua_b:.4f} = {rua_f:.4f} (forward) + {rua_b:.4f} (backward)')
+
+    naive_f = naive_f.seconds
+    naive_b = naive_b.seconds
+    print(f'naive (sec) => {naive_f + naive_b:.4f} = {naive_f:.4f} (forward) + {naive_b:.4f} (backward)')
+
+    return (rua_f, rua_b), (naive_f, naive_b)
+
+
 def gen_pad(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:
     return pad_sequence([
         torch.randn((length, embedding_dim), dtype=torch.float32, device=device, requires_grad=True)

@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 
 from benchmark.naive import naive_roll_packed_sequence
-from benchmark.utils import Timer, gen_pack
+from benchmark.utils import Timer, gen_pack, report_performance
 from torchrua.indexing import roll_packed_sequence
 
 
@@ -41,12 +41,4 @@ def roll_pack(num_examples: int = 2400, batch_size: int = 32, offset: int = 1,
         with naive_b:
             z.sum().backward()
 
-    rua_f = rua_f.seconds
-    rua_b = rua_b.seconds
-    print(f'rua (sec) => {rua_f + rua_b:.4f} = {rua_f:.4f} + {rua_b:.4f}')
-
-    naive_f = naive_f.seconds
-    naive_b = naive_b.seconds
-    print(f'naive (sec) => {naive_f + naive_b:.4f} = {naive_f:.4f} + {naive_b:.4f}')
-
-    return (rua_f, rua_b), (naive_f, naive_b)
+    return report_performance(rua_f, rua_b, naive_f, naive_b)
