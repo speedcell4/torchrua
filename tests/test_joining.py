@@ -4,7 +4,7 @@ from torch.nn.utils.rnn import pad_packed_sequence
 
 from tests.strategies import list_of_homo_lists_of_sentences
 from tests.utils import assert_equal
-from torchrua.joining import cat_packed_sequences, stack_packed_sequences
+from torchrua import cat_packed_sequences, stack_packed_sequences
 
 
 @given(

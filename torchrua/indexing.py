@@ -3,8 +3,9 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.padding import pack_to_lengths
-from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, fetch_batch_size, fetch_accumulated_batch_sizes
+from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, fetch_batch_size, \
+    fetch_accumulated_batch_sizes
+from torchrua.utils import packed_sequence_to_lengths
 
 
 @torch.no_grad()
@@ -65,7 +66,7 @@ def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = No
                  dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     device = fetch_device(pack, device=device)
     if lengths is None:
-        lengths = pack_to_lengths(pack=pack, unsort=False)
+        lengths = packed_sequence_to_lengths(pack=pack, unsort=False)
 
     indices = pack.batch_sizes.to(dtype=dtype, device=device).cumsum(dim=0)
     indices = F.pad(indices, [2, 0], value=0)[lengths]
@@ -154,7 +155,7 @@ def rolled_indices(pack: PackedSequence, offset: int, *,
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device)
-    lengths = pack_to_lengths(pack, unsort=False, device=device)[batch_ptr]
+    lengths = packed_sequence_to_lengths(pack, unsort=False, device=device)[batch_ptr]
 
     indices = fetch_accumulated_batch_sizes(pack, device=device)
     return indices[(token_ptr - offset + lengths) % lengths] + batch_ptr

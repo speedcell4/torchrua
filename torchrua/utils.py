@@ -2,7 +2,7 @@ from typing import Union
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import PackedSequence, pack_sequence, invert_permutation
 
 
 @torch.no_grad()
@@ -125,6 +125,16 @@ def lengths_to_mask(lengths: Tensor, batch_first: bool = True, total_length: int
 @torch.no_grad()
 def lengths_to_batch_sizes(lengths: Tensor, dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     return lengths_to_mask(lengths, batch_first=True, dtype=dtype, device=device).sum(dim=0)
+
+
+@torch.no_grad()
+def lengths_to_sorted_indices(lengths: Tensor, dtype: torch.dtype = torch.long, device: torch.device = None):
+    device = fetch_device(lengths, device=device)
+    dtype = fetch_dtype(lengths, dtype=dtype)
+
+    sorted_indices = lengths.argsort(dim=0, descending=True)
+    unsorted_indices = invert_permutation(sorted_indices)
+    return sorted_indices.to(dtype=dtype, device=device), unsorted_indices.to(dtype=dtype, device=device)
 
 
 @torch.no_grad()
