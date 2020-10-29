@@ -34,21 +34,20 @@ def naive_forward(rnn: nn.LSTM, pack: PackedSequence, nun_chunks: int):
     return sum(encodings)
 
 
-def cat_pack(num_epoch: int = 1000, batch_size: int = 32, num_chunks: int = 1,
-             total_length: int = 120,
-             embedding_dim: int = 200, hidden_dim: int = 300, device: int = -1) -> None:
+def cat_pack(num_examples: int = 2400, batch_size: int = 32, num_chunks: int = 5,
+             total_length: int = 50, embedding_dim: int = 100, hidden_dim: int = 100, device: int = -1):
     device = torch.device('cpu') if device < 0 else torch.device(f'cuda:{device}')
     lengths = [
         torch.randint(0, total_length, (batch_size,), device=device) + 1
-        for _ in range(num_epoch)
+        for _ in range(num_examples)
     ]
     rnn = nn.LSTM(
         input_size=embedding_dim // num_chunks, hidden_size=hidden_dim,
         bidirectional=True, bias=True, batch_first=True,
     ).to(device=device)
 
-    rf, rb = Timer(), Timer()
-    nf, nb = Timer(), Timer()
+    rua_f, rua_b = Timer(), Timer()
+    naive_f, naive_b = Timer(), Timer()
 
     for length in tqdm(lengths):
         pack = gen_pack(
@@ -56,10 +55,10 @@ def cat_pack(num_epoch: int = 1000, batch_size: int = 32, num_chunks: int = 1,
             embedding_dim=embedding_dim,
             device=device,
         )
-        with rf:
+        with rua_f:
             loss = rua_forward(rnn, pack, num_chunks)
         rnn.zero_grad()
-        with rb:
+        with rua_b:
             _ = loss.backward()
 
     for length in tqdm(lengths):
@@ -68,13 +67,18 @@ def cat_pack(num_epoch: int = 1000, batch_size: int = 32, num_chunks: int = 1,
             embedding_dim=embedding_dim,
             device=device,
         )
-        with nf:
+        with naive_f:
             loss = naive_forward(rnn, pack, num_chunks)
         rnn.zero_grad()
-        with nb:
+        with naive_b:
             _ = loss.backward()
 
-    print(f'rua.seconds => {rf.seconds + rb.seconds:.4f} '
-          f'({rf.seconds:.4f}, {rb.seconds:.4f})')
-    print(f'naive.seconds => {nf.seconds + nb.seconds:.4f} '
-          f'({nf.seconds:.4f}, {nb.seconds:.4f})')
+    rua_f = rua_f.seconds
+    rua_b = rua_b.seconds
+    print(f'rua (sec) => {rua_f + rua_b:.4f} = {rua_f:.4f} + {rua_b:.4f}')
+
+    naive_f = naive_f.seconds
+    naive_b = naive_b.seconds
+    print(f'naive (sec) => {naive_f + naive_b:.4f} = {naive_f:.4f} + {naive_b:.4f}')
+
+    return (rua_f, rua_b), (naive_f, naive_b)
