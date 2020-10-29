@@ -9,7 +9,11 @@
 ## Requirements
 
 - Python 3.7 or higher
-- PyTorch 1.6.0
+- PyTorch 1.6.0 or higher
+
+## Install
+
+`python -m pip install torchrua --upgrade`
 
 ## Usage
 
