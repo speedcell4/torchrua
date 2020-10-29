@@ -46,7 +46,7 @@ def test_packed_sequence_to_mask(sentences, unsort, batch_first):
 )
 def test_lengths_to_batch_sizes(sentences):
     lengths = torch.tensor([s.size(0) for s in sentences], dtype=torch.long, device=sentences[0].device)
-    batch_sizes = lengths_to_batch_sizes(lengths=lengths, device=sentences[0].device)
+    batch_sizes = lengths_to_batch_sizes(lengths=lengths, device=torch.device('cpu'))
     sorted_indices, unsorted_indices = lengths_to_sorted_indices(lengths=lengths, device=sentences[0].device)
     sorted_sentences = pad_sequence([
         sentences[sorted_index]

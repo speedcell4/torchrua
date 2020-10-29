@@ -30,7 +30,7 @@ def test_pack_padded_sequence(sentences_and_lengths, batch_first):
 def test_pack_padded_sequence(sentences_and_lengths, batch_first):
     sentences, lengths = sentences_and_lengths
 
-    x_lengths = torch.tensor(lengths, dtype=torch.long, device=sentences[0].device)
+    x_lengths = torch.tensor(lengths, dtype=torch.long, device=torch.device('cpu'))
 
     pack = pack_sequence(sentences, enforce_sorted=False)
     y_data, y_lengths = pad_packed_sequence(pack, batch_first=batch_first)
