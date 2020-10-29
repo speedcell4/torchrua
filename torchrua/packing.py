@@ -3,19 +3,18 @@ from typing import Union, Tuple
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
-from torch.nn.utils.rnn import invert_permutation
 
 from torchrua import batch_indices, token_indices
-from torchrua.utils import lengths_to_batch_sizes, packed_sequence_to_lengths, fetch_batch_size, fetch_total_length
+from torchrua.utils import lengths_to_batch_sizes, packed_sequence_to_lengths, fetch_batch_size, fetch_total_length, \
+    lengths_to_sorted_indices
 
 
 def pack_padded_sequence(input: Tensor, lengths: Tensor,
                          batch_first: bool = False, enforce_sorted: bool = True) -> PackedSequence:
-    batch_sizes = lengths_to_batch_sizes(lengths=lengths, dtype=torch.long, device=torch.device('cpu'))
+    batch_sizes = lengths_to_batch_sizes(lengths=lengths, dtype=torch.long, device=input.device)
 
     if not enforce_sorted:
-        sorted_indices = lengths.argsort(dim=0, descending=True)
-        unsorted_indices = invert_permutation(sorted_indices)
+        sorted_indices, unsorted_indices = lengths_to_sorted_indices(lengths)
     else:
         sorted_indices = unsorted_indices = None
 
@@ -35,7 +34,7 @@ def pack_padded_sequence(input: Tensor, lengths: Tensor,
 
     return PackedSequence(
         data=data,
-        batch_sizes=batch_sizes,
+        batch_sizes=batch_sizes.cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
@@ -47,7 +46,7 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
     batch_size = fetch_batch_size(pack)
     total_length = fetch_total_length(pack, total_length=total_length)
 
-    lengths = packed_sequence_to_lengths(pack=pack, unsort=True, dtype=torch.long, device=torch.device('cpu'))
+    lengths = packed_sequence_to_lengths(pack=pack, unsort=True, dtype=torch.long, device=pack.data.device)
     batch_ptr = batch_indices(pack, device=pack.data.device)
     token_ptr = token_indices(pack, device=pack.data.device)
 
@@ -64,4 +63,4 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
         )
         data[token_ptr, batch_ptr] = pack.data
 
-    return data, lengths
+    return data, lengths.cpu()
