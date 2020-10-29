@@ -6,8 +6,8 @@ from benchmark.utils import Timer, gen_pack
 from torchrua.packing import pad_packed_sequence
 
 
-def pad_packed_sequence_fn(num_epoch: int = 5000, batch_size: int = 32,
-                           total_length: int = 120, embedding_dim: int = 100, device: int = -1) -> None:
+def pad_packed(num_epoch: int = 5000, batch_size: int = 32,
+               total_length: int = 120, embedding_dim: int = 100, device: int = -1) -> None:
     device = torch.device('cpu') if device < 0 else torch.device(f'cuda:{device}')
     lengths = [
         torch.randint(0, total_length, (batch_size,), device=device) + 1
