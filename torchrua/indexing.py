@@ -1,6 +1,5 @@
 import torch
 from torch import Tensor
-from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, fetch_batch_size, \
@@ -87,13 +86,10 @@ def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = No
     if lengths is None:
         lengths = packed_sequence_to_lengths(pack=pack, unsort=False)
 
-    indices = pack.batch_sizes.to(dtype=dtype, device=device).cumsum(dim=0)
-    indices = F.pad(indices, [2, 0], value=0)[lengths]
-    if unsort and pack.unsorted_indices is not None:
-        indices = indices[pack.unsorted_indices] + pack.unsorted_indices
-    else:
-        indices = indices + torch.arange(indices.size(0), dtype=dtype, device=device)
-    return indices
+    indices = fetch_accumulated_batch_sizes(pack, device=device)[lengths - 1]
+    unsorted_indices = head_indices(pack=pack, unsort=unsort, dtype=dtype, device=device)
+
+    return indices[unsorted_indices] + unsorted_indices
 
 
 def select_last(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None) -> Tensor:
@@ -106,8 +102,7 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, *,
     device = fetch_device(pack, device=device)
     total_length = fetch_total_length(pack) - drop_last_n
 
-    batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device,
-                              total_length=total_length)
+    batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device, total_length=total_length)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device, total_length=total_length)
     indices = fetch_accumulated_batch_sizes(pack, device=device)
     return indices[token_ptr] + batch_ptr
