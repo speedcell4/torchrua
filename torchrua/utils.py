@@ -6,6 +6,72 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
 
+# fetch from PackedSequence
+
+@torch.no_grad()
+def fetch_batch_size(pack: PackedSequence) -> int:
+    return pack.batch_sizes[0].item()
+
+
+@torch.no_grad()
+def fetch_total_length(pack: PackedSequence, total_length: int = None) -> int:
+    if total_length is not None:
+        return total_length
+    return pack.batch_sizes.size(0)
+
+
+@torch.no_grad()
+def fetch_dtype(x: Union[Tensor, PackedSequence], dtype: torch.dtype = None) -> torch.dtype:
+    if dtype is not None:
+        return dtype
+    if torch.is_tensor(x):
+        return x.dtype
+    if isinstance(x, PackedSequence):
+        return x.data.dtype
+    raise TypeError(f'unsupported type {type(x)}')
+
+
+@torch.no_grad()
+def fetch_device(x: Union[Tensor, PackedSequence], device: torch.device = None) -> torch.device:
+    if device is not None:
+        return device
+    if torch.is_tensor(x):
+        return x.device
+    if isinstance(x, PackedSequence):
+        return x.data.device
+    raise TypeError(f'unsupported type {type(x)}')
+
+
+@torch.no_grad()
+def fetch_batch_sizes(x: Union[Tensor, PackedSequence],
+                      total_length: int = None, device: torch.device = None) -> Tensor:
+    device = fetch_device(x, device=device)
+
+    batch_sizes = x
+    if not torch.is_tensor(x):
+        batch_sizes = x.batch_sizes
+
+    if total_length is not None:
+        if total_length < batch_sizes.size(0):
+            assert batch_sizes[0].item() == batch_sizes[-total_length].item(), \
+                f'some sequences contain only less than {total_length} elements, truncating is not allowed.'
+            batch_sizes = batch_sizes[-total_length:]
+        elif total_length > batch_sizes.size(0):
+            padding = torch.full(
+                (total_length - batch_sizes.size(0),), fill_value=batch_sizes[0],
+                dtype=batch_sizes.dtype, device=batch_sizes.device,
+            )
+            batch_sizes = torch.cat([padding, batch_sizes], dim=0)
+    return batch_sizes.to(device=device)
+
+
+@torch.no_grad()
+def fetch_accumulated_batch_sizes(pack: PackedSequence, device: torch.device = None) -> Tensor:
+    batch_sizes: Tensor = pack.batch_sizes.to(device=device).cumsum(dim=0).roll(1, dims=[0])
+    batch_sizes[0] = 0
+    return batch_sizes
+
+
 @torch.no_grad()
 def packed_sequence_to_mask(pack: PackedSequence, unsort: bool, total_length: int = None,
                             dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
@@ -79,65 +145,3 @@ def lengths_to_batch_sizes(lengths: Tensor, dtype: torch.dtype = torch.long, dev
 
     indices = torch.ones((total_length, total_length), dtype=dtype, device=device).tril(0)
     return indices[lengths - 1].sum(dim=0)
-
-
-@torch.no_grad()
-def fetch_batch_size(pack: PackedSequence) -> int:
-    return pack.batch_sizes[0].item()
-
-
-@torch.no_grad()
-def fetch_total_length(pack: PackedSequence, total_length: int = None) -> int:
-    if total_length is not None:
-        return total_length
-    return pack.batch_sizes.size(0)
-
-
-@torch.no_grad()
-def fetch_dtype(x: Union[Tensor, PackedSequence], dtype: torch.dtype = None) -> torch.dtype:
-    if dtype is not None:
-        return dtype
-    if torch.is_tensor(x):
-        return x.dtype
-    if isinstance(x, PackedSequence):
-        return x.data.dtype
-    raise TypeError(f'unsupported type {type(x)}')
-
-
-@torch.no_grad()
-def fetch_device(x: Union[Tensor, PackedSequence], device: torch.device = None) -> torch.device:
-    if device is not None:
-        return device
-    if torch.is_tensor(x):
-        return x.device
-    if isinstance(x, PackedSequence):
-        return x.data.device
-    raise TypeError(f'unsupported type {type(x)}')
-
-
-@torch.no_grad()
-def fetch_batch_sizes(x: Union[Tensor, PackedSequence], total_length: int = None) -> Tensor:
-    batch_sizes = x
-    if not torch.is_tensor(x):
-        batch_sizes = x.batch_sizes
-
-    if total_length is not None:
-        if total_length < batch_sizes.size(0):
-            assert batch_sizes[0].item() == batch_sizes[-total_length].item(), \
-                f'some sequences contain only less than {total_length} elements, truncating is not allowed.'
-            batch_sizes = batch_sizes[-total_length:]
-        elif total_length > batch_sizes.size(0):
-            batch_sizes = torch.cat([
-                torch.full(
-                    (total_length - batch_sizes.size(0),), fill_value=batch_sizes[0],
-                    dtype=batch_sizes.dtype, device=batch_sizes.device,
-                ), batch_sizes,
-            ], dim=0)
-    return batch_sizes
-
-
-@torch.no_grad()
-def cum_batch_sizes(pack: PackedSequence, device: torch.device = None) -> Tensor:
-    batch_sizes = pack.batch_sizes.to(device=device).cumsum(dim=0).roll(1, dims=[0])
-    batch_sizes[0] = 0
-    return batch_sizes
