@@ -3,8 +3,8 @@ from torch.nn.utils.rnn import pack_sequence, pad_packed_sequence
 
 from tests.strategies import list_of_homo_lists_of_sentences
 from tests.utils import assert_equal
-from torchrua.joining import cat_packed_sequences, stack_packed_sequences
-from torchrua.slicing import uncat_packed_sequence, unstack_packed_sequence
+from torchrua import cat_packed_sequences, stack_packed_sequences
+from torchrua import uncat_packed_sequence, unstack_packed_sequence
 
 
 @given(

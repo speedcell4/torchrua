@@ -5,7 +5,7 @@ from torch.nn.utils.rnn import pad_sequence, pack_sequence
 
 from tests.strategies import list_of_sentences
 from tests.utils import assert_equal
-from torchrua.packing import pad_packed_sequence, pack_padded_sequence
+from torchrua import pad_packed_sequence, pack_padded_sequence
 
 
 @given(
