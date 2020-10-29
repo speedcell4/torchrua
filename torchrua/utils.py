@@ -2,7 +2,7 @@ from typing import Union
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import PackedSequence, pack_sequence
 
 
 @torch.no_grad()
@@ -79,26 +79,32 @@ def fetch_accumulated_batch_sizes(x: Union[Tensor, PackedSequence], device: torc
 
 
 @torch.no_grad()
-def batch_sizes_to_mask(batch_sizes: Tensor, total_length: int = None,
+def batch_sizes_to_mask(batch_sizes: Tensor, batch_first: bool = True, total_length: int = None,
                         dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     device = fetch_device(batch_sizes, device=device)
     dtype = fetch_dtype(batch_sizes, dtype=dtype)
     batch_size = fetch_batch_size(batch_sizes)
 
     batch_sizes = fetch_batch_sizes(batch_sizes, total_length=total_length, device=device)
-    return torch.ones(
+    indices = torch.ones(
         (batch_size, batch_size),
         dtype=dtype, device=device,
-    ).triu(0)[:, batch_sizes - 1]
+    )
+
+    if batch_first:
+        return indices.triu(0)[:, batch_sizes - 1]
+    else:
+        return indices.tril(0)[batch_sizes - 1, :]
 
 
 @torch.no_grad()
-def batch_sizes_to_lengths(batch_sizes: Tensor, dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    return batch_sizes_to_mask(batch_sizes, dtype=dtype, device=device).sum(dim=1)
+def batch_sizes_to_lengths(batch_sizes: Tensor, batch_first: bool = True,
+                           dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+    return batch_sizes_to_mask(batch_sizes, batch_first=batch_first, dtype=dtype, device=device).sum(dim=1)
 
 
 @torch.no_grad()
-def lengths_to_mask(lengths: Tensor, total_length: int = None,
+def lengths_to_mask(lengths: Tensor, batch_first: bool = True, total_length: int = None,
                     dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     device = fetch_device(lengths, device=device)
     dtype = fetch_dtype(lengths, dtype=dtype)
@@ -106,26 +112,33 @@ def lengths_to_mask(lengths: Tensor, total_length: int = None,
     if total_length is None:
         total_length = lengths.max().item()
 
-    return torch.ones(
+    indices = torch.ones(
         (total_length, total_length),
         dtype=dtype, device=device,
-    ).tril(0)[lengths - 1]
+    )
+    if batch_first:
+        return indices.tril(0)[lengths - 1, :]
+    else:
+        return indices.triu(0)[:, lengths - 1]
 
 
 @torch.no_grad()
 def lengths_to_batch_sizes(lengths: Tensor, dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    return lengths_to_mask(lengths, dtype=dtype, device=device).sum(dim=0)
+    return lengths_to_mask(lengths, batch_first=True, dtype=dtype, device=device).sum(dim=0)
 
 
 @torch.no_grad()
-def packed_sequence_to_mask(pack: PackedSequence, unsort: bool, total_length: int = None,
+def packed_sequence_to_mask(pack: PackedSequence, unsort: bool, batch_first: bool = True, total_length: int = None,
                             dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
     mask = batch_sizes_to_mask(
-        batch_sizes=pack.batch_sizes, total_length=total_length,
+        batch_sizes=pack.batch_sizes, batch_first=batch_first, total_length=total_length,
         dtype=dtype, device=device or pack.data.device,
     )
     if unsort and pack.unsorted_indices is not None:
-        mask = mask[pack.unsorted_indices]
+        if batch_first:
+            mask = mask[pack.unsorted_indices, :]
+        else:
+            mask = mask[:, pack.unsorted_indices]
     return mask
 
 
