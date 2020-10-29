@@ -6,9 +6,20 @@ from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, 
     fetch_accumulated_batch_sizes
 from torchrua.utils import packed_sequence_to_lengths
 
+__all__ = [
+    'batch_token_indices',
+    'batch_indices', 'token_indices',
+    'head_indices', 'select_head',
+    'last_indices', 'select_last',
+    'init_indices', 'select_init',
+    'tail_indices', 'select_tail',
+    'reversed_indices', 'reverse_packed_sequence',
+    'rolled_indices', 'roll_packed_sequence',
+]
+
 
 @torch.no_grad()
-def _batch_token_indices(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
+def batch_token_indices(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
     batch_size = fetch_batch_size(batch_sizes)
     total_length = fetch_total_length(batch_sizes)
 
