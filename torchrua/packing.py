@@ -7,7 +7,8 @@ from torchrua import batch_indices, token_indices
 from torchrua.utils import lengths_to_batch_sizes
 
 
-def pack_padded_sequence(tensor: Tensor, lengths: Tensor, batch_first: bool, enforce_sorted: bool = True) -> Tensor:
+def pack_padded_sequence(input: Tensor, lengths: Tensor,
+                         batch_first: bool = False, enforce_sorted: bool = True) -> Tensor:
     batch_sizes = lengths_to_batch_sizes(lengths=lengths, dtype=torch.long, device=torch.device('cpu'))
 
     if not enforce_sorted:
@@ -23,12 +24,12 @@ def pack_padded_sequence(tensor: Tensor, lengths: Tensor, batch_first: bool, enf
         unsorted_indices=unsorted_indices,
     )
 
-    batch_ptr = batch_indices(pack, device=tensor.data.device)
-    token_ptr = token_indices(pack, device=tensor.data.device)
+    batch_ptr = batch_indices(pack, device=input.data.device)
+    token_ptr = token_indices(pack, device=input.data.device)
     if batch_first:
-        data = tensor[batch_ptr, token_ptr]
+        data = input[batch_ptr, token_ptr]
     else:
-        data = tensor[token_ptr, batch_ptr]
+        data = input[token_ptr, batch_ptr]
 
     return PackedSequence(
         data=data,
