@@ -1,13 +1,13 @@
 import torch
 from tqdm import tqdm
 
-from benchmark.naive import naive_reverse_packed_sequence
+from benchmark.naive import naive_roll_packed_sequence
 from benchmark.utils import Timer, gen_pack
-from torchrua.indexing import reverse_packed_sequence
+from torchrua.indexing import roll_packed_sequence
 
 
-def reverse_pack(num_examples: int = 2400, batch_size: int = 32,
-                 total_length: int = 120, embedding_dim: int = 100, device: int = -1):
+def roll_pack(num_examples: int = 2400, batch_size: int = 32, offset: int = 1,
+              total_length: int = 120, embedding_dim: int = 100, device: int = -1):
     device = torch.device('cpu') if device < 0 else torch.device(f'cuda:{device}')
     lengths = [
         torch.randint(0, total_length, (batch_size,), device=device) + 1
@@ -24,7 +24,7 @@ def reverse_pack(num_examples: int = 2400, batch_size: int = 32,
         )
 
         with rua_f:
-            y = reverse_packed_sequence(pack).data
+            y = roll_packed_sequence(pack, offset=offset).data
         with rua_b:
             y.sum().backward()
 
@@ -37,7 +37,7 @@ def reverse_pack(num_examples: int = 2400, batch_size: int = 32,
             device=device,
         )
         with naive_f:
-            z = naive_reverse_packed_sequence(pack).data
+            z = naive_roll_packed_sequence(pack, offset=offset).data
         with naive_b:
             z.sum().backward()
 

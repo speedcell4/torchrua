@@ -1,10 +1,40 @@
 import torch
 from torch import Tensor
-from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.padding import pack_to_lengths
-from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, fetch_batch_size, cum_batch_sizes
+from torchrua.utils import fetch_batch_sizes, fetch_device, fetch_total_length, fetch_batch_size, \
+    fetch_accumulated_batch_sizes
+from torchrua.utils import packed_sequence_to_lengths
+
+__all__ = [
+    'batch_token_indices',
+    'batch_indices', 'token_indices',
+    'head_indices', 'select_head',
+    'last_indices', 'select_last',
+    'init_indices', 'select_init',
+    'tail_indices', 'select_tail',
+    'reversed_indices', 'reverse_packed_sequence',
+    'rolled_indices', 'roll_packed_sequence',
+]
+
+
+@torch.no_grad()
+def batch_token_indices(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
+    batch_size = fetch_batch_size(batch_sizes)
+    total_length = fetch_total_length(batch_sizes)
+
+    if sorted_indices is None:
+        sorted_indices = ...
+
+    batch_ptr = torch.arange(1, 1 + batch_size, dtype=torch.long, device=device)
+    batch_ptr = batch_ptr[None, sorted_indices].expand((batch_size, -1)).tril(0)
+    batch_ptr = batch_ptr[batch_sizes - 1]
+
+    token_ptr = torch.arange(total_length, dtype=torch.long, device=device)
+    token_ptr = token_ptr[:, None].expand((-1, batch_size))
+
+    mask = batch_ptr != 0
+    return torch.masked_select(batch_ptr, mask) - 1, torch.masked_select(token_ptr, mask)
 
 
 @torch.no_grad()
@@ -13,12 +43,17 @@ def batch_indices(pack: PackedSequence, unsort: bool = False, total_length: int 
     device = fetch_device(pack, device=device)
     batch_size = fetch_batch_size(pack)
 
-    indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
     if not unsort and pack.sorted_indices is not None:
-        indices = indices[pack.sorted_indices]
-    indices = indices[None, :].expand((batch_size, -1)).tril(0)
+        sorted_indices = pack.sorted_indices
+    else:
+        sorted_indices = ...
+
+    indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
+    indices = indices[None, sorted_indices].expand((batch_size, -1)).tril(0)
     indices = indices[fetch_batch_sizes(pack, total_length=total_length) - 1]
-    return torch.masked_select(indices, indices != 0) - 1
+
+    mask = indices != 0
+    return torch.masked_select(indices, mask) - 1
 
 
 @torch.no_grad()
@@ -31,10 +66,7 @@ def token_indices(pack: PackedSequence, reverse: bool = False, total_length: int
     indices = torch.arange(1, total_length + 1, dtype=dtype, device=device)
     indices = indices[:, None].expand((-1, batch_size))
 
-    mask = torch.ones((batch_size,), dtype=torch.bool, device=device)
-    if pack.sorted_indices is not None:
-        mask = mask[pack.sorted_indices]
-    mask = mask[None, :].expand((batch_size, -1)).tril(0)
+    mask = torch.ones((batch_size, batch_size), dtype=torch.bool, device=device).tril(0)
     mask = mask[fetch_batch_sizes(pack, total_length=total_length) - 1]
 
     if reverse:
@@ -63,15 +95,12 @@ def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = No
                  dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     device = fetch_device(pack, device=device)
     if lengths is None:
-        lengths = pack_to_lengths(pack=pack, unsort=False)
+        lengths = packed_sequence_to_lengths(pack=pack, unsort=False)
 
-    indices = pack.batch_sizes.to(dtype=dtype, device=device).cumsum(dim=0)
-    indices = F.pad(indices, [2, 0], value=0)[lengths]
-    if unsort and pack.unsorted_indices is not None:
-        indices = indices[pack.unsorted_indices] + pack.unsorted_indices
-    else:
-        indices = indices + torch.arange(indices.size(0), dtype=dtype, device=device)
-    return indices
+    indices = fetch_accumulated_batch_sizes(pack, device=device)[lengths - 1]
+    unsorted_indices = head_indices(pack=pack, unsort=unsort, dtype=dtype, device=device)
+
+    return indices[unsorted_indices] + unsorted_indices
 
 
 def select_last(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None) -> Tensor:
@@ -86,7 +115,7 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, *,
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device, total_length=total_length)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device, total_length=total_length)
-    indices = cum_batch_sizes(pack)
+    indices = fetch_accumulated_batch_sizes(pack, device=device)
     return indices[token_ptr] + batch_ptr
 
 
@@ -131,7 +160,7 @@ def reversed_indices(pack: PackedSequence, *,
 
     batch_ptr = batch_indices(pack, unsort=True, dtype=dtype, device=device)
     token_ptr = token_indices(pack, reverse=True, dtype=dtype, device=device)
-    indices = cum_batch_sizes(pack)
+    indices = fetch_accumulated_batch_sizes(pack, device=device)
     return indices[token_ptr] + batch_ptr
 
 
@@ -151,9 +180,9 @@ def rolled_indices(pack: PackedSequence, offset: int, *,
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device)
-    lengths = pack_to_lengths(pack, unsort=False)[batch_ptr]
+    lengths = packed_sequence_to_lengths(pack, unsort=False, device=device)[batch_ptr]
 
-    indices = cum_batch_sizes(pack)
+    indices = fetch_accumulated_batch_sizes(pack, device=device)
     return indices[(token_ptr - offset + lengths) % lengths] + batch_ptr
 
 

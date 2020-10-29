@@ -2,7 +2,7 @@ from datetime import datetime
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import PackedSequence, pack_sequence, pad_sequence
 
 
 class Timer(object):
@@ -16,6 +16,13 @@ class Timer(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.seconds += (datetime.now() - self.start_tm).total_seconds()
         del self.start_tm
+
+
+def gen_pad(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:
+    return pad_sequence([
+        torch.randn((length, embedding_dim), dtype=torch.float32, device=device, requires_grad=True)
+        for length in lengths.detach().cpu().tolist()
+    ], batch_first=True)
 
 
 def gen_pack(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:

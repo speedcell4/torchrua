@@ -5,7 +5,7 @@ from torch.nn.utils.rnn import pad_packed_sequence
 
 from tests.strategies import list_of_sentences
 from tests.utils import assert_equal
-from torchrua.indexing import batch_indices, token_indices, select_head, select_last, select_init, select_tail, \
+from torchrua import batch_indices, token_indices, select_head, select_last, select_init, select_tail, \
     reverse_packed_sequence, roll_packed_sequence
 
 

@@ -5,6 +5,11 @@ from einops import rearrange
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
+__all__ = [
+    'uncat_packed_sequence', 'uncat_packed_data', 'uncat_packed_batch_sizes',
+    'unstack_packed_sequence', 'unstack_packed_data', 'unstack_packed_batch_sizes',
+]
+
 
 def uncat_packed_sequence(pack: PackedSequence, num_packs: int) -> List[PackedSequence]:
     batch_sizes, sorted_indices, unsorted_indices = uncat_packed_batch_sizes(pack=pack, num_packs=num_packs)
