@@ -21,20 +21,19 @@ __all__ = [
 @torch.no_grad()
 def batch_token_indices(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
     batch_size = fetch_batch_size(batch_sizes)
-    total_length = fetch_total_length(batch_sizes)
+    num_tokens = fetch_total_length(batch_sizes)
 
-    if sorted_indices is None:
-        sorted_indices = ...
+    batch_ptr = torch.arange(batch_size, device=device)
+    token_ptr = torch.arange(num_tokens, device=device)
 
-    batch_ptr = torch.arange(1, 1 + batch_size, dtype=torch.long, device=device)
-    batch_ptr = batch_ptr[None, sorted_indices].expand((batch_size, -1)).tril(0)
-    batch_ptr = batch_ptr[batch_sizes - 1]
+    tb_mask = batch_ptr[None, :] < batch_sizes[:, None]
 
-    token_ptr = torch.arange(total_length, dtype=torch.long, device=device)
-    token_ptr = token_ptr[:, None].expand((-1, batch_size))
+    if sorted_indices is not None:
+        batch_ptr = sorted_indices
 
-    mask = batch_ptr != 0
-    return torch.masked_select(batch_ptr, mask) - 1, torch.masked_select(token_ptr, mask)
+    batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
+    token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
+    return batch_ptr.clone(), token_ptr.clone()
 
 
 @torch.no_grad()
@@ -43,17 +42,14 @@ def batch_indices(pack: PackedSequence, unsort: bool = False, total_length: int 
     device = fetch_device(pack, device=device)
     batch_size = fetch_batch_size(pack)
 
+    batch_ptr = torch.arange(batch_size, device=device)
+    batch_sizes = fetch_batch_sizes(pack, total_length=total_length, device=device)
+
+    tb_mask = batch_ptr[None, :] < batch_sizes[:, None]
+
     if not unsort and pack.sorted_indices is not None:
-        sorted_indices = pack.sorted_indices
-    else:
-        sorted_indices = ...
-
-    indices = torch.arange(1, batch_size + 1, dtype=dtype, device=device)
-    indices = indices[None, sorted_indices].expand((batch_size, -1)).tril(0)
-    indices = indices[fetch_batch_sizes(pack, total_length=total_length) - 1]
-
-    mask = indices != 0
-    return torch.masked_select(indices, mask) - 1
+        batch_ptr = pack.sorted_indices
+    return torch.masked_select(batch_ptr[None, :], mask=tb_mask).clone().to(dtype=dtype)
 
 
 @torch.no_grad()
