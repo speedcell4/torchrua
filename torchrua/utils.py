@@ -2,7 +2,7 @@ from typing import Union, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, invert_permutation, pack_sequence
+from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 __all__ = [
     'Seq',
@@ -165,17 +165,15 @@ def packed_sequence_to_mask(pack: PackedSequence, unsort: bool,
         batch_sizes=pack.batch_sizes,
         unsorted_indices=pack.unsorted_indices if unsort else None,
         batch_first=batch_first, total_length=total_length,
-        dtype=dtype, device=device or pack.data.device,
+        dtype=dtype, device=device,
     )
 
 
 @torch.no_grad()
 def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool,
                                dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    lengths = batch_sizes_to_lengths(
-        batch_sizes=pack.batch_sizes, dtype=dtype,
-        device=device or pack.data.device,
+    return batch_sizes_to_lengths(
+        batch_sizes=pack.batch_sizes,
+        unsorted_indices=pack.unsorted_indices if unsort else None,
+        dtype=dtype, device=device,
     )
-    if unsort and pack.unsorted_indices is not None:
-        lengths = lengths[pack.unsorted_indices]
-    return lengths
