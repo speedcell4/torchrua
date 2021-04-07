@@ -55,8 +55,9 @@ def get_total_length(seq: Seq, total_length: int = None) -> int:
 def get_batch_sizes(seq: Seq, total_length: int = None, device: torch.device = None) -> Tensor:
     device = get_device(seq, device=device)
 
-    batch_sizes = seq
-    if not torch.is_tensor(seq):
+    if torch.is_tensor(seq):
+        batch_sizes = seq
+    else:
         batch_sizes = seq.batch_sizes
 
     if total_length is not None:
@@ -75,9 +76,11 @@ def get_batch_sizes(seq: Seq, total_length: int = None, device: torch.device = N
 
 @torch.no_grad()
 def accumulate_batch_sizes(seq: Seq, device: torch.device = None) -> Tensor:
-    batch_sizes = seq
-    if not torch.is_tensor(seq):
+    if torch.is_tensor(seq):
+        batch_sizes = seq
+    else:
         batch_sizes = seq.batch_sizes
+
     batch_sizes: Tensor = batch_sizes.cumsum(dim=0).roll(1, dims=[0])
     batch_sizes[0] = 0
     return batch_sizes.to(device=device)
@@ -86,26 +89,26 @@ def accumulate_batch_sizes(seq: Seq, device: torch.device = None) -> Tensor:
 @torch.no_grad()
 def batch_sizes_to_mask(batch_sizes: Tensor, batch_first: bool = True, total_length: int = None,
                         dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
-    device = get_device(batch_sizes, device=device)
-    dtype = get_dtype(batch_sizes, dtype=dtype)
     batch_size = get_batch_size(batch_sizes)
 
-    batch_sizes = get_batch_sizes(batch_sizes, total_length=total_length, device=device)
-    indices = torch.ones(
-        (batch_size, batch_size),
-        dtype=dtype, device=device,
-    )
+    batch_ptr = torch.arange(batch_size, dtype=batch_sizes.dtype, device=batch_sizes.device)
+    batch_sizes = get_batch_sizes(batch_sizes, total_length=total_length, device=batch_sizes.device)
 
     if batch_first:
-        return indices.triu(0)[:, batch_sizes - 1]
+        mask = batch_ptr[:, None] < batch_sizes[None, :]
     else:
-        return indices.tril(0)[batch_sizes - 1, :]
+        mask = batch_ptr[None, :] < batch_sizes[:, None]
+
+    device = get_device(batch_sizes, device=device)
+    dtype = get_dtype(batch_sizes, dtype=dtype)
+
+    return mask.to(dtype=dtype, device=device)
 
 
 @torch.no_grad()
-def batch_sizes_to_lengths(batch_sizes: Tensor, batch_first: bool = True,
-                           dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
-    return batch_sizes_to_mask(batch_sizes, batch_first=batch_first, dtype=dtype, device=device).sum(dim=1)
+def batch_sizes_to_lengths(batch_sizes: Tensor, dtype: torch.dtype = torch.long,
+                           device: torch.device = None) -> Tensor:
+    return batch_sizes_to_mask(batch_sizes, batch_first=True, dtype=dtype, device=device).sum(dim=1)
 
 
 @torch.no_grad()
