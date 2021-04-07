@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 __all__ = [
     'fetch_dtype', 'fetch_device',
-    'fetch_batch_size', 'fetch_total_length',
+    'fetch_batch_size', 'get_total_length',
     'fetch_batch_sizes', 'fetch_accumulated_batch_sizes',
     'batch_sizes_to_mask', 'batch_sizes_to_lengths',
     'lengths_to_mask', 'lengths_to_batch_sizes', 'lengths_to_sorted_indices',
@@ -45,13 +45,12 @@ def fetch_batch_size(x: Union[Tensor, PackedSequence]) -> int:
 
 
 @torch.no_grad()
-def fetch_total_length(x: Union[Tensor, PackedSequence], total_length: int = None) -> int:
-    batch_sizes = x
-    if not torch.is_tensor(x):
-        batch_sizes = x.batch_sizes
+def get_total_length(seq: Union[Tensor, PackedSequence], total_length: int = None) -> int:
     if total_length is not None:
         return total_length
-    return batch_sizes.size(0)
+    if torch.is_tensor(seq):
+        return seq.size(0)
+    return seq.batch_sizes.size(0)
 
 
 @torch.no_grad()
