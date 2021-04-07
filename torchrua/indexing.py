@@ -7,7 +7,7 @@ from torchrua.utils import get_batch_sizes, get_device, get_total_length, get_ba
 from torchrua.utils import packed_sequence_to_lengths
 
 __all__ = [
-    'batch_token_indices',
+    'batch_sizes_to_pointers',
     'batch_indices', 'token_indices',
     'head_indices', 'select_head',
     'last_indices', 'select_last',
@@ -19,7 +19,7 @@ __all__ = [
 
 
 @torch.no_grad()
-def batch_token_indices(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
+def batch_sizes_to_pointers(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
     batch_size = get_batch_size(batch_sizes)
     num_tokens = get_total_length(batch_sizes)
 

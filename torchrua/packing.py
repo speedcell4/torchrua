@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.indexing import batch_token_indices
+from torchrua.indexing import batch_sizes_to_pointers
 from torchrua.utils import lengths_to_batch_sizes, packed_sequence_to_lengths, get_batch_size, get_total_length, \
     lengths_to_sorting_indices, get_device
 
@@ -23,7 +23,8 @@ def pack_padded_sequence(input: Tensor, lengths: Tensor,
     else:
         sorted_indices = unsorted_indices = None
 
-    batch_ptr, token_ptr = batch_token_indices(batch_sizes, sorted_indices, device=device)
+    batch_ptr, token_ptr = batch_sizes_to_pointers(batch_sizes, sorted_indices, device=device)
+
     if batch_first:
         data = input[batch_ptr, token_ptr]
     else:
@@ -44,7 +45,7 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
     batch_size = get_batch_size(pack)
     total_length = get_total_length(pack, total_length=total_length)
 
-    batch_ptr, token_ptr = batch_token_indices(
+    batch_ptr, token_ptr = batch_sizes_to_pointers(
         pack.batch_sizes.to(device=device), pack.sorted_indices, device=device)
 
     if batch_first:
