@@ -15,7 +15,7 @@ from torchrua import packed_sequence_to_mask, lengths_to_mask, packed_sequence_t
 def test_packed_sequence_to_lengths(sentences_and_lengths):
     sentences, lengths = sentences_and_lengths
 
-    x = torch.tensor(lengths, dtype=torch.long, device=sentences[0].device)
+    x = torch.tensor(lengths, dtype=torch.long, device=torch.device('cpu'))
     y = packed_sequence_to_lengths(
         pack=pack_sequence(sentences, enforce_sorted=False),
         unsort=True, dtype=torch.long,
@@ -46,7 +46,7 @@ def test_packed_sequence_to_mask(sentences, unsort, batch_first):
 )
 def test_lengths_to_batch_sizes(sentences):
     lengths = torch.tensor([s.size(0) for s in sentences], dtype=torch.long, device=sentences[0].device)
-    batch_sizes = lengths_to_batch_sizes(lengths=lengths, device=sentences[0].device)
+    batch_sizes = lengths_to_batch_sizes(lengths=lengths, device=torch.device('cpu'))
     sorted_indices, unsorted_indices = lengths_to_sorting_indices(lengths=lengths, device=sentences[0].device)
     sorted_sentences = pad_sequence([
         sentences[sorted_index]
@@ -55,7 +55,7 @@ def test_lengths_to_batch_sizes(sentences):
 
     data = torch.cat([
         sorted_sentences[:batch_size, index]
-        for index, batch_size in enumerate(batch_sizes.detach().cpu().tolist())
+        for index, batch_size in enumerate(batch_sizes.detach().tolist())
     ], dim=0)
 
     x = PackedSequence(
