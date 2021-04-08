@@ -2,51 +2,26 @@ from typing import Union, Tuple
 
 import torch
 from torch import Tensor
+from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 __all__ = [
-    'Seq',
     'get_device',
-    'get_batch_sizes', 'accumulate_batch_sizes',
-    'batch_sizes_to_mask', 'batch_sizes_to_lengths',
-    'lengths_to_mask', 'lengths_to_batch_sizes', 'lengths_to_sorting_indices',
-    'packed_sequence_to_mask', 'packed_sequence_to_lengths',
-    'resize_batch_sizes',
+    'resize_batch_sizes', 'accumulate_batch_sizes',
+    'batch_sizes_to_mask', 'lengths_to_mask', 'packed_sequence_to_mask',
+    'batch_sizes_to_lengths', 'packed_sequence_to_lengths',
+    'lengths_to_batch_sizes',
+    'lengths_to_sorting_indices',
 ]
-
-Seq = Union[Tensor, PackedSequence]
 
 
 @torch.no_grad()
-def get_device(seq: Seq, device: torch.device = None) -> torch.device:
+def get_device(seq: Union[Tensor, PackedSequence], device: torch.device = None) -> torch.device:
     if device is not None:
         return device
     if torch.is_tensor(seq):
         return seq.device
     return seq.data.device
-
-
-@torch.no_grad()
-def get_batch_sizes(seq: Seq, total_length: int = None, device: torch.device = None) -> Tensor:
-    device = get_device(seq, device=device)
-
-    if torch.is_tensor(seq):
-        batch_sizes = seq
-    else:
-        batch_sizes = seq.batch_sizes
-
-    if total_length is not None:
-        if total_length < batch_sizes.size(0):
-            assert batch_sizes[0].item() == batch_sizes[-total_length].item(), \
-                f'some sequences contain only less than {total_length} elements, truncating is not allowed.'
-            batch_sizes = batch_sizes[-total_length:]
-        elif total_length > batch_sizes.size(0):
-            padding = torch.full(
-                (total_length - batch_sizes.size(0),), fill_value=batch_sizes[0],
-                dtype=batch_sizes.dtype, device=batch_sizes.device,
-            )
-            batch_sizes = torch.cat([padding, batch_sizes], dim=0)
-    return batch_sizes.to(device=device)
 
 
 @torch.no_grad()
@@ -57,6 +32,14 @@ def accumulate_batch_sizes(batch_sizes: Tensor, device: torch.device = None) -> 
     return batch_sizes
 
 
+def resize_batch_sizes(batch_sizes: Tensor, total_length: int) -> Tensor:
+    num_tokens = batch_sizes.size(0)
+    if total_length <= num_tokens:
+        assert batch_sizes[0] == batch_sizes[-total_length]
+        return batch_sizes[-total_length:]
+    return F.pad(batch_sizes, [total_length - num_tokens, 0], value=batch_sizes[0])
+
+
 @torch.no_grad()
 def batch_sizes_to_mask(
         batch_sizes: Tensor, unsorted_indices: Tensor = None,
@@ -65,7 +48,8 @@ def batch_sizes_to_mask(
     batch_size = batch_sizes[0].item()
 
     batch_ptr = torch.arange(batch_size, dtype=batch_sizes.dtype, device=batch_sizes.device)
-    batch_sizes = get_batch_sizes(batch_sizes, total_length=total_length, device=batch_sizes.device)
+    if total_length is not None:
+        batch_sizes = resize_batch_sizes(batch_sizes, total_length=total_length)
 
     if unsorted_indices is None:
         unsorted_indices = ...
@@ -145,17 +129,3 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool,
         unsorted_indices=pack.unsorted_indices if unsort else None,
         dtype=dtype, device=device,
     )
-
-
-def resize_batch_sizes(batch_sizes: Tensor, total_length: int) -> Tensor:
-    num_tokens = batch_sizes.size(0)
-    if total_length <= num_tokens:
-        assert batch_sizes[0] == batch_sizes[-total_length]
-        return batch_sizes[-total_length:]
-    return torch.cat([
-        batch_sizes,
-        torch.zeros(
-            (total_length - num_tokens,),
-            dtype=batch_sizes.dtype, device=batch_sizes.device,
-        )
-    ])
