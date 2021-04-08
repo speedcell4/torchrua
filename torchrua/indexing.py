@@ -113,19 +113,6 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, *, device: torch.de
     return indices[token_ptr] + batch_ptr
 
 
-init_indices(
-    pack_sequence([
-        torch.randn((5,)),
-        torch.randn((2,)),
-        torch.randn((3,)),
-    ], enforce_sorted=False)
-)
-
-
-# tensor([0, 1, 2, 0, 1, 0, 0])
-# tensor([0, 0, 0, 1, 1, 2, 3])
-
-
 def select_init(pack: PackedSequence, drop_last_n: int = 1) -> PackedSequence:
     return PackedSequence(
         data=pack.data[init_indices(pack, drop_last_n=drop_last_n)],
