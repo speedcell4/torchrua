@@ -7,7 +7,6 @@ from torch.nn.utils.rnn import PackedSequence, invert_permutation
 __all__ = [
     'Seq',
     'get_device',
-    'get_total_length',
     'get_batch_sizes', 'accumulate_batch_sizes',
     'batch_sizes_to_mask', 'batch_sizes_to_lengths',
     'lengths_to_mask', 'lengths_to_batch_sizes', 'lengths_to_sorting_indices',
@@ -25,15 +24,6 @@ def get_device(seq: Seq, device: torch.device = None) -> torch.device:
     if torch.is_tensor(seq):
         return seq.device
     return seq.data.device
-
-
-@torch.no_grad()
-def get_total_length(seq: Seq, total_length: int = None) -> int:
-    if total_length is not None:
-        return total_length
-    if torch.is_tensor(seq):
-        return seq.size(0)
-    return seq.batch_sizes.size(0)
 
 
 @torch.no_grad()

@@ -4,8 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, pack_sequence
 
-from torchrua.utils import get_device, get_total_length, \
-    accumulate_batch_sizes, resize_batch_sizes
+from torchrua.utils import get_device, accumulate_batch_sizes, resize_batch_sizes
 from torchrua.utils import packed_sequence_to_lengths
 
 __all__ = [
@@ -101,7 +100,7 @@ def select_last(pack: PackedSequence, unsort: bool = True, lengths: Tensor = Non
 @torch.no_grad()
 def init_indices(pack: PackedSequence, drop_last_n: int = 1, *, device: torch.device = None) -> Tensor:
     device = get_device(pack, device=device)
-    total_length = get_total_length(pack) - drop_last_n
+    total_length = pack.batch_sizes.size(0) - drop_last_n
 
     batch_ptr, token_ptr, _ = batch_sizes_to_ptr(
         batch_sizes=pack.batch_sizes.to(device=device),
