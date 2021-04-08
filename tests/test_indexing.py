@@ -5,40 +5,8 @@ from torch.nn.utils.rnn import pad_packed_sequence
 
 from tests.strategies import list_of_sentences
 from tests.utils import assert_equal
-from torchrua import batch_indices, token_indices, select_head, select_last, select_init, select_tail, \
+from torchrua import select_head, select_last, select_init, select_tail, \
     reverse_packed_sequence, roll_packed_sequence
-
-
-@given(
-    sentences_and_lengths=list_of_sentences(return_lengths=True)
-)
-def test_batch_indices(sentences_and_lengths):
-    sentences, lengths = sentences_and_lengths
-    pack = pack_sequence(sentences, enforce_sorted=False)
-    x = batch_indices(pack=pack)
-
-    y = pack_sequence([
-        torch.full((length,), fill_value=index, dtype=torch.long, device=x.device)
-        for index, length in enumerate(lengths)
-    ], enforce_sorted=False).data
-
-    assert_equal(x, y)
-
-
-@given(
-    sentences_and_lengths=list_of_sentences(return_lengths=True)
-)
-def test_token_indices(sentences_and_lengths):
-    sentences, lengths = sentences_and_lengths
-    pack = pack_sequence(sentences, enforce_sorted=False)
-    x = token_indices(pack=pack)
-
-    y = pack_sequence([
-        torch.arange(length, dtype=torch.long, device=x.device)
-        for length in lengths
-    ], enforce_sorted=False).data
-
-    assert_equal(x, y)
 
 
 @given(

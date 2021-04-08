@@ -179,11 +179,12 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool,
 def resize_batch_sizes(batch_sizes: Tensor, total_length: int) -> Tensor:
     num_tokens = batch_sizes.size(0)
     if total_length <= num_tokens:
-        return batch_sizes[:total_length]
+        assert batch_sizes[0] == batch_sizes[-total_length]
+        return batch_sizes[-total_length:]
     return torch.cat([
         batch_sizes,
         torch.zeros(
-            (total_length, num_tokens),
+            (total_length - num_tokens,),
             dtype=batch_sizes.dtype, device=batch_sizes.device,
         )
     ])
