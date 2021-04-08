@@ -32,7 +32,7 @@ def pack_padded_sequence(input: Tensor, lengths: Tensor,
 
     return PackedSequence(
         data=data,
-        batch_sizes=batch_sizes,
+        batch_sizes=batch_sizes.cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
@@ -65,4 +65,4 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
         )
         data[token_ptr, batch_ptr] = pack.data
 
-    return data, lengths
+    return data, lengths.cpu()
