@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 __all__ = [
     'Seq',
-    'get_dtype', 'get_device',
+    'get_device',
     'get_batch_size', 'get_total_length',
     'get_batch_sizes', 'accumulate_batch_sizes',
     'batch_sizes_to_mask', 'batch_sizes_to_lengths',
@@ -16,15 +16,6 @@ __all__ = [
 ]
 
 Seq = Union[Tensor, PackedSequence]
-
-
-@torch.no_grad()
-def get_dtype(seq: Seq, dtype: torch.dtype = None) -> torch.dtype:
-    if dtype is not None:
-        return dtype
-    if torch.is_tensor(seq):
-        return seq.dtype
-    return seq.data.dtype
 
 
 @torch.no_grad()
@@ -102,7 +93,6 @@ def batch_sizes_to_mask(
         mask = batch_ptr[None, unsorted_indices] < batch_sizes[:, None]
 
     device = get_device(batch_sizes, device=device)
-    dtype = get_dtype(batch_sizes, dtype=dtype)
 
     return mask.to(dtype=dtype, device=device)
 
@@ -130,7 +120,6 @@ def lengths_to_mask(lengths: Tensor, batch_first: bool = True, total_length: int
         mask = token_ptr[:, None] < lengths[None, :]
 
     device = get_device(lengths, device=device)
-    dtype = get_dtype(lengths, dtype=dtype)
 
     return mask.to(dtype=dtype, device=device)
 
@@ -150,7 +139,6 @@ def lengths_to_sorting_indices(lengths: Tensor, dtype: torch.dtype = torch.long,
     unsorted_indices = invert_permutation(sorted_indices)
 
     device = get_device(lengths, device=device)
-    dtype = get_dtype(lengths, dtype=dtype)
     return sorted_indices.to(dtype=dtype, device=device), unsorted_indices.to(dtype=dtype, device=device)
 
 
