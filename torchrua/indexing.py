@@ -122,7 +122,7 @@ def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = No
     if lengths is None:
         lengths = packed_sequence_to_lengths(pack=pack, unsort=False)
 
-    indices = accumulate_batch_sizes(pack, device=device)[lengths - 1]
+    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)[lengths - 1]
     unsorted_indices = head_indices(pack=pack, unsort=unsort, dtype=dtype, device=device)
 
     return indices[unsorted_indices] + unsorted_indices
@@ -140,7 +140,7 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, *,
 
     batch_ptr = batch_indices(pack=pack, unsort=True, dtype=dtype, device=device, total_length=total_length)
     token_ptr = token_indices(pack=pack, reverse=False, dtype=dtype, device=device, total_length=total_length)
-    indices = accumulate_batch_sizes(pack, device=device)
+    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)
     return indices[token_ptr] + batch_ptr
 
 
@@ -190,7 +190,7 @@ def reversed_indices(pack: PackedSequence, *, device: torch.device = None) -> Te
     )
     token_ptr = (lengths - 1)[batch_ptr] - token_ptr
 
-    indices = accumulate_batch_sizes(pack, device=device)
+    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)
     return indices[token_ptr] + batch_ptr
 
 
@@ -216,7 +216,7 @@ def rolled_indices(pack: PackedSequence, offset: int, *, device: torch.device = 
     lengths = lengths[batch_ptr]
     token_ptr = (token_ptr - offset + lengths) % lengths
 
-    indices = accumulate_batch_sizes(pack, device=device)
+    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)
     return indices[token_ptr] + batch_ptr
 
 

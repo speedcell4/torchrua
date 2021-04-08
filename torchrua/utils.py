@@ -75,15 +75,11 @@ def get_batch_sizes(seq: Seq, total_length: int = None, device: torch.device = N
 
 
 @torch.no_grad()
-def accumulate_batch_sizes(seq: Seq, device: torch.device = None) -> Tensor:
-    if torch.is_tensor(seq):
-        batch_sizes = seq
-    else:
-        batch_sizes = seq.batch_sizes
-
-    batch_sizes: Tensor = batch_sizes.cumsum(dim=0).roll(1, dims=[0])
+def accumulate_batch_sizes(batch_sizes: Tensor, device: torch.device = None) -> Tensor:
+    batch_sizes = batch_sizes.to(device=device).cumsum(dim=0).roll(1, dims=[0])
     batch_sizes[0] = 0
-    return batch_sizes.to(device=device)
+
+    return batch_sizes
 
 
 @torch.no_grad()
