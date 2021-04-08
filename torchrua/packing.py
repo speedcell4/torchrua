@@ -4,9 +4,8 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.indexing import batch_token_indices
-from torchrua.utils import lengths_to_batch_sizes, packed_sequence_to_lengths, fetch_batch_size, fetch_total_length, \
-    lengths_to_sorted_indices, fetch_device
+from torchrua.indexing import batch_sizes_to_ptr, lengths_to_ptr
+from torchrua.utils import lengths_to_sorting_indices, get_device
 
 __all__ = [
     'pack_padded_sequence', 'pad_packed_sequence',
@@ -15,15 +14,17 @@ __all__ = [
 
 def pack_padded_sequence(input: Tensor, lengths: Tensor,
                          batch_first: bool = False, enforce_sorted: bool = True) -> PackedSequence:
-    device = fetch_device(input)
-    batch_sizes = lengths_to_batch_sizes(lengths=lengths, dtype=torch.long, device=device)
+    device = get_device(input)
 
     if not enforce_sorted:
-        sorted_indices, unsorted_indices = lengths_to_sorted_indices(lengths)
+        sorted_indices, unsorted_indices = lengths_to_sorting_indices(lengths)
     else:
         sorted_indices = unsorted_indices = None
 
-    batch_ptr, token_ptr = batch_token_indices(batch_sizes, sorted_indices, device=device)
+    batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
+        lengths, sorted_indices=sorted_indices, device=device,
+    )
+
     if batch_first:
         data = input[batch_ptr, token_ptr]
     else:
@@ -40,12 +41,17 @@ def pack_padded_sequence(input: Tensor, lengths: Tensor,
 def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
                         padding_value: Union[int, float, bool] = 0,
                         total_length: int = None) -> Tuple[Tensor, Tensor]:
-    device = fetch_device(pack)
-    batch_size = fetch_batch_size(pack)
-    total_length = fetch_total_length(pack, total_length=total_length)
+    device = get_device(pack)
+    batch_size = pack.batch_sizes[0].item()
+    if total_length is None:
+        total_length = pack.batch_sizes.size(0)
 
-    batch_ptr, token_ptr = batch_token_indices(
-        pack.batch_sizes.to(device=device), pack.sorted_indices, device=device)
+    batch_ptr, token_ptr, lengths = batch_sizes_to_ptr(
+        batch_sizes=pack.batch_sizes.to(device=device),
+        sorted_indices=pack.sorted_indices,
+        unsorted_indices=pack.unsorted_indices,
+        total_length=total_length, device=device,
+    )
 
     if batch_first:
         data = torch.full(
@@ -60,5 +66,4 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
         )
         data[token_ptr, batch_ptr] = pack.data
 
-    lengths = packed_sequence_to_lengths(pack=pack, unsort=True, dtype=torch.long, device=torch.device('cpu'))
-    return data, lengths
+    return data, lengths.cpu()
