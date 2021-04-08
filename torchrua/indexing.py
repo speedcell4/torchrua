@@ -179,12 +179,17 @@ def select_tail(pack: PackedSequence, drop_first_n: int = 1) -> PackedSequence:
 
 
 @torch.no_grad()
-def reversed_indices(pack: PackedSequence, *,
-                     dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+def reversed_indices(pack: PackedSequence, *, device: torch.device = None) -> Tensor:
     device = get_device(pack, device=device)
 
-    batch_ptr = batch_indices(pack, unsort=True, dtype=dtype, device=device)
-    token_ptr = token_indices(pack, reverse=True, dtype=dtype, device=device)
+    batch_ptr, token_ptr, lengths = batch_sizes_to_ptr(
+        batch_sizes=pack.batch_sizes.to(device=device),
+        sorted_indices=None,
+        unsorted_indices=None,
+        device=device,
+    )
+    token_ptr = (lengths - 1)[batch_ptr] - token_ptr
+
     indices = accumulate_batch_sizes(pack, device=device)
     return indices[token_ptr] + batch_ptr
 
@@ -209,9 +214,10 @@ def rolled_indices(pack: PackedSequence, offset: int, *, device: torch.device = 
         device=device,
     )
     lengths = lengths[batch_ptr]
+    token_ptr = (token_ptr - offset + lengths) % lengths
 
     indices = accumulate_batch_sizes(pack, device=device)
-    return indices[(token_ptr - offset + lengths) % lengths] + batch_ptr
+    return indices[token_ptr] + batch_ptr
 
 
 def roll_packed_sequence(pack: PackedSequence, offset: int) -> PackedSequence:
