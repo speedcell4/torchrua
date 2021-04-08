@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
@@ -7,7 +9,7 @@ from torchrua.utils import get_batch_sizes, get_device, get_total_length, get_ba
 from torchrua.utils import packed_sequence_to_lengths
 
 __all__ = [
-    'batch_sizes_to_pointers',
+    'batch_sizes_to_ptr', 'lengths_to_ptr',
     'batch_indices', 'token_indices',
     'head_indices', 'select_head',
     'last_indices', 'select_last',
@@ -19,9 +21,11 @@ __all__ = [
 
 
 @torch.no_grad()
-def batch_sizes_to_pointers(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device):
-    batch_size = get_batch_size(batch_sizes)
-    num_tokens = get_total_length(batch_sizes)
+def batch_sizes_to_ptr(
+        batch_sizes: Tensor, sorted_indices: Optional[Tensor],
+        unsorted_indices: Optional[Tensor], device: torch.device):
+    batch_size = batch_sizes[0].item()
+    num_tokens = batch_sizes.size(0)
 
     batch_ptr = torch.arange(batch_size, device=device)
     token_ptr = torch.arange(num_tokens, device=device)
@@ -33,7 +37,32 @@ def batch_sizes_to_pointers(batch_sizes: Tensor, sorted_indices: Tensor, device:
 
     batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
     token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
-    return batch_ptr.clone(), token_ptr.clone()
+
+    lengths = tb_mask.long().sum(dim=0)
+    if unsorted_indices is not None:
+        lengths = lengths[unsorted_indices]
+
+    return batch_ptr, token_ptr, lengths.cpu()
+
+
+@torch.no_grad()
+def lengths_to_ptr(lengths: Tensor, sorted_indices: Optional[Tensor], device: torch.device):
+    batch_size = lengths.size(0)
+    num_tokens = lengths.max().item()
+
+    batch_ptr = torch.arange(batch_size, device=device)
+    token_ptr = torch.arange(num_tokens, device=device)
+
+    tb_mask = token_ptr[:, None] < lengths[None, :]
+
+    if sorted_indices is not None:
+        batch_ptr = sorted_indices
+
+    batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
+    token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
+    batch_sizes = tb_mask.long().sum(dim=1)
+
+    return batch_ptr, token_ptr, batch_sizes.cpu()
 
 
 @torch.no_grad()
