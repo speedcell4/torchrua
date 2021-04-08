@@ -2,10 +2,10 @@ from typing import Optional
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.utils import get_batch_sizes, get_device, get_total_length, get_batch_size, \
-    accumulate_batch_sizes
+    accumulate_batch_sizes, resize_batch_sizes
 from torchrua.utils import packed_sequence_to_lengths
 
 __all__ = [
@@ -22,15 +22,21 @@ __all__ = [
 
 @torch.no_grad()
 def batch_sizes_to_ptr(
-        batch_sizes: Tensor, sorted_indices: Optional[Tensor],
-        unsorted_indices: Optional[Tensor], device: torch.device):
+        batch_sizes: Tensor,
+        sorted_indices: Optional[Tensor], unsorted_indices: Optional[Tensor],
+        total_length: Optional[int], device: torch.device):
     batch_size = batch_sizes[0].item()
-    num_tokens = batch_sizes.size(0)
+    if total_length is None:
+        total_length = batch_sizes.size(0)
 
     batch_ptr = torch.arange(batch_size, device=device)
-    token_ptr = torch.arange(num_tokens, device=device)
+    token_ptr = torch.arange(total_length, device=device)
 
-    tb_mask = batch_ptr[None, :] < batch_sizes[:, None]
+    if total_length > batch_sizes.size(0):
+        batch_sizes = torch.cat([
+            batch_sizes, torch.zeros])
+
+    tb_mask = batch_ptr[None, :] < resize_batch_sizes(batch_sizes, total_length)[:, None]
 
     if sorted_indices is not None:
         batch_ptr = sorted_indices
@@ -186,7 +192,7 @@ def reversed_indices(pack: PackedSequence, *, device: torch.device = None) -> Te
         batch_sizes=pack.batch_sizes.to(device=device),
         sorted_indices=None,
         unsorted_indices=None,
-        device=device,
+        total_length=None, device=device,
     )
     token_ptr = (lengths - 1)[batch_ptr] - token_ptr
 
@@ -211,7 +217,7 @@ def rolled_indices(pack: PackedSequence, offset: int, *, device: torch.device = 
         batch_sizes=pack.batch_sizes.to(device=device),
         sorted_indices=None,
         unsorted_indices=None,
-        device=device,
+        total_length=None, device=device,
     )
     lengths = lengths[batch_ptr]
     token_ptr = (token_ptr - offset + lengths) % lengths

@@ -49,7 +49,7 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
         batch_sizes=pack.batch_sizes.to(device=device),
         sorted_indices=pack.sorted_indices,
         unsorted_indices=pack.unsorted_indices,
-        device=device,
+        total_length=total_length, device=device,
     )
 
     if batch_first:

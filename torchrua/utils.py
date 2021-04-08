@@ -12,6 +12,7 @@ __all__ = [
     'batch_sizes_to_mask', 'batch_sizes_to_lengths',
     'lengths_to_mask', 'lengths_to_batch_sizes', 'lengths_to_sorting_indices',
     'packed_sequence_to_mask', 'packed_sequence_to_lengths',
+    'resize_batch_sizes',
 ]
 
 Seq = Union[Tensor, PackedSequence]
@@ -173,3 +174,16 @@ def packed_sequence_to_lengths(pack: PackedSequence, unsort: bool,
         unsorted_indices=pack.unsorted_indices if unsort else None,
         dtype=dtype, device=device,
     )
+
+
+def resize_batch_sizes(batch_sizes: Tensor, total_length: int) -> Tensor:
+    num_tokens = batch_sizes.size(0)
+    if total_length <= num_tokens:
+        return batch_sizes[:total_length]
+    return torch.cat([
+        batch_sizes,
+        torch.zeros(
+            (total_length, num_tokens),
+            dtype=batch_sizes.dtype, device=batch_sizes.device,
+        )
+    ])
