@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, pack_sequence
 
-from torchrua.utils import get_device, get_total_length, get_batch_size, \
+from torchrua.utils import get_device, get_total_length, \
     accumulate_batch_sizes, resize_batch_sizes
 from torchrua.utils import packed_sequence_to_lengths
 
@@ -70,7 +70,7 @@ def lengths_to_ptr(lengths: Tensor, sorted_indices: Optional[Tensor], device: to
 def head_indices(pack: PackedSequence, unsort: bool = True, *,
                  dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
     device = get_device(pack, device=device)
-    batch_size = get_batch_size(pack)
+    batch_size = pack.batch_sizes[0].item()
 
     if unsort and pack.unsorted_indices is not None:
         return pack.unsorted_indices

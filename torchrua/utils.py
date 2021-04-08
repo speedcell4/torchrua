@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import PackedSequence, invert_permutation
 __all__ = [
     'Seq',
     'get_device',
-    'get_batch_size', 'get_total_length',
+    'get_total_length',
     'get_batch_sizes', 'accumulate_batch_sizes',
     'batch_sizes_to_mask', 'batch_sizes_to_lengths',
     'lengths_to_mask', 'lengths_to_batch_sizes', 'lengths_to_sorting_indices',
@@ -25,13 +25,6 @@ def get_device(seq: Seq, device: torch.device = None) -> torch.device:
     if torch.is_tensor(seq):
         return seq.device
     return seq.data.device
-
-
-@torch.no_grad()
-def get_batch_size(seq: Seq) -> int:
-    if torch.is_tensor(seq):
-        return seq[0].item()
-    return seq.batch_sizes[0].item()
 
 
 @torch.no_grad()
@@ -79,7 +72,7 @@ def batch_sizes_to_mask(
         batch_sizes: Tensor, unsorted_indices: Tensor = None,
         batch_first: bool = True, total_length: int = None,
         dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
-    batch_size = get_batch_size(batch_sizes)
+    batch_size = batch_sizes[0].item()
 
     batch_ptr = torch.arange(batch_size, dtype=batch_sizes.dtype, device=batch_sizes.device)
     batch_sizes = get_batch_sizes(batch_sizes, total_length=total_length, device=batch_sizes.device)
