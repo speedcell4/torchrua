@@ -36,6 +36,7 @@ def pack_padded(num_examples: int = 2400, batch_size: int = 32,
             embedding_dim=embedding_dim,
             device=device,
         )
+        length = length.cpu()
         with naive_f:
             z = naive_pack_padded_sequence(pad, length, batch_first=True, enforce_sorted=False).data
         with naive_b:
