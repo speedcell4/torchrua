@@ -2,7 +2,7 @@ from typing import Optional
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, pack_sequence
+from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.utils import get_device, accumulate_batch_sizes, resize_batch_sizes
 from torchrua.utils import packed_sequence_to_lengths
@@ -66,14 +66,13 @@ def lengths_to_ptr(lengths: Tensor, sorted_indices: Optional[Tensor], device: to
 
 
 @torch.no_grad()
-def head_indices(pack: PackedSequence, unsort: bool = True, *,
-                 dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+def head_indices(pack: PackedSequence, unsort: bool = True, *, device: torch.device = None) -> Tensor:
     device = get_device(pack, device=device)
     batch_size = pack.batch_sizes[0].item()
 
     if unsort and pack.unsorted_indices is not None:
         return pack.unsorted_indices
-    return torch.arange(0, batch_size, dtype=dtype, device=device)
+    return torch.arange(0, batch_size, device=device)
 
 
 def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
@@ -82,13 +81,13 @@ def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
 
 @torch.no_grad()
 def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None, *,
-                 dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+                 device: torch.device = None) -> Tensor:
     device = get_device(pack, device=device)
     if lengths is None:
         lengths = packed_sequence_to_lengths(pack=pack, unsort=False)
 
     indices = accumulate_batch_sizes(pack.batch_sizes, device=device)[lengths - 1]
-    unsorted_indices = head_indices(pack=pack, unsort=unsort, dtype=dtype, device=device)
+    unsorted_indices = head_indices(pack=pack, unsort=unsort, device=device)
 
     return indices[unsorted_indices] + unsorted_indices
 
@@ -124,14 +123,15 @@ def select_init(pack: PackedSequence, drop_last_n: int = 1) -> PackedSequence:
 
 @torch.no_grad()
 def tail_indices(pack: PackedSequence, drop_first_n: int = 1, *,
-                 dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+                 device: torch.device = None) -> Tensor:
     assert pack.batch_sizes[0] == pack.batch_sizes[drop_first_n], \
         'some sequences contain only one element, truncating is not allowed.'
 
     device = get_device(pack, device=device)
     return torch.arange(
-        pack.batch_sizes[0].item() * drop_first_n, pack.batch_sizes.sum().item(),
-        dtype=dtype, device=device,
+        pack.batch_sizes[0].item() * drop_first_n,
+        pack.batch_sizes.sum().item(),
+        device=device,
     )
 
 
