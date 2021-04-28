@@ -8,11 +8,11 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
 
 from torchrua.indexing import lengths_to_ptr
-from torchrua.packing import pad_packed_sequence
 
 __all__ = [
     'cat_packed_sequences', 'cat_packed_data', 'cat_packed_batch_sizes',
     'stack_packed_sequences', 'stack_packed_data', 'stack_packed_batch_sizes',
+    'pack_catted_sequence',
 ]
 
 

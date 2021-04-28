@@ -1,10 +1,11 @@
-from typing import Union, Tuple
+from typing import Union, List, Tuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.indexing import batch_sizes_to_ptr, lengths_to_ptr
+from torchrua.joining import pack_catted_sequence
 from torchrua.utils import lengths_to_sorting_indices, get_device
 
 __all__ = [
@@ -67,3 +68,12 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
         data[token_ptr, batch_ptr] = pack.data
 
     return data, lengths.cpu()
+
+
+def pack_sequence(sequences: List[Tensor]) -> PackedSequence:
+    tensor = torch.cat(sequences, dim=0)
+    lengths = torch.tensor(
+        [sequence.size()[0] for sequence in sequences],
+        dtype=torch.long, device=tensor.device,
+    )
+    return pack_catted_sequence(tensor=tensor, lengths=lengths)
