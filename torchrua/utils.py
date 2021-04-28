@@ -26,10 +26,7 @@ def get_device(seq: Union[Tensor, PackedSequence], device: torch.device = None) 
 
 @torch.no_grad()
 def accumulate_batch_sizes(batch_sizes: Tensor, device: torch.device = None) -> Tensor:
-    batch_sizes = batch_sizes.to(device=device).cumsum(dim=0).roll(1, dims=[0])
-    batch_sizes[0] = 0
-
-    return batch_sizes
+    return F.pad(batch_sizes.to(device=device).cumsum(dim=0), [1, -1])
 
 
 def resize_batch_sizes(batch_sizes: Tensor, total_length: int) -> Tensor:
