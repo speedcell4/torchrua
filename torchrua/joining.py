@@ -3,10 +3,10 @@ from typing import Optional, List, Tuple
 import torch
 from einops import rearrange
 from torch import Tensor
-from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
 
+from torchrua.utils import accumulate_lengths
 from torchrua.indexing import lengths_to_ptr
 
 __all__ = [
@@ -88,7 +88,7 @@ def pack_catted_sequence(tensor: Tensor, lengths: Tensor) -> PackedSequence:
         device=sorted_lengths.device,
     )
 
-    acc_lengths = F.pad(lengths.cumsum(dim=0), [1, -1])
+    acc_lengths = accumulate_lengths(lengths=lengths)
     indices = acc_lengths[batch_ptr] + token_ptr
 
     return PackedSequence(

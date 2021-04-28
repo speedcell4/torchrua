@@ -2,12 +2,11 @@ from typing import Union, List, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.indexing import lengths_to_ptr, batch_sizes_to_ptr
 from torchrua.joining import pack_catted_sequence
-from torchrua.utils import lengths_to_sorting_indices, get_device
+from torchrua.utils import lengths_to_sorting_indices, get_device, accumulate_lengths
 
 __all__ = [
     'pack_padded_sequence', 'pad_packed_sequence',
@@ -95,7 +94,7 @@ def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
         device=unsorted_lengths.device,
     )
 
-    acc_lengths = F.pad(unsorted_lengths.cumsum(dim=0), [1, -1])
+    acc_lengths = accumulate_lengths(lengths=unsorted_lengths)
     indices = acc_lengths[batch_ptr] + token_ptr
 
     batch_size = len(sequences)
