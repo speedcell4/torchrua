@@ -6,6 +6,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
 
+from torchrua.catting import CattedSequence
 from torchrua.utils import accumulate_lengths
 from torchrua.indexing import lengths_to_ptr
 
@@ -78,8 +79,8 @@ def stack_packed_batch_sizes(pack: PackedSequence, num_packs: int) -> Tuple[Tens
     return pack.batch_sizes * num_packs, sorted_indices, unsorted_indices
 
 
-def pack_catted_sequence(tensor: Tensor, lengths: Tensor) -> PackedSequence:
-    sorted_lengths, sorted_indices = torch.sort(lengths, descending=True)
+def pack_catted_sequence(sequence: CattedSequence) -> PackedSequence:
+    sorted_lengths, sorted_indices = torch.sort(sequence.lengths, descending=True)
     unsorted_indices = invert_permutation(sorted_indices)
 
     batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
@@ -88,11 +89,11 @@ def pack_catted_sequence(tensor: Tensor, lengths: Tensor) -> PackedSequence:
         device=sorted_lengths.device,
     )
 
-    acc_lengths = accumulate_lengths(lengths=lengths)
+    acc_lengths = accumulate_lengths(lengths=sequence.lengths)
     indices = acc_lengths[batch_ptr] + token_ptr
 
     return PackedSequence(
-        data=tensor[indices],
+        data=sequence.data[indices],
         batch_sizes=batch_sizes.detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,

@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
+from torchrua.catting import cat_sequence
 from torchrua.indexing import lengths_to_ptr, batch_sizes_to_ptr
 from torchrua.joining import pack_catted_sequence
 from torchrua.utils import lengths_to_sorting_indices, get_device, accumulate_lengths
@@ -72,12 +73,7 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
 
 
 def pack_sequence(sequences: List[Tensor]) -> PackedSequence:
-    tensor = torch.cat(sequences, dim=0)
-    lengths = torch.tensor(
-        [sequence.size()[0] for sequence in sequences],
-        dtype=torch.long, device=tensor.device,
-    )
-    return pack_catted_sequence(tensor=tensor, lengths=lengths)
+    return pack_catted_sequence(sequence=cat_sequence(sequences=sequences))
 
 
 def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
