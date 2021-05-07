@@ -7,8 +7,8 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
 
 from torchrua.catting import CattedSequence
-from torchrua.utils import accumulate_lengths
 from torchrua.indexing import lengths_to_ptr
+from torchrua.utils import accumulate_lengths
 
 __all__ = [
     'cat_packed_sequences', 'cat_packed_data', 'cat_packed_batch_sizes',
