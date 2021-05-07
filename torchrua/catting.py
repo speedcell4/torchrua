@@ -11,8 +11,8 @@ class CattedSequence(NamedTuple):
 
 def cat_sequence(sequences: List[Tensor]) -> CattedSequence:
     data, lengths = zip(*[
-        (seq, seq.size()[0])
-        for seq in sequences
+        (sequence, sequence.size()[0])
+        for sequence in sequences
     ])
 
     data = torch.cat(data, dim=0)
