@@ -7,7 +7,8 @@ from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 __all__ = [
     'get_device',
-    'resize_batch_sizes', 'accumulate_batch_sizes',
+    'accumulate_batch_sizes', 'accumulate_lengths',
+    'resize_batch_sizes',
     'batch_sizes_to_mask', 'lengths_to_mask', 'packed_sequence_to_mask',
     'batch_sizes_to_lengths', 'packed_sequence_to_lengths',
     'lengths_to_batch_sizes',
@@ -25,15 +26,17 @@ def get_device(seq: Union[Tensor, PackedSequence], device: torch.device = None) 
 
 
 @torch.no_grad()
-def accumulate_batch_sizes(batch_sizes: Tensor, device: torch.device = None) -> Tensor:
-    batch_sizes = batch_sizes.to(device=device).cumsum(dim=0).roll(1, dims=[0])
-    batch_sizes[0] = 0
+def accumulate_lengths(lengths: Tensor) -> Tensor:
+    return F.pad(lengths.cumsum(dim=0), pad=[1, -1])
 
-    return batch_sizes
+
+@torch.no_grad()
+def accumulate_batch_sizes(batch_sizes: Tensor, device: torch.device = None) -> Tensor:
+    return F.pad(batch_sizes.to(device=device).cumsum(dim=0), pad=[1, -1])
 
 
 def resize_batch_sizes(batch_sizes: Tensor, total_length: int) -> Tensor:
-    num_tokens = batch_sizes.size(0)
+    num_tokens = batch_sizes.size()[0]
     if total_length <= num_tokens:
         assert batch_sizes[0] == batch_sizes[-total_length]
         return batch_sizes[-total_length:]
