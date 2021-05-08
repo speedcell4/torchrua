@@ -1,12 +1,11 @@
 from typing import List, Tuple, Optional
 
 import torch
-from einops import rearrange
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
 __all__ = [
-    'chunk_packed_sequence', 'chunk_packed_data', 'chunk_batch_sizes_dim0', 'chunk_batch_sizes_dim1',
+    'chunk_packed_sequence', 'chunk_data', 'chunk_batch_sizes_dim0', 'chunk_batch_sizes_dim1',
 ]
 
 
@@ -23,13 +22,12 @@ def chunk_packed_sequence(sequence: PackedSequence, chunks: int, dim: int) -> Li
             sorted_indices=sorted_indices,
             unsorted_indices=unsorted_indices,
         )
-        for data in chunk_packed_data(sequence=sequence, chunks=chunks)
+        for data in chunk_data(sequence=sequence, chunks=chunks)
     ]
 
 
-def chunk_packed_data(sequence: PackedSequence, chunks: int) -> List[Tensor]:
-    data = rearrange(sequence.data, '(p n) ... -> p n ...', n=chunks)
-    return [data[:, index] for index in range(chunks)]
+def chunk_data(sequence: PackedSequence, chunks: int) -> List[Tensor]:
+    return [sequence.data[index::chunks] for index in range(chunks)]
 
 
 @torch.no_grad()
