@@ -4,9 +4,8 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.catting import cat_sequence
+from torchrua.catting import cat_sequence, pack_catted_sequence
 from torchrua.indexing import lengths_to_ptr, batch_sizes_to_ptr
-from torchrua.joining import pack_catted_sequence
 from torchrua.utils import lengths_to_sorting_indices, get_device, accumulate_lengths
 
 __all__ = [

@@ -3,8 +3,7 @@ from typing import List
 import torch
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
-from torchrua import pack_catted_sequence
-from torchrua.catting import CattedSequence
+from torchrua.catting import CattedSequence, pack_catted_sequence
 
 __all__ = [
     'reduce_catted_sequence',
