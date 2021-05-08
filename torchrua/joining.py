@@ -16,50 +16,50 @@ __all__ = [
 ]
 
 
-def stack_packed_sequences(packs: List[PackedSequence], dim: int) -> PackedSequence:
+def stack_packed_sequences(sequences: List[PackedSequence], dim: int) -> PackedSequence:
     batch_sizes, sorted_indices, unsorted_indices = [
         stack_indices_dim0, stack_indices_dim1,
-    ][dim](pack=packs[0], num_packs=len(packs))
+    ][dim](sequence=sequences[0], chunks=len(sequences))
 
     return PackedSequence(
-        data=stack_data(packs=packs),
+        data=stack_data(sequences=sequences),
         batch_sizes=batch_sizes,
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
 
 
-def stack_data(packs: List[PackedSequence]) -> Tensor:
-    data = torch.stack([pack.data for pack in packs], dim=1)
+def stack_data(sequences: List[PackedSequence]) -> Tensor:
+    data = torch.stack([sequence.data for sequence in sequences], dim=1)
     return rearrange(data, 'p n ... -> (p n) ...')
 
 
 @torch.no_grad()
-def stack_indices_dim0(pack: PackedSequence, num_packs: int) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
-    if pack.unsorted_indices is not None:
-        unsorted_indices = torch.arange(num_packs, device=pack.data.device)
-        unsorted_indices = unsorted_indices[None, :] + pack.unsorted_indices[:, None] * num_packs
+def stack_indices_dim0(sequence: PackedSequence, chunks: int) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+    if sequence.unsorted_indices is not None:
+        unsorted_indices = torch.arange(chunks, device=sequence.data.device)
+        unsorted_indices = unsorted_indices[None, :] + sequence.unsorted_indices[:, None] * chunks
         unsorted_indices = unsorted_indices.view(-1)
 
         sorted_indices = invert_permutation(unsorted_indices)
     else:
         sorted_indices = unsorted_indices = None
 
-    return pack.batch_sizes * num_packs, sorted_indices, unsorted_indices
+    return sequence.batch_sizes * chunks, sorted_indices, unsorted_indices
 
 
 @torch.no_grad()
-def stack_indices_dim1(pack: PackedSequence, num_packs: int) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
-    if pack.unsorted_indices is not None:
-        unsorted_indices = torch.arange(num_packs, device=pack.data.device)
-        unsorted_indices = unsorted_indices[:, None] + pack.unsorted_indices[None, :] * num_packs
+def stack_indices_dim1(sequence: PackedSequence, chunks: int) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+    if sequence.unsorted_indices is not None:
+        unsorted_indices = torch.arange(chunks, device=sequence.data.device)
+        unsorted_indices = unsorted_indices[:, None] + sequence.unsorted_indices[None, :] * chunks
         unsorted_indices = unsorted_indices.view(-1)
 
         sorted_indices = invert_permutation(unsorted_indices)
     else:
         sorted_indices = unsorted_indices = None
 
-    return pack.batch_sizes * num_packs, sorted_indices, unsorted_indices
+    return sequence.batch_sizes * chunks, sorted_indices, unsorted_indices
 
 
 def pack_catted_sequence(sequence: CattedSequence) -> PackedSequence:

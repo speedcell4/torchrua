@@ -15,7 +15,7 @@ def test_cat_packed_sequences(lists_of_sentences):
         pack_sequence(sentences, enforce_sorted=False)
         for sentences in lists_of_sentences
     ]
-    x = stack_packed_sequences(packs=xs, dim=1)
+    x = stack_packed_sequences(sequences=xs, dim=1)
     x, _ = pad_packed_sequence(x, batch_first=True)
 
     y = pack_sequence([
@@ -34,7 +34,7 @@ def test_stack_packed_sequences(lists_of_sentences):
         pack_sequence(sentences, enforce_sorted=False)
         for sentences in lists_of_sentences
     ]
-    x = stack_packed_sequences(packs=xs, dim=0)
+    x = stack_packed_sequences(sequences=xs, dim=0)
     x, _ = pad_packed_sequence(x, batch_first=True)
 
     y = pack_sequence([

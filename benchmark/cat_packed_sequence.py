@@ -10,7 +10,7 @@ from torchrua.joining import stack_indices_dim1
 
 def rua_forward(rnn: nn.LSTM, pack: PackedSequence, num_chunks: int):
     data = rearrange(pack.data, 'p (d n x) -> (p n) (d x)', d=2 if rnn.bidirectional else 1, n=num_chunks)
-    batch_sizes, sorted_indices, unsorted_indices = stack_indices_dim1(pack=pack, num_packs=num_chunks)
+    batch_sizes, sorted_indices, unsorted_indices = stack_indices_dim1(sequence=pack, chunks=num_chunks)
     pack = PackedSequence(
         data=data, batch_sizes=batch_sizes,
         sorted_indices=sorted_indices,

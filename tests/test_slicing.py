@@ -17,7 +17,7 @@ def test_chunk_packed_sequence(lists_of_sentences, dim):
         for sentences in lists_of_sentences
     ]
     ys = chunk_packed_sequence(
-        pack=stack_packed_sequences(packs=xs, dim=dim),
+        sequence=stack_packed_sequences(sequences=xs, dim=dim),
         chunks=len(xs), dim=dim,
     )
 
