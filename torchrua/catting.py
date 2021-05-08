@@ -1,11 +1,11 @@
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Union
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
-from torchrua.utils import accumulate_lengths
 from torchrua.indexing import lengths_to_ptr
+from torchrua.utils import accumulate_lengths
 
 __all__ = [
     'CattedSequence',
@@ -52,3 +52,17 @@ def pack_catted_sequence(sequence: CattedSequence) -> PackedSequence:
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
+
+
+def cat_packed_sequence(sequence: PackedSequence) -> CattedSequence:
+    raise NotImplementedError
+
+
+def pad_catted_sequence(sequence: CattedSequence, batch_first: bool = False,
+                        padding_value: Union[int, float, bool] = 0,
+                        total_length: int = None) -> Tensor:
+    raise NotImplementedError
+
+
+def cat_padded_sequence(sequence: Tensor, lengths: Tensor, batch_first: bool) -> CattedSequence:
+    raise NotImplementedError
