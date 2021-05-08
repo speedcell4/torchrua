@@ -1,16 +1,16 @@
-from typing import List, NamedTuple, Union
+from typing import List, NamedTuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
-from torchrua.indexing import lengths_to_ptr
-from torchrua.utils import accumulate_lengths
+from torchrua.indexing import lengths_to_ptr, batch_sizes_to_ptr
+from torchrua.utils import accumulate_lengths, accumulate_batch_sizes
 
 __all__ = [
     'CattedSequence',
     'cat_sequence',
-    'pack_catted_sequence',
+    'pack_catted_sequence', 'cat_padded_sequence',
 ]
 
 
@@ -55,13 +55,22 @@ def pack_catted_sequence(sequence: CattedSequence) -> PackedSequence:
 
 
 def cat_packed_sequence(sequence: PackedSequence) -> CattedSequence:
-    raise NotImplementedError
+    device = sequence[0].data.device
 
+    batch_ptr, token_ptr, lengths = batch_sizes_to_ptr(
+        batch_sizes=sequence.batch_sizes,
+        sorted_indices=None,
+        unsorted_indices=sequence.unsorted_indices,
+        total_length=None, device=device,
+    )
+    acc_batch_sizes = accumulate_batch_sizes(sequence.batch_sizes, device=device)
+    acc_lengths = accumulate_lengths(lengths)
 
-def pad_catted_sequence(sequence: CattedSequence, batch_first: bool = False,
-                        padding_value: Union[int, float, bool] = 0,
-                        total_length: int = None) -> Tensor:
-    raise NotImplementedError
+    cat_index = acc_lengths[sequence.unsorted_indices[batch_ptr]] + token_ptr
+    pack_index = acc_batch_sizes[token_ptr] + batch_ptr
+    index = invert_permutation(cat_index)[pack_index]
+
+    return CattedSequence(data=sequence.data[index], lengths=lengths)
 
 
 def cat_padded_sequence(sequence: Tensor, lengths: Tensor, batch_first: bool) -> CattedSequence:
