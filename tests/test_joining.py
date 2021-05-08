@@ -4,7 +4,7 @@ from torch.nn.utils.rnn import pad_packed_sequence
 
 from tests.strategies import list_of_homo_lists_of_sentences
 from tests.utils import assert_equal
-from torchrua import cat_packed_sequences, stack_packed_sequences
+from torchrua import stack_packed_sequences
 
 
 @given(
@@ -15,7 +15,7 @@ def test_cat_packed_sequences(lists_of_sentences):
         pack_sequence(sentences, enforce_sorted=False)
         for sentences in lists_of_sentences
     ]
-    x = cat_packed_sequences(packs=xs)
+    x = stack_packed_sequences(packs=xs, dim=1)
     x, _ = pad_packed_sequence(x, batch_first=True)
 
     y = pack_sequence([
@@ -34,7 +34,7 @@ def test_stack_packed_sequences(lists_of_sentences):
         pack_sequence(sentences, enforce_sorted=False)
         for sentences in lists_of_sentences
     ]
-    x = stack_packed_sequences(packs=xs)
+    x = stack_packed_sequences(packs=xs, dim=0)
     x, _ = pad_packed_sequence(x, batch_first=True)
 
     y = pack_sequence([

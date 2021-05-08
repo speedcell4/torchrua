@@ -5,12 +5,12 @@ from torch.nn.utils.rnn import PackedSequence
 from tqdm import tqdm
 
 from benchmark.utils import Timer, gen_pack, report_performance
-from torchrua.joining import cat_packed_batch_sizes
+from torchrua.joining import stack_indices_dim1
 
 
 def rua_forward(rnn: nn.LSTM, pack: PackedSequence, num_chunks: int):
     data = rearrange(pack.data, 'p (d n x) -> (p n) (d x)', d=2 if rnn.bidirectional else 1, n=num_chunks)
-    batch_sizes, sorted_indices, unsorted_indices = cat_packed_batch_sizes(pack=pack, num_packs=num_chunks)
+    batch_sizes, sorted_indices, unsorted_indices = stack_indices_dim1(pack=pack, num_packs=num_chunks)
     pack = PackedSequence(
         data=data, batch_sizes=batch_sizes,
         sorted_indices=sorted_indices,
