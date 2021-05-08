@@ -11,14 +11,17 @@ __all__ = [
 ]
 
 
-def reduce_catted_sequence(sequences: List[CattedSequence]) -> PackedSequence:
+def reduce_catted_sequence(sequences: List[CattedSequence], device: torch.device = None) -> PackedSequence:
+    if device is None:
+        device = sequences[0].data.device
+
     data, length1, length2 = zip(*[
         (sequence.data, sequence.lengths, sequence.lengths.size()[0])
         for sequence in sequences
     ])
-    data = torch.cat(data, dim=0)
-    length1 = torch.cat(length1, dim=0)
-    length2 = torch.tensor(length2, dtype=torch.long, device=data.device)
+    data = torch.cat(data, dim=0).to(device=device)
+    length1 = torch.cat(length1, dim=0).to(device=device)
+    length2 = torch.tensor(length2, dtype=torch.long, device=device)
 
     data_pack = pack_catted_sequence(CattedSequence(data=data, lengths=length1))
     indices_pack = pack_catted_sequence(CattedSequence(data=data_pack.unsorted_indices, lengths=length2))
