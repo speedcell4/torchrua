@@ -3,7 +3,7 @@ from torch.nn.utils.rnn import pad_packed_sequence as naive_pad_packed_sequence
 from tqdm import tqdm
 
 from benchmark.utils import Timer, gen_pack, report_performance
-from torchrua.packing import pad_packed_sequence
+from torchrua.padding import pad_packed_sequence
 
 
 def pad_packed(num_examples: int = 2400, batch_size: int = 32,

@@ -28,7 +28,8 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import packed_fn, packed_method, Packed, pad_packed_sequence
+from torchrua import packed_fn, packed_method, Packed
+from torchrua.padding import pad_packed_sequence
 
 linear = nn.Linear(7, 13)
 
@@ -74,7 +75,8 @@ from torch.nn import functional as F
 from torch.nn import init
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import PackedMeta, pad_packed_sequence, PackedSequential
+from torchrua import PackedMeta, PackedSequential
+from torchrua.padding import pad_packed_sequence
 
 
 class MyLinear(nn.Module, metaclass=PackedMeta):
@@ -136,7 +138,8 @@ print(z.size())
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import select_head, select_last, select_init, select_tail, pad_packed_sequence
+from torchrua import select_head, select_last, select_init, select_tail
+from torchrua.padding import pad_packed_sequence
 
 pack = pack_sequence([
     torch.arange(5) + 1,
@@ -178,7 +181,8 @@ print(z)
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import reverse_packed_sequence, roll_packed_sequence, pad_packed_sequence
+from torchrua import reverse_packed_sequence, roll_packed_sequence
+from torchrua.padding import pad_packed_sequence
 
 x = pack_sequence([
     torch.arange(5) + 1,
@@ -235,7 +239,8 @@ If you have several `PackedSequence`s of exactly the same shape, then you can `c
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import cat_packed_sequences, stack_packed_sequences, pad_packed_sequence
+from torchrua import cat_packed_sequences, stack_packed_sequences
+from torchrua.padding import pad_packed_sequence
 
 x1 = pack_sequence([
     torch.arange(5) + 1,
