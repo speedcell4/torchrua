@@ -6,6 +6,12 @@ from torch.nn.utils.rnn import PackedSequence
 
 from torchrua import get_device, batch_sizes_to_ptr, lengths_to_ptr, accumulate_lengths
 
+__all__ = [
+    'pad_sequence',
+    'pad_catted_sequence',
+    'pad_packed_sequence',
+]
+
 
 def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
                         padding_value: Union[int, float, bool] = 0,
@@ -73,3 +79,7 @@ def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
         data[token_ptr, batch_ptr] = tensor[indices]
 
     return data
+
+
+def pad_catted_sequence():
+    raise NotImplementedError
