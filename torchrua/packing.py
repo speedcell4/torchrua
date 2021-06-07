@@ -22,16 +22,19 @@ def pack_sequence(sequences: List[Tensor]) -> PackedSequence:
 
 def pack_padded_sequence(input: Tensor, lengths: Tensor,
                          batch_first: bool = False, enforce_sorted: bool = True) -> PackedSequence:
-    device = get_device(input)
+    with torch.no_grad():
+        device = get_device(input)
 
-    if not enforce_sorted:
-        sorted_indices, unsorted_indices = lengths_to_sorting_indices(lengths)
-    else:
-        sorted_indices = unsorted_indices = None
+        if not enforce_sorted:
+            sorted_indices, unsorted_indices = lengths_to_sorting_indices(lengths)
+        else:
+            sorted_indices = unsorted_indices = None
 
-    batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
-        lengths, sorted_indices=sorted_indices, device=device,
-    )
+        batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
+            lengths=lengths,
+            sorted_indices=sorted_indices,
+            device=device,
+        )
 
     if batch_first:
         data = input[batch_ptr, token_ptr]
@@ -47,20 +50,21 @@ def pack_padded_sequence(input: Tensor, lengths: Tensor,
 
 
 def pack_catted_sequence(sequence: Tensor, lengths: Tensor) -> PackedSequence:
-    sorted_lengths, sorted_indices = torch.sort(lengths, descending=True)
-    unsorted_indices = invert_permutation(sorted_indices)
+    with torch.no_grad():
+        sorted_lengths, sorted_indices = torch.sort(lengths, descending=True)
+        unsorted_indices = invert_permutation(sorted_indices)
 
-    batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
-        lengths=sorted_lengths,
-        sorted_indices=sorted_indices,
-        device=sorted_lengths.device,
-    )
+        batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
+            lengths=sorted_lengths,
+            sorted_indices=sorted_indices,
+            device=sorted_lengths.device,
+        )
 
-    acc_lengths = accumulate_lengths(lengths=lengths)
-    indices = acc_lengths[batch_ptr] + token_ptr
+        acc_lengths = accumulate_lengths(lengths=lengths)
+        index = acc_lengths[batch_ptr] + token_ptr
 
     return PackedSequence(
-        data=sequence[indices],
+        data=sequence[index],
         batch_sizes=batch_sizes.detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,

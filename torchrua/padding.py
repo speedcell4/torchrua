@@ -18,17 +18,18 @@ __all__ = [
 def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
                         padding_value: Union[int, float, bool] = 0,
                         total_length: int = None) -> Tuple[Tensor, Tensor]:
-    device = get_device(pack)
-    batch_size = pack.batch_sizes[0].item()
-    if total_length is None:
-        total_length = pack.batch_sizes.size(0)
+    with torch.no_grad():
+        device = get_device(pack)
+        batch_size = pack.batch_sizes[0].item()
+        if total_length is None:
+            total_length = pack.batch_sizes.size(0)
 
-    batch_ptr, token_ptr, lengths = batch_sizes_to_ptr(
-        batch_sizes=pack.batch_sizes.to(device=device),
-        sorted_indices=pack.sorted_indices,
-        unsorted_indices=pack.unsorted_indices,
-        total_length=total_length, device=device,
-    )
+        batch_ptr, token_ptr, lengths = batch_sizes_to_ptr(
+            batch_sizes=pack.batch_sizes.to(device=device),
+            sorted_indices=pack.sorted_indices,
+            unsorted_indices=pack.unsorted_indices,
+            total_length=total_length, device=device,
+        )
 
     if batch_first:
         data = torch.full(
@@ -58,24 +59,25 @@ def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
 def pad_catted_sequence(sequence: Tensor, lengths: Tensor,
                         batch_first: bool = False, padding_value: float = 0.,
                         total_length: Optional[None] = None, device: Optional[torch.device] = None) -> Tensor:
-    if device is None:
-        device = sequence.device
+    with torch.no_grad():
+        if device is None:
+            device = sequence.device
 
-    unsorted_lengths = lengths.to(device=device)
-    batch_size = unsorted_lengths.size()[0]
-    if total_length is None:
-        total_length = unsorted_lengths.max().detach().cpu().item()
+        unsorted_lengths = lengths.to(device=device)
+        batch_size = unsorted_lengths.size()[0]
+        if total_length is None:
+            total_length = unsorted_lengths.max().detach().cpu().item()
 
-    batch_ptr, token_ptr, _ = lengths_to_ptr(
-        lengths=unsorted_lengths,
-        sorted_indices=None,
-        device=unsorted_lengths.device,
-    )
+        batch_ptr, token_ptr, _ = lengths_to_ptr(
+            lengths=unsorted_lengths,
+            sorted_indices=None,
+            device=unsorted_lengths.device,
+        )
 
-    acc_lengths = accumulate_lengths(lengths=unsorted_lengths)
-    index = invert_permutation(acc_lengths[batch_ptr] + token_ptr)
-    batch_ptr = batch_ptr[index]
-    token_ptr = token_ptr[index]
+        acc_lengths = accumulate_lengths(lengths=unsorted_lengths)
+        index = invert_permutation(acc_lengths[batch_ptr] + token_ptr)
+        batch_ptr = batch_ptr[index]
+        token_ptr = token_ptr[index]
 
     if batch_first:
         data = torch.full(
