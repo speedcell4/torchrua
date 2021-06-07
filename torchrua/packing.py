@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import torch
 from torch import Tensor
@@ -16,7 +16,8 @@ __all__ = [
 
 
 def pack_sequence(sequences: List[Tensor]) -> PackedSequence:
-    return pack_catted_sequence(*cat_sequence(sequences=sequences))
+    sequence, lengths = cat_sequence(sequences=sequences)
+    return pack_catted_sequence(sequence=sequence, lengths=lengths)
 
 
 def pack_padded_sequence(input: Tensor, lengths: Tensor,
