@@ -1,10 +1,12 @@
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Optional
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import PackedSequence, invert_permutation
+from torchrua.indexing import batch_sizes_to_ptr, lengths_to_ptr
 
-from torchrua import get_device, batch_sizes_to_ptr, lengths_to_ptr, accumulate_lengths
+from torchrua.utils import get_device, accumulate_lengths
+from torchrua.catting import cat_sequence
 
 __all__ = [
     'pad_sequence',
@@ -45,12 +47,24 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
 
 
 def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
-                 total_length: int = None, padding_value: float = 0) -> Tensor:
-    tensor = torch.cat(sequences, dim=0)
-    unsorted_lengths = torch.tensor(
-        [sequence.size()[0] for sequence in sequences],
-        dtype=torch.long, device=tensor.device,
+                 total_length: int = None, padding_value: float = 0, device: Optional[torch.device] = None) -> Tensor:
+    sequence, lengths = cat_sequence(sequences=sequences, device=device)
+    return pad_catted_sequence(
+        sequence=sequence, lengths=lengths, batch_first=batch_first,
+        padding_value=padding_value, total_length=total_length, device=device,
     )
+
+
+def pad_catted_sequence(sequence: Tensor, lengths: Tensor,
+                        batch_first: bool = False, padding_value: float = 0.,
+                        total_length: Optional[None] = None, device: Optional[torch.device] = None) -> Tensor:
+    if device is None:
+        device = sequence.device
+
+    unsorted_lengths = lengths.to(device=device)
+    batch_size = unsorted_lengths.size()[0]
+    if total_length is None:
+        total_length = unsorted_lengths.max().detach().cpu().item()
 
     batch_ptr, token_ptr, _ = lengths_to_ptr(
         lengths=unsorted_lengths,
@@ -59,27 +73,21 @@ def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
     )
 
     acc_lengths = accumulate_lengths(lengths=unsorted_lengths)
-    indices = acc_lengths[batch_ptr] + token_ptr
-
-    batch_size = len(sequences)
-    if total_length is None:
-        total_length = unsorted_lengths.max().detach().cpu().item()
+    index = invert_permutation(acc_lengths[batch_ptr] + token_ptr)
+    batch_ptr = batch_ptr[index]
+    token_ptr = token_ptr[index]
 
     if batch_first:
         data = torch.full(
-            (batch_size, total_length, *tensor.size()[1:]),
-            fill_value=padding_value, dtype=tensor.dtype, device=tensor.device, requires_grad=False,
+            (batch_size, total_length, *sequence.size()[1:]), fill_value=padding_value,
+            dtype=sequence.dtype, device=sequence.device, requires_grad=False,
         )
-        data[batch_ptr, token_ptr] = tensor[indices]
+        data[batch_ptr, token_ptr] = sequence
     else:
         data = torch.full(
-            (total_length, batch_size, *tensor.size()[1:]),
-            fill_value=padding_value, dtype=tensor.dtype, device=tensor.device, requires_grad=False,
+            (total_length, batch_size, *sequence.size()[1:]), fill_value=padding_value,
+            dtype=sequence.dtype, device=sequence.device, requires_grad=False,
         )
-        data[token_ptr, batch_ptr] = tensor[indices]
+        data[token_ptr, batch_ptr] = sequence
 
     return data
-
-
-def pad_catted_sequence():
-    raise NotImplementedError

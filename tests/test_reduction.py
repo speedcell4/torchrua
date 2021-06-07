@@ -10,7 +10,7 @@ from torchrua.reduction import reduce_catted_sequence
 
 
 @given(
-    batched_lengths=st.lists(st.lists(st.integers(1, 10), min_size=1, max_size=5), min_size=1, max_size=3),
+    batched_lengths=st.lists(st.lists(st.integers(1, 5), min_size=1, max_size=5), min_size=1, max_size=3),
     dim=st.integers(1, 5),
 )
 def test_reduce_catted_sequence(batched_lengths: List[List[int]], dim: int):
