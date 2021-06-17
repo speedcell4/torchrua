@@ -2,10 +2,10 @@ from typing import List, Tuple, Optional
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import PackedSequence, pack_sequence
 
-from torchrua.indexing import lengths_to_ptr, batch_sizes_to_ptr
-from torchrua.utils import accumulate_batch_sizes
+from torchrua.indexing import token_sizes_to_ptr, batch_sizes_to_ptr
+from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'cat_sequence',
@@ -29,8 +29,9 @@ def cat_packed_sequence(pack: PackedSequence, device: Optional[torch.device] = N
             device = pack.data.device
 
         batch_sizes = pack.batch_sizes.to(device=device)
-        acc_batch_sizes = accumulate_batch_sizes(batch_sizes=batch_sizes)
-        token_ptr, batch_ptr, sorted_lengths = lengths_to_ptr(lengths=batch_sizes)
+        acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
+        token_ptr, batch_ptr, sorted_lengths = token_sizes_to_ptr(token_sizes=batch_sizes)
+
         if pack.unsorted_indices is not None:
             unsorted_lengths = sorted_lengths[pack.unsorted_indices]
 
@@ -54,3 +55,11 @@ def cat_padded_sequence(tensor: Tensor, lengths: Tensor, batch_first: bool,
         data = tensor[token_ptr, batch_ptr]
 
     return data, lengths
+
+
+if __name__ == '__main__':
+    print(cat_packed_sequence(pack_sequence([
+        torch.arange(5),
+        torch.arange(2),
+        torch.arange(3),
+    ], enforce_sorted=False)))

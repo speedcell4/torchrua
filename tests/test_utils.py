@@ -5,7 +5,7 @@ from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence
 
 from tests.strategies import list_of_sentences
 from tests.utils import assert_equal
-from torchrua import packed_sequence_to_mask, lengths_to_mask, packed_sequence_to_lengths, lengths_to_batch_sizes, \
+from torchrua import packed_sequence_to_mask, token_sizes_to_mask, packed_sequence_to_token_sizes, token_sizes_to_batch_sizes, \
     lengths_to_sorting_indices
 
 
@@ -16,7 +16,7 @@ def test_packed_sequence_to_lengths(sentences_and_lengths):
     sentences, lengths = sentences_and_lengths
 
     x = torch.tensor(lengths, dtype=torch.long, device=torch.device('cpu'))
-    y = packed_sequence_to_lengths(
+    y = packed_sequence_to_token_sizes(
         pack=pack_sequence(sentences, enforce_sorted=False),
         unsort=True, dtype=torch.long,
     )
@@ -35,8 +35,8 @@ def test_packed_sequence_to_mask(sentences, unsort, batch_first):
     x = packed_sequence_to_mask(
         pack=pack, unsort=unsort, batch_first=batch_first, dtype=torch.bool)
 
-    lengths = packed_sequence_to_lengths(pack=pack, unsort=unsort, dtype=torch.long)
-    y = lengths_to_mask(lengths, batch_first=batch_first, dtype=torch.bool)
+    lengths = packed_sequence_to_token_sizes(pack=pack, unsort=unsort, dtype=torch.long)
+    y = token_sizes_to_mask(lengths, batch_first=batch_first, dtype=torch.bool)
 
     assert_equal(x, y)
 
@@ -46,7 +46,7 @@ def test_packed_sequence_to_mask(sentences, unsort, batch_first):
 )
 def test_lengths_to_batch_sizes(sentences):
     lengths = torch.tensor([s.size(0) for s in sentences], dtype=torch.long, device=sentences[0].device)
-    batch_sizes = lengths_to_batch_sizes(lengths=lengths, device=torch.device('cpu'))
+    batch_sizes = token_sizes_to_batch_sizes(lengths=lengths, device=torch.device('cpu'))
     sorted_indices, unsorted_indices = lengths_to_sorting_indices(lengths=lengths, device=sentences[0].device)
     sorted_sentences = pad_sequence([
         sentences[sorted_index]

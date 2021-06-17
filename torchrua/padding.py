@@ -3,9 +3,9 @@ from typing import Union, Tuple, List, Optional
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
-from torchrua.indexing import batch_sizes_to_ptr, lengths_to_ptr
+from torchrua.indexing import batch_sizes_to_ptr, token_sizes_to_ptr
 
-from torchrua.utils import get_device, accumulate_lengths
+from torchrua.utils import get_device, accumulate_sizes
 from torchrua.catting import cat_sequence
 
 __all__ = [
@@ -68,13 +68,13 @@ def pad_catted_sequence(sequence: Tensor, lengths: Tensor,
         if total_length is None:
             total_length = unsorted_lengths.max().detach().cpu().item()
 
-        batch_ptr, token_ptr, _ = lengths_to_ptr(
-            lengths=unsorted_lengths,
+        batch_ptr, token_ptr, _ = token_sizes_to_ptr(
+            token_sizes=unsorted_lengths,
             sorted_indices=None,
             device=unsorted_lengths.device,
         )
 
-        acc_lengths = accumulate_lengths(lengths=unsorted_lengths)
+        acc_lengths = accumulate_sizes(lengths=unsorted_lengths)
         index = invert_permutation(acc_lengths[batch_ptr] + token_ptr)
         batch_ptr = batch_ptr[index]
         token_ptr = token_ptr[index]

@@ -6,9 +6,9 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
 
-from torchrua.indexing import lengths_to_ptr, batch_sizes_to_ptr
+from torchrua.indexing import token_sizes_to_ptr, batch_sizes_to_ptr
 from torchrua.packing import pack_catted_sequence
-from torchrua.utils import accumulate_batch_sizes
+from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'reduce_catted_sequences',
@@ -60,15 +60,15 @@ def tree_reduction_indices(batch_sizes: Tensor, device: Optional[torch.device]) 
         total_length=None, device=device,
     )
     offsets = torch.zeros_like(lengths)
-    acc_batch_sizes1 = accumulate_batch_sizes(batch_sizes)
+    acc_batch_sizes1 = accumulate_sizes(batch_sizes)
 
     lengths2 = lengths * 2 - 1
-    batch_ptr2, token_ptr2, batch_sizes2 = lengths_to_ptr(
-        lengths=lengths2,
+    batch_ptr2, token_ptr2, batch_sizes2 = token_sizes_to_ptr(
+        token_sizes=lengths2,
         sorted_indices=None,
         device=device,
     )
-    acc_batch_sizes2 = accumulate_batch_sizes(batch_sizes2)
+    acc_batch_sizes2 = accumulate_sizes(batch_sizes2)
 
     mask = torch.ones_like(token_ptr2, dtype=torch.bool)
     offs = torch.zeros_like(mask, dtype=torch.long)
@@ -82,7 +82,7 @@ def tree_reduction_indices(batch_sizes: Tensor, device: Optional[torch.device]) 
     xs, ys, zs = [], [], []
     for i in range(clamp_lengths.size()[1]):
         clamp_lengths_i = clamp_lengths[:, i]
-        batch_ptr, token_ptr, _ = lengths_to_ptr(clamp_lengths_i // 2, sorted_indices=None, device=device)
+        batch_ptr, token_ptr, _ = token_sizes_to_ptr(clamp_lengths_i // 2, sorted_indices=None, device=device)
         base_ptr = offsets[batch_ptr] + token_ptr
 
         x = acc_batch_sizes2[base_ptr + token_ptr + 0] + batch_ptr
