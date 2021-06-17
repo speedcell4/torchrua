@@ -1,11 +1,10 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.utils import get_device, accumulate_batch_sizes, resize_batch_sizes
-from torchrua.utils import packed_sequence_to_lengths
+from torchrua.utils import accumulate_batch_sizes, resize_batch_sizes, packed_sequence_to_lengths
 
 __all__ = [
     'batch_sizes_to_ptr', 'lengths_to_ptr',
@@ -21,11 +20,15 @@ __all__ = [
 @torch.no_grad()
 def batch_sizes_to_ptr(
         batch_sizes: Tensor,
-        sorted_indices: Optional[Tensor], unsorted_indices: Optional[Tensor],
-        total_length: Optional[int], device: torch.device):
-    batch_size = batch_sizes[0].item()
+        sorted_indices: Optional[Tensor] = None,
+        total_length: Optional[int] = None,
+        device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor, Tensor]:
+    if device is None:
+        device = batch_sizes.device
+
     if total_length is None:
-        total_length = batch_sizes.size(0)
+        total_length = batch_sizes.size()[0]
+    batch_size = batch_sizes[0].item()
 
     batch_ptr = torch.arange(batch_size, device=device)
     token_ptr = torch.arange(total_length, device=device)
@@ -37,21 +40,23 @@ def batch_sizes_to_ptr(
 
     batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
     token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
+    sorted_lengths = tb_mask.long().sum(dim=0)
 
-    lengths = tb_mask.long().sum(dim=0)
-    if unsorted_indices is not None:
-        lengths = lengths[unsorted_indices]
-
-    return batch_ptr, token_ptr, lengths
+    return batch_ptr, token_ptr, sorted_lengths
 
 
 @torch.no_grad()
-def lengths_to_ptr(lengths: Tensor, sorted_indices: Optional[Tensor], device: torch.device):
-    batch_size = lengths.size(0)
-    num_tokens = lengths.max().item()
+def lengths_to_ptr(lengths: Tensor,
+                   sorted_indices: Optional[Tensor] = None,
+                   device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor, Tensor]:
+    if device is None:
+        device = lengths.device
+
+    batch_size = lengths.size()[0]
+    total_length = lengths.max().item()
 
     batch_ptr = torch.arange(batch_size, device=device)
-    token_ptr = torch.arange(num_tokens, device=device)
+    token_ptr = torch.arange(total_length, device=device)
 
     tb_mask = token_ptr[:, None] < lengths[None, :]
 
@@ -66,12 +71,14 @@ def lengths_to_ptr(lengths: Tensor, sorted_indices: Optional[Tensor], device: to
 
 
 @torch.no_grad()
-def head_indices(pack: PackedSequence, unsort: bool = True, *, device: torch.device = None) -> Tensor:
-    device = get_device(pack, device=device)
-    batch_size = pack.batch_sizes[0].item()
+def head_indices(pack: PackedSequence, unsort: bool = True, device: Optional[torch.device] = None) -> Tensor:
+    if device is None:
+        device = pack.data.device
 
     if unsort and pack.unsorted_indices is not None:
-        return pack.unsorted_indices
+        return pack.unsorted_indices.to(device=device)
+
+    batch_size = pack.batch_sizes[0].item()
     return torch.arange(0, batch_size, device=device)
 
 
@@ -80,36 +87,35 @@ def select_head(pack: PackedSequence, unsort: bool = True) -> Tensor:
 
 
 @torch.no_grad()
-def last_indices(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None, *,
-                 device: torch.device = None) -> Tensor:
-    device = get_device(pack, device=device)
-    if lengths is None:
-        lengths = packed_sequence_to_lengths(pack=pack, unsort=False)
+def last_indices(pack: PackedSequence, unsort: bool = True, device: Optional[torch.device] = None) -> Tensor:
+    if device is None:
+        device = pack.data.device
 
-    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)[lengths - 1]
-    unsorted_indices = head_indices(pack=pack, unsort=unsort, device=device)
+    acc_batch_sizes = accumulate_batch_sizes(pack.batch_sizes, device=device)
+    batch_ptr = head_indices(pack=pack, unsort=unsort, device=device)
+    token_ptr = packed_sequence_to_lengths(pack=pack, unsort=unsort) - 1
 
-    return indices[unsorted_indices] + unsorted_indices
+    return acc_batch_sizes[token_ptr] + batch_ptr
 
 
-def select_last(pack: PackedSequence, unsort: bool = True, lengths: Tensor = None) -> Tensor:
-    return pack.data[last_indices(pack=pack, unsort=unsort, lengths=lengths)]
+def select_last(pack: PackedSequence, unsort: bool = True) -> Tensor:
+    return pack.data[last_indices(pack=pack, unsort=unsort)]
 
 
 @torch.no_grad()
-def init_indices(pack: PackedSequence, drop_last_n: int = 1, *, device: torch.device = None) -> Tensor:
-    device = get_device(pack, device=device)
-    total_length = pack.batch_sizes.size(0) - drop_last_n
+def init_indices(pack: PackedSequence, drop_last_n: int = 1, device: Optional[torch.device] = None) -> Tensor:
+    if device is None:
+        device = pack.data.device
+    total_length = pack.batch_sizes.size()[0] - drop_last_n
 
+    batch_sizes = pack.batch_sizes.to(device=device)
+    acc_batch_sizes = accumulate_batch_sizes(batch_sizes=batch_sizes)
     batch_ptr, token_ptr, _ = batch_sizes_to_ptr(
-        batch_sizes=pack.batch_sizes.to(device=device),
-        sorted_indices=None,
-        unsorted_indices=None,
-        total_length=total_length, device=device,
+        batch_sizes=batch_sizes,
+        total_length=total_length,
     )
 
-    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)
-    return indices[token_ptr] + batch_ptr
+    return acc_batch_sizes[token_ptr] + batch_ptr
 
 
 def select_init(pack: PackedSequence, drop_last_n: int = 1) -> PackedSequence:
@@ -122,12 +128,13 @@ def select_init(pack: PackedSequence, drop_last_n: int = 1) -> PackedSequence:
 
 
 @torch.no_grad()
-def tail_indices(pack: PackedSequence, drop_first_n: int = 1, *,
-                 device: torch.device = None) -> Tensor:
+def tail_indices(pack: PackedSequence, drop_first_n: int = 1, device: Optional[torch.device] = None) -> Tensor:
     assert pack.batch_sizes[0] == pack.batch_sizes[drop_first_n], \
-        'some sequences contain only one element, truncating is not allowed.'
+        f'some sequences contain less than {drop_first_n} elements, truncating is not allowed.'
 
-    device = get_device(pack, device=device)
+    if device is None:
+        device = pack.data.device
+
     return torch.arange(
         pack.batch_sizes[0].item() * drop_first_n,
         pack.batch_sizes.sum().item(),
@@ -148,19 +155,17 @@ def select_tail(pack: PackedSequence, drop_first_n: int = 1) -> PackedSequence:
 
 
 @torch.no_grad()
-def reversed_indices(pack: PackedSequence, *, device: torch.device = None) -> Tensor:
-    device = get_device(pack, device=device)
+def reversed_indices(pack: PackedSequence, device: Optional[torch.device] = None) -> Tensor:
+    if device is None:
+        device = pack.data.device
 
-    batch_ptr, token_ptr, lengths = batch_sizes_to_ptr(
-        batch_sizes=pack.batch_sizes.to(device=device),
-        sorted_indices=None,
-        unsorted_indices=None,
-        total_length=None, device=device,
-    )
-    token_ptr = (lengths - 1)[batch_ptr] - token_ptr
+    batch_sizes = pack.batch_sizes.to(device=device)
+    acc_batch_sizes = accumulate_batch_sizes(batch_sizes=batch_sizes)
+    batch_ptr, token_ptr, sorted_lengths = batch_sizes_to_ptr(batch_sizes=batch_sizes)
 
-    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)
-    return indices[token_ptr] + batch_ptr
+    token_ptr = (sorted_lengths - 1)[batch_ptr] - token_ptr
+
+    return acc_batch_sizes[token_ptr] + batch_ptr
 
 
 def reverse_packed_sequence(pack: PackedSequence) -> PackedSequence:
@@ -173,20 +178,18 @@ def reverse_packed_sequence(pack: PackedSequence) -> PackedSequence:
 
 
 @torch.no_grad()
-def rolled_indices(pack: PackedSequence, offset: int, *, device: torch.device = None) -> Tensor:
-    device = get_device(pack, device=device)
+def rolled_indices(pack: PackedSequence, offset: int, device: Optional[torch.device] = None) -> Tensor:
+    if device is None:
+        device = pack.data.device
 
-    batch_ptr, token_ptr, lengths = batch_sizes_to_ptr(
-        batch_sizes=pack.batch_sizes.to(device=device),
-        sorted_indices=None,
-        unsorted_indices=None,
-        total_length=None, device=device,
-    )
-    lengths = lengths[batch_ptr]
+    batch_sizes = pack.batch_sizes.to(device=device)
+    acc_batch_sizes = accumulate_batch_sizes(batch_sizes=batch_sizes)
+    batch_ptr, token_ptr, sorted_lengths = batch_sizes_to_ptr(batch_sizes=batch_sizes)
+
+    lengths = sorted_lengths[batch_ptr]
     token_ptr = (token_ptr - offset + lengths) % lengths
 
-    indices = accumulate_batch_sizes(pack.batch_sizes, device=device)
-    return indices[token_ptr] + batch_ptr
+    return acc_batch_sizes[token_ptr] + batch_ptr
 
 
 def roll_packed_sequence(pack: PackedSequence, offset: int) -> PackedSequence:

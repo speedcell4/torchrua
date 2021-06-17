@@ -9,10 +9,10 @@ ATOL = 1e-5
 
 @st.composite
 def devices(draw):
-    if torch.cuda.is_available():
-        return torch.device('cuda:0')
-    else:
+    if not torch.cuda.is_available():
         return torch.device('cpu')
+    else:
+        return torch.device('cuda:0')
 
 
 @st.composite

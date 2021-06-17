@@ -35,6 +35,7 @@ def accumulate_batch_sizes(batch_sizes: Tensor, device: torch.device = None) -> 
     return F.pad(batch_sizes.to(device=device).cumsum(dim=0), pad=[1, -1])
 
 
+@torch.no_grad()
 def resize_batch_sizes(batch_sizes: Tensor, total_length: int) -> Tensor:
     num_tokens = batch_sizes.size()[0]
     if total_length <= num_tokens:
