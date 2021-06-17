@@ -91,7 +91,8 @@ def last_indices(pack: PackedSequence, unsort: bool = True, device: Optional[tor
     if device is None:
         device = pack.data.device
 
-    acc_batch_sizes = accumulate_batch_sizes(pack.batch_sizes, device=device)
+    batch_sizes = pack.batch_sizes.to(device=device)
+    acc_batch_sizes = accumulate_batch_sizes(batch_sizes=batch_sizes)
     batch_ptr = head_indices(pack=pack, unsort=unsort, device=device)
     token_ptr = packed_sequence_to_lengths(pack=pack, unsort=unsort) - 1
 

@@ -31,8 +31,8 @@ def accumulate_lengths(lengths: Tensor) -> Tensor:
 
 
 @torch.no_grad()
-def accumulate_batch_sizes(batch_sizes: Tensor, device: torch.device = None) -> Tensor:
-    return F.pad(batch_sizes.to(device=device).cumsum(dim=0), pad=[1, -1])
+def accumulate_batch_sizes(batch_sizes: Tensor) -> Tensor:
+    return F.pad(batch_sizes.cumsum(dim=0), pad=[1, -1])
 
 
 @torch.no_grad()
