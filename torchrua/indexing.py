@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.utils import accumulate_batch_sizes, resize_batch_sizes, packed_sequence_to_lengths
+from torchrua.utils import accumulate_batch_sizes, packed_sequence_to_lengths, resize_batch_sizes
 
 __all__ = [
     'batch_sizes_to_ptr', 'lengths_to_ptr',
@@ -18,25 +18,14 @@ __all__ = [
 
 
 @torch.no_grad()
-def batch_sizes_to_ptr(
-        batch_sizes: Tensor,
-        sorted_indices: Optional[Tensor] = None,
-        total_length: Optional[int] = None,
-        device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor, Tensor]:
-    if device is None:
-        device = batch_sizes.device
-
-    if total_length is None:
-        total_length = batch_sizes.size()[0]
+def batch_sizes_to_ptr(batch_sizes: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     batch_size = batch_sizes[0].item()
+    total_length = batch_sizes.size()[0]
 
-    batch_ptr = torch.arange(batch_size, device=device)
-    token_ptr = torch.arange(total_length, device=device)
+    batch_ptr = torch.arange(batch_size, device=batch_sizes.device)
+    token_ptr = torch.arange(total_length, device=batch_sizes.device)
 
-    tb_mask = batch_ptr[None, :] < resize_batch_sizes(batch_sizes, total_length)[:, None]
-
-    if sorted_indices is not None:
-        batch_ptr = sorted_indices
+    tb_mask = batch_ptr[None, :] < batch_sizes[:, None]
 
     batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
     token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
@@ -46,22 +35,14 @@ def batch_sizes_to_ptr(
 
 
 @torch.no_grad()
-def lengths_to_ptr(lengths: Tensor,
-                   sorted_indices: Optional[Tensor] = None,
-                   device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor, Tensor]:
-    if device is None:
-        device = lengths.device
-
+def lengths_to_ptr(lengths: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     batch_size = lengths.size()[0]
     total_length = lengths.max().item()
 
-    batch_ptr = torch.arange(batch_size, device=device)
-    token_ptr = torch.arange(total_length, device=device)
+    batch_ptr = torch.arange(batch_size, device=lengths.device)
+    token_ptr = torch.arange(total_length, device=lengths.device)
 
     tb_mask = token_ptr[:, None] < lengths[None, :]
-
-    if sorted_indices is not None:
-        batch_ptr = sorted_indices
 
     batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
     token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
@@ -111,10 +92,8 @@ def init_indices(pack: PackedSequence, drop_last_n: int = 1, device: Optional[to
 
     batch_sizes = pack.batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_batch_sizes(batch_sizes=batch_sizes)
-    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(
-        batch_sizes=batch_sizes,
-        total_length=total_length,
-    )
+    batch_sizes = resize_batch_sizes(batch_sizes=batch_sizes, total_length=total_length)
+    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=batch_sizes)
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
