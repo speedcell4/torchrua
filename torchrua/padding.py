@@ -3,10 +3,10 @@ from typing import Union, Tuple, List, Optional
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
-from torchrua.indexing import batch_sizes_to_ptr, token_sizes_to_ptr
 
-from torchrua.utils import get_device, accumulate_sizes
 from torchrua.catting import cat_sequence
+from torchrua.indexing import batch_sizes_to_ptr, token_sizes_to_ptr
+from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'pad_sequence',
@@ -19,7 +19,7 @@ def pad_packed_sequence(pack: PackedSequence, batch_first: bool = False,
                         padding_value: Union[int, float, bool] = 0,
                         total_length: int = None) -> Tuple[Tensor, Tensor]:
     with torch.no_grad():
-        device = get_device(pack)
+        device = pack.data.device
         batch_size = pack.batch_sizes[0].item()
         if total_length is None:
             total_length = pack.batch_sizes.size(0)
