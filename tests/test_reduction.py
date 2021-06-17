@@ -6,7 +6,7 @@ from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 
 from torchrua.catting import cat_sequence
-from torchrua.reduction import reduce_catted_sequence
+from torchrua.reduction import reduce_catted_sequences
 
 
 @given(
@@ -30,7 +30,7 @@ def test_reduce_catted_sequence(batched_lengths: List[List[int]], dim: int):
         tgt.append(torch.cat(ys, dim=0))
     tgt = pack_sequence(tgt, enforce_sorted=False).data.transpose(0, 1)
 
-    x = reduce_catted_sequence([cat_sequence(datum) for datum in data])
+    x = reduce_catted_sequences([cat_sequence(datum) for datum in data])
     _, (prd, _) = rnn(x)
 
     assert torch.allclose(tgt, prd, atol=1e-5, rtol=1e-5)
