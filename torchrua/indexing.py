@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.utils import accumulate_sizes, packed_sequence_to_token_sizes, resize_sizes
+from torchrua.utils import accumulate_sizes, resize_sizes, batch_sizes_to_token_sizes
 
 __all__ = [
     'batch_sizes_to_ptr',
@@ -104,7 +104,7 @@ def last_indices(pack: PackedSequence, unsort: bool = True) -> Tensor:
     batch_sizes = pack.batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
     batch_ptr = head_indices(pack=pack, unsort=unsort)
-    token_ptr = packed_sequence_to_token_sizes(pack=pack, unsort=unsort) - 1
+    token_ptr = batch_sizes_to_token_sizes(batch_sizes=batch_sizes, batch_ptr=batch_ptr) - 1
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
