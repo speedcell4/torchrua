@@ -18,7 +18,7 @@ def test_pack_padded_sequence(sentences_and_lengths, batch_first):
     lengths = torch.tensor(lengths, dtype=torch.long, device=sentences[0].device)
 
     y = pad_sequence(sentences, batch_first=batch_first)
-    x = pack_padded_sequence(y, lengths=lengths, batch_first=batch_first, enforce_sorted=False)
+    x = pack_padded_sequence(y, token_sizes=lengths, batch_first=batch_first, enforce_sorted=False)
     x, _ = pad_packed_sequence_naive(x, batch_first=batch_first)
 
     assert_equal(x, y)

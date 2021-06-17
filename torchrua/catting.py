@@ -39,7 +39,7 @@ def cat_packed_sequence(sequence: PackedSequence, device: Optional[torch.device]
     return sequence.data[indices], token_sizes
 
 
-def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor, batch_first: bool,
+def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor, batch_first: bool = False,
                         device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor]:
     with torch.no_grad():
         if device is None:

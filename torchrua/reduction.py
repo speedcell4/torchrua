@@ -29,8 +29,8 @@ def reduce_catted_sequences(sequences: List[Tuple[Tensor, Tensor]],
     length1 = torch.cat(length1, dim=0).to(device=device)
     length2 = torch.tensor(length2, dtype=torch.long, device=device)
 
-    data_pack = pack_catted_sequence(sequence=data, lengths=length1)
-    indices_pack = pack_catted_sequence(sequence=data_pack.unsorted_indices, lengths=length2)
+    data_pack = pack_catted_sequence(sequence=data, token_sizes=length1)
+    indices_pack = pack_catted_sequence(sequence=data_pack.unsorted_indices, token_sizes=length2)
 
     return PackedSequence(
         data=data_pack.data,
