@@ -6,11 +6,10 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 __all__ = [
-    'accumulate_sizes', 'resize_sizes',
-    'batch_sizes_to_mask', 'token_sizes_to_mask', 'packed_sequence_to_mask',
-    'batch_sizes_to_token_sizes', 'packed_sequence_to_token_sizes',
-    'token_sizes_to_batch_sizes',
-    'lengths_to_sorting_indices',
+    'accumulate_sizes', 'resize_sizes', 'sizes_to_sorting_indices',
+    'batch_sizes_to_mask', 'batch_sizes_to_token_sizes',
+    'token_sizes_to_mask', 'token_sizes_to_batch_sizes', 'packed_sequence_to_mask',
+    'packed_sequence_to_token_sizes',
 ]
 
 
@@ -28,13 +27,21 @@ def resize_sizes(sizes: Tensor, n: int) -> Tensor:
 
 
 @torch.no_grad()
+def sizes_to_sorting_indices(sizes: Tensor, descending: bool = True) -> Tuple[Tensor, Tensor]:
+    sorted_indices = sizes.argsort(dim=0, descending=descending)
+    unsorted_indices = invert_permutation(sorted_indices)
+
+    return sorted_indices, unsorted_indices
+
+
+@torch.no_grad()
 def batch_sizes_to_mask(
         batch_sizes: Tensor, unsorted_indices: Tensor = None,
         batch_first: bool = True, total_length: int = None,
         dtype: torch.dtype = torch.bool, device: torch.device = None) -> Tensor:
-    batch_size = batch_sizes[0].item()
+    b = batch_sizes[0].item()
 
-    batch_ptr = torch.arange(batch_size, dtype=batch_sizes.dtype, device=batch_sizes.device)
+    batch_ptr = torch.arange(b, dtype=batch_sizes.dtype, device=batch_sizes.device)
     if total_length is not None:
         batch_sizes = resize_sizes(batch_sizes, n=total_length)
 
@@ -86,17 +93,6 @@ def token_sizes_to_batch_sizes(lengths: Tensor, total_length: int = None,
     return token_sizes_to_mask(
         lengths, batch_first=False, total_length=total_length, dtype=dtype, device=device,
     ).sum(dim=1)
-
-
-@torch.no_grad()
-def lengths_to_sorting_indices(lengths: Tensor, dtype: torch.dtype = torch.long,
-                               device: torch.device = None) -> Tuple[Tensor, Tensor]:
-    sorted_indices = lengths.argsort(dim=0, descending=True)
-    unsorted_indices = invert_permutation(sorted_indices)
-
-    if device is None:
-        device = lengths.device
-    return sorted_indices.to(dtype=dtype, device=device), unsorted_indices.to(dtype=dtype, device=device)
 
 
 @torch.no_grad()

@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import pad_sequence, pad_packed_sequence
 from tests.strategies import list_of_sentences
 from tests.utils import assert_equal
 from torchrua import packed_sequence_to_mask, token_sizes_to_mask, packed_sequence_to_token_sizes, token_sizes_to_batch_sizes, \
-    lengths_to_sorting_indices
+    sizes_to_sorting_indices
 
 
 @given(
@@ -47,7 +47,7 @@ def test_packed_sequence_to_mask(sentences, unsort, batch_first):
 def test_lengths_to_batch_sizes(sentences):
     lengths = torch.tensor([s.size(0) for s in sentences], dtype=torch.long, device=sentences[0].device)
     batch_sizes = token_sizes_to_batch_sizes(lengths=lengths, device=torch.device('cpu'))
-    sorted_indices, unsorted_indices = lengths_to_sorting_indices(lengths=lengths, device=sentences[0].device)
+    sorted_indices, unsorted_indices = sizes_to_sorting_indices(sizes=lengths, device=sentences[0].device)
     sorted_sentences = pad_sequence([
         sentences[sorted_index]
         for sorted_index in sorted_indices.detach().cpu().tolist()
