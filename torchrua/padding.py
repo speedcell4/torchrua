@@ -36,6 +36,8 @@ def pad_packed_sequence(sequence: PackedSequence,
         token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
         if sequence.sorted_indices is not None:
             batch_ptr = sequence.sorted_indices[batch_ptr]
+        if sequence.unsorted_indices is not None:
+            token_sizes = token_sizes[sequence.unsorted_indices]
 
     if batch_first:
         tensor = torch.full(
