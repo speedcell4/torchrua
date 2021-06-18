@@ -2,7 +2,7 @@ from typing import List, Optional
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
+from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 from torchrua.catting import cat_sequence
 from torchrua.indexing import token_sizes_to_ptr
@@ -49,17 +49,18 @@ def pack_catted_sequence(sequence: Tensor, token_sizes: Tensor) -> PackedSequenc
         device = sequence.device
         token_sizes = token_sizes.to(device=device)
 
-        sorted_indices, unsorted_indices = sizes_to_sorting_indices(sizes=token_sizes)
+        sorted_token_sizes, sorted_indices = torch.sort(token_sizes, dim=0, descending=True)
+        unsorted_indices = invert_permutation(permutation=sorted_indices)
         token_ptr, batch_ptr, batch_sizes = token_sizes_to_ptr(
-            token_sizes=token_sizes,
+            token_sizes=sorted_token_sizes,
             batch_ptr=sorted_indices,
         )
 
         acc_token_sizes = accumulate_sizes(sizes=token_sizes)
-        index = acc_token_sizes[batch_ptr] + token_ptr
+        indices = acc_token_sizes[batch_ptr] + token_ptr
 
     return PackedSequence(
-        data=sequence[index],
+        data=sequence[indices],
         batch_sizes=batch_sizes.detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,

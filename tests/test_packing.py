@@ -1,42 +1,29 @@
 import torch
 from hypothesis import given, strategies as st
-from torch.nn.utils.rnn import pad_packed_sequence as pad_packed_sequence_naive
-from torch.nn.utils.rnn import pad_sequence, pack_sequence
+from torch.nn.utils import rnn as tgt
 
-from tests.strategies import list_of_sentences
-from tests.utils import assert_equal
-from torchrua import pack_padded_sequence
-from torchrua.padding import pad_packed_sequence
+from tests.strategies import token_size_lists, embedding_dims, devices
+from tests.utils import assert_close, assert_equal
+from torchrua import packing as rua
 
 
 @given(
-    sentences_and_lengths=list_of_sentences(return_lengths=True),
-    batch_first=st.booleans(),
+    data=st.data(),
+    token_sizes=token_size_lists(),
+    dim=embedding_dims(),
+    device=devices(),
 )
-def test_pack_padded_sequence(sentences_and_lengths, batch_first):
-    sentences, lengths = sentences_and_lengths
-    lengths = torch.tensor(lengths, dtype=torch.long, device=sentences[0].device)
+def test_cat_packed_sequence(data, token_sizes, dim, device):
+    sequences = [torch.randn((length, dim), device=device) for length in token_sizes]
 
-    y = pad_sequence(sentences, batch_first=batch_first)
-    x = pack_padded_sequence(y, token_sizes=lengths, batch_first=batch_first, enforce_sorted=False)
-    x, _ = pad_packed_sequence_naive(x, batch_first=batch_first)
+    print(f'token_sizes => {token_sizes}')
 
-    assert_equal(x, y)
+    pack_tgt = tgt.pack_sequence(sequences, enforce_sorted=False)
+    pack_prd = rua.pack_sequence(sequences, device=device)
 
-
-@given(
-    sentences_and_lengths=list_of_sentences(return_lengths=True),
-    batch_first=st.booleans(),
-)
-def test_pack_padded_sequence(sentences_and_lengths, batch_first):
-    sentences, lengths = sentences_and_lengths
-
-    x_lengths = torch.tensor(lengths, dtype=torch.long, device=torch.device('cpu'))
-
-    pack = pack_sequence(sentences, enforce_sorted=False)
-    y_data, y_lengths = pad_packed_sequence(pack, batch_first=batch_first)
-
-    x_data = pad_sequence(sentences, batch_first=batch_first)
-
-    assert_equal(x_data, y_data)
-    assert_equal(x_lengths, y_lengths)
+    assert_close(pack_tgt.data, pack_prd.data)
+    assert_equal(pack_tgt.batch_sizes, pack_prd.batch_sizes)
+    if pack_tgt.sorted_indices is not None:
+        assert_equal(pack_tgt.sorted_indices, pack_prd.sorted_indices)
+    if pack_tgt.sorted_indices is not None:
+        assert_equal(pack_tgt.unsorted_indices, pack_prd.unsorted_indices)

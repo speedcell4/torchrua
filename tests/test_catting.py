@@ -9,35 +9,35 @@ from torchrua import catting as rua
 
 @given(
     data=st.data(),
-    lengths=token_size_lists(),
+    token_sizes=token_size_lists(),
     dim=embedding_dims(),
     device=devices(),
 )
-def test_cat_packed_sequence(data, lengths, dim, device):
-    sequences = [torch.randn((length, dim), device=device).mul(10).long() for length in lengths]
+def test_cat_packed_sequence(data, token_sizes, dim, device):
+    sequences = [torch.randn((length, dim), device=device) for length in token_sizes]
 
-    data_tgt, lengths_tgt = rua.cat_sequence(sequences, device=device)
-    data_prd, lengths_prd = rua.cat_packed_sequence(
+    data_tgt, token_sizes_tgt = rua.cat_sequence(sequences, device=device)
+    data_prd, token_sizes_prd = rua.cat_packed_sequence(
         tgt.pack_sequence(sequences, enforce_sorted=False), device=device)
 
     assert_close(data_tgt, data_prd)
-    assert_equal(lengths_tgt, lengths_prd)
+    assert_equal(token_sizes_tgt, token_sizes_prd)
 
 
 @given(
     data=st.data(),
-    lengths=token_size_lists(),
+    token_sizes=token_size_lists(),
     dim=embedding_dims(),
     batch_first=st.booleans(),
     device=devices(),
 )
-def test_cat_padded_sequence(data, lengths, dim, batch_first, device):
-    sequences = [torch.randn((length, dim), device=device).mul(10).long() for length in lengths]
+def test_cat_padded_sequence(data, token_sizes, dim, batch_first, device):
+    sequences = [torch.randn((length, dim), device=device) for length in token_sizes]
 
-    data_tgt, lengths_tgt = rua.cat_sequence(sequences, device=device)
+    data_tgt, token_sizes_tgt = rua.cat_sequence(sequences, device=device)
     pad = tgt.pad_sequence(sequences, batch_first=batch_first)
-    token_sizes = torch.tensor(lengths, device=device)
-    data_prd, lengths_prd = rua.cat_padded_sequence(pad, token_sizes, batch_first=batch_first, device=device)
+    token_sizes = torch.tensor(token_sizes, device=device)
+    data_prd, token_sizes_prd = rua.cat_padded_sequence(pad, token_sizes, batch_first=batch_first, device=device)
 
     assert_close(data_tgt, data_prd)
-    assert_equal(lengths_tgt, lengths_prd)
+    assert_equal(token_sizes_tgt, token_sizes_prd)
