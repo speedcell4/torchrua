@@ -14,7 +14,7 @@ from torchrua import packing as rua
     device=devices(),
 )
 def test_pack_sequence(data, token_sizes, dim, device):
-    sequences = [torch.randn((length, dim), device=device) for length in token_sizes]
+    sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
 
     pack_tgt = tgt.pack_sequence(sequences, enforce_sorted=False)
     pack_prd = rua.pack_sequence(sequences, device=device)
@@ -35,7 +35,7 @@ def test_pack_sequence(data, token_sizes, dim, device):
     device=devices(),
 )
 def test_pack_padded_sequence(data, token_sizes, dim, batch_first, device):
-    sequences = [torch.randn((length, dim), device=device) for length in token_sizes]
+    sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
 
     pack_tgt = tgt.pack_sequence(sequences, enforce_sorted=False)
     pack_prd = rua.pack_padded_sequence(

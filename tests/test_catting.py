@@ -14,7 +14,7 @@ from torchrua import catting as rua
     device=devices(),
 )
 def test_cat_packed_sequence(data, token_sizes, dim, device):
-    sequences = [torch.randn((length, dim), device=device) for length in token_sizes]
+    sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
 
     data_tgt, token_sizes_tgt = rua.cat_sequence(sequences, device=device)
     data_prd, token_sizes_prd = rua.cat_packed_sequence(
@@ -32,7 +32,7 @@ def test_cat_packed_sequence(data, token_sizes, dim, device):
     device=devices(),
 )
 def test_cat_padded_sequence(data, token_sizes, dim, batch_first, device):
-    sequences = [torch.randn((length, dim), device=device) for length in token_sizes]
+    sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
 
     data_tgt, token_sizes_tgt = rua.cat_sequence(sequences, device=device)
     pad = tgt.pad_sequence(sequences, batch_first=batch_first)
