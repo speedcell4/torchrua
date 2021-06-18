@@ -12,17 +12,17 @@ def devices(draw):
 
 
 @st.composite
-def batch_sizes(draw, min_value: int = 1, max_value: int = 13):
+def batch_sizes(draw, min_value: int = 1, max_value: int = 47):
     return draw(st.integers(min_value=min_value, max_value=max_value))
 
 
 @st.composite
-def token_sizes(draw, min_value: int = 1, max_value: int = 17):
+def token_sizes(draw, min_value: int = 1, max_value: int = 47):
     return draw(st.integers(min_value=min_value, max_value=max_value))
 
 
 @st.composite
-def embedding_dims(draw, min_value: int = 1, max_value: int = 19):
+def embedding_dims(draw, min_value: int = 1, max_value: int = 47):
     return draw(st.integers(min_value=min_value, max_value=max_value))
 
 
