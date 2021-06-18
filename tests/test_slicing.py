@@ -4,7 +4,7 @@ from torch.nn.utils.rnn import pack_sequence, pad_packed_sequence
 
 from tests.strategies import token_size_lists, embedding_dims, devices, batch_sizes
 from tests.utils import assert_equal, assert_close
-from torchrua.joining import stack_packed_sequence
+from torchrua.joining import stack_packed_sequences
 from torchrua.slicing import chunk_packed_sequence
 
 
@@ -25,7 +25,7 @@ def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batc
         for _ in range(batch_size)
     ]
     prd = chunk_packed_sequence(
-        sequence=stack_packed_sequence(sequences=sequences, dim=dim),
+        sequence=stack_packed_sequences(sequences=sequences, dim=dim),
         chunks=len(sequences), dim=dim,
     )
 

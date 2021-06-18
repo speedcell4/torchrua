@@ -7,11 +7,12 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
 
 __all__ = [
-    'stack_packed_sequence', 'stack_data', 'stack_indices_dim0', 'stack_indices_dim1',
+    'stack_packed_sequences', 'stack_data',
+    'stack_indices_dim0', 'stack_indices_dim1',
 ]
 
 
-def stack_packed_sequence(sequences: List[PackedSequence], dim: int) -> PackedSequence:
+def stack_packed_sequences(sequences: List[PackedSequence], dim: int) -> PackedSequence:
     batch_sizes, sorted_indices, unsorted_indices = [
         stack_indices_dim0, stack_indices_dim1,
     ][dim](sequence=sequences[0], chunks=len(sequences))
