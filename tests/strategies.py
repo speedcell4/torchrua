@@ -12,20 +12,23 @@ def devices(draw):
 
 
 @st.composite
-def batch_sizes(draw, min_value: int = 1, max_value: int = 47):
-    return draw(st.integers(min_value=min_value, max_value=max_value))
+def batch_sizes(draw, max_value: int = 23):
+    return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def token_sizes(draw, min_value: int = 1, max_value: int = 47):
-    return draw(st.integers(min_value=min_value, max_value=max_value))
+def token_sizes(draw, max_value: int = 29):
+    return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def embedding_dims(draw, min_value: int = 1, max_value: int = 47):
-    return draw(st.integers(min_value=min_value, max_value=max_value))
+def embedding_dims(draw, max_value: int = 31):
+    return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def token_size_lists(draw):
-    return [draw(token_sizes()) for _ in range(draw(batch_sizes()))]
+def token_size_lists(draw, max_token_size: int = 29, max_batch_size: int = 23):
+    return [
+        draw(token_sizes(max_value=max_token_size))
+        for _ in range(draw(batch_sizes(max_value=max_batch_size)))
+    ]
