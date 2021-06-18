@@ -50,57 +50,41 @@ class TreeReductionIndices(NamedTuple):
 
 
 @torch.no_grad()
-def tree_reduction_indices(batch_sizes: Tensor, device: Optional[torch.device]) -> TreeReductionIndices:
-    if device is not None:
-        device = batch_sizes.device
+def tree_reduction_indices(batch_sizes: Tensor) -> TreeReductionIndices:
+    token_ptr1, batch_ptr1, token_sizes1 = batch_sizes_to_ptr(batch_sizes=batch_sizes)
+    offsets = torch.zeros_like(token_sizes1)
+    acc_batch_sizes1 = accumulate_sizes(sizes=batch_sizes)
 
-    _, _, lengths = batch_sizes_to_ptr(
-        batch_sizes=batch_sizes,
-        sorted_indices=None,
-        unsorted_indices=None,
-        total_length=None, device=device,
-    )
-    offsets = torch.zeros_like(lengths)
-    acc_batch_sizes1 = accumulate_sizes(batch_sizes)
-
-    lengths2 = lengths * 2 - 1
-    batch_ptr2, token_ptr2, batch_sizes2 = token_sizes_to_ptr(
-        token_sizes=lengths2,
-        sorted_indices=None,
-        device=device,
-    )
-    acc_batch_sizes2 = accumulate_sizes(batch_sizes2)
+    token_sizes2 = token_sizes1 * 2 - 1
+    token_ptr2, batch_ptr2, batch_sizes2 = token_sizes_to_ptr(token_sizes=token_sizes2)
+    acc_batch_sizes2 = accumulate_sizes(sizes=batch_sizes2)
 
     mask = torch.ones_like(token_ptr2, dtype=torch.bool)
-    offs = torch.zeros_like(mask, dtype=torch.long)
-    last = acc_batch_sizes2[lengths2 - 1] + batch_ptr2[:batch_sizes2[0]]
+    last = acc_batch_sizes2[token_sizes2 - 1] + batch_ptr2[:batch_sizes2[0]]
 
-    base = 2 ** torch.arange(torch.iinfo(lengths.dtype).bits - 1)
+    base = 2 ** torch.arange(torch.iinfo(token_sizes1.dtype).bits - 1)
     acc_base = F.pad(base.cumsum(dim=0), [1, -1])
-    clamp_lengths = (lengths2[:, None] - acc_base[None, :]).clamp_min(0).min(base)
-    clamp_lengths = clamp_lengths[:, 1:clamp_lengths.any(dim=0).long().sum()].flip(dims=[-1])
+    activate_sizes = (token_sizes2[:, None] - acc_base[None, :]).clamp_min(0).min(base)
+    activate_sizes = activate_sizes[:, 1:activate_sizes.any(dim=0).long().sum()].flip(dims=[-1])
 
     xs, ys, zs = [], [], []
-    for i in range(clamp_lengths.size()[1]):
-        clamp_lengths_i = clamp_lengths[:, i]
-        batch_ptr, token_ptr, _ = token_sizes_to_ptr(clamp_lengths_i // 2, sorted_indices=None, device=device)
+    for i in range(activate_sizes.size()[1]):
+        activate_size = activate_sizes[:, i]
+        token_ptr, batch_ptr, _ = token_sizes_to_ptr(token_sizes=activate_size // 2)
         base_ptr = offsets[batch_ptr] + token_ptr
 
-        x = acc_batch_sizes2[base_ptr + token_ptr + 0] + batch_ptr
+        x = acc_batch_sizes2[base_ptr + token_ptr] + batch_ptr
         y = acc_batch_sizes2[base_ptr + token_ptr + 1] + batch_ptr
-        z = acc_batch_sizes2[base_ptr + clamp_lengths_i[batch_ptr]] + batch_ptr
+        z = acc_batch_sizes2[base_ptr + activate_size[batch_ptr]] + batch_ptr
         xs.append(x)
         ys.append(y)
         zs.append(z)
 
-        offs = torch.scatter(offs, dim=0, index=x, src=offsets[batch_ptr])
-        offs = torch.scatter(offs, dim=0, index=y, src=offsets[batch_ptr])
-        mask = torch.scatter(mask, dim=0, index=z, value=False)
-        offsets = offsets + clamp_lengths_i
+        mask[z] = False
+        offsets = offsets + activate_size
 
     batch_ptr2 = batch_ptr2[mask]
     token_ptr2 = token_ptr2[mask]
-    token_ptr1 = token_ptr2 - offs[mask] // 2
 
     head1 = acc_batch_sizes1[token_ptr1] + batch_ptr2
     head2 = acc_batch_sizes2[token_ptr2] + batch_ptr2
@@ -120,7 +104,7 @@ def tree_reduce_packed_sequence(fn: Callable[[Tensor, Tensor], Tensor]):
         assert tensor.size()[0] == head.size()[0], f'{tensor.size()[0]} != {head.size()[0]}'
 
         data = torch.empty(
-            (last.max().item() + 1, *tensor.size()[1:]),
+            (tensor.size()[0] * 2 - last.size()[0], *tensor.size()[1:]),
             dtype=tensor.dtype, device=tensor.device, requires_grad=False,
         )
 
