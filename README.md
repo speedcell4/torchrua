@@ -239,7 +239,7 @@ If you have several `PackedSequence`s of exactly the same shape, then you can `c
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import cat_packed_sequences, stack_packed_sequences
+from torchrua import cat_packed_sequences, stack_packed_sequence
 from torchrua.padding import pad_packed_sequence
 
 x1 = pack_sequence([
@@ -262,7 +262,7 @@ x3 = pack_sequence([
 
 y = cat_packed_sequences([x1, x2, x3])
 
-z = stack_packed_sequences([x1, x2, x3])
+z = stack_packed_sequence([x1, x2, x3])
 
 x1, _ = pad_packed_sequence(x1, batch_first=True)
 print(x1)
