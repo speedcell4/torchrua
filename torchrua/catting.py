@@ -29,10 +29,11 @@ def cat_packed_sequence(sequence: PackedSequence, device: Optional[torch.device]
             device = sequence.data.device
 
         batch_sizes = sequence.batch_sizes.to(device=device)
-        acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
         batch_ptr, token_ptr, token_sizes = token_sizes_to_ptr(
-            token_sizes=batch_sizes, token_ptr=sequence.sorted_indices,
+            token_sizes=batch_sizes,
+            token_ptr=sequence.unsorted_indices,
         )
+        acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
         indices = acc_batch_sizes[token_ptr] + batch_ptr
 

@@ -1,15 +1,13 @@
 import torch
 from torch import Tensor
 
-from tests.strategies import ATOL, RTOL
+RTOL = 1e-5
+ATOL = 1e-5
 
 
-def assert_equal(lhs: Tensor, rhs: Tensor) -> None:
-    if lhs.dtype == torch.float32 and rhs.dtype == torch.float32:
-        assert torch.allclose(lhs, rhs, rtol=RTOL, atol=ATOL), f'{lhs.contiguous().view(-1)} != {rhs.contiguous().view(-1)}'
-    elif lhs.dtype == torch.long and rhs.dtype == torch.long:
-        assert torch.equal(lhs, rhs), f'{lhs.contiguous().view(-1)} != {rhs.contiguous().view(-1)}'
-    elif lhs.dtype == torch.bool and rhs.dtype == torch.bool:
-        assert torch.equal(lhs, rhs), f'{lhs.contiguous().view(-1)} != {rhs.contiguous().view(-1)}'
-    else:
-        raise NotImplementedError
+def assert_equal(x: Tensor, y: Tensor) -> None:
+    assert torch.equal(x, y), f'{x} != {y}'
+
+
+def assert_close(x: Tensor, y: Tensor) -> None:
+    assert torch.allclose(x, y, rtol=RTOL, atol=ATOL), f'{x} != {y}'
