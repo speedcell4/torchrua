@@ -12,7 +12,8 @@ from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'reduce_catted_sequences',
-    'tree_reduction_indices', 'tree_reduce_packed_sequence',
+    'tree_reduction_indices',
+    'tree_reduce_packed_sequence',
 ]
 
 
@@ -21,22 +22,22 @@ def reduce_catted_sequences(sequences: List[Tuple[Tensor, Tensor]],
     if device is None:
         device = sequences[0][0].device
 
-    data, length1, length2 = zip(*[
-        (sequence, lengths, lengths.size()[0])
-        for sequence, lengths in sequences
+    sequence, token_sizes, batch_sizes = zip(*[
+        (sequence, token_sizes, token_sizes.size()[0])
+        for sequence, token_sizes in sequences
     ])
-    data = torch.cat(data, dim=0).to(device=device)
-    length1 = torch.cat(length1, dim=0).to(device=device)
-    length2 = torch.tensor(length2, dtype=torch.long, device=device)
+    sequence = torch.cat(sequence, dim=0).to(device=device)
+    token_sizes = torch.cat(token_sizes, dim=0).to(device=device)
+    batch_sizes = torch.tensor(batch_sizes, dtype=torch.long, device=device)
 
-    data_pack = pack_catted_sequence(sequence=data, token_sizes=length1)
-    indices_pack = pack_catted_sequence(sequence=data_pack.unsorted_indices, token_sizes=length2)
+    sequence = pack_catted_sequence(sequence=sequence, token_sizes=token_sizes)
+    sorting_indices = pack_catted_sequence(sequence=sequence.unsorted_indices, token_sizes=batch_sizes)
 
     return PackedSequence(
-        data=data_pack.data,
-        batch_sizes=data_pack.batch_sizes,
-        sorted_indices=invert_permutation(indices_pack.data),
-        unsorted_indices=indices_pack.data,
+        data=sequence.data,
+        batch_sizes=sequence.batch_sizes,
+        sorted_indices=invert_permutation(sorting_indices.data),
+        unsorted_indices=sorting_indices.data,
     )
 
 
