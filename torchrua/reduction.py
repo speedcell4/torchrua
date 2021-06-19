@@ -52,14 +52,14 @@ class TreeReductionIndices(NamedTuple):
 @torch.no_grad()
 def tree_reduction_indices(batch_sizes: Tensor) -> TreeReductionIndices:
     batch_ptr1, token_ptr1, token_sizes1 = token_sizes_to_ptr(token_sizes=batch_sizes)
-    offsets = torch.zeros_like(token_sizes1)
     acc_batch_sizes1 = accumulate_sizes(sizes=batch_sizes)
 
     token_sizes2 = token_sizes1 * 2 - 1
-    batch_ptr2, token_ptr2, batch_sizes2 = batch_sizes_to_ptr(batch_sizes=token_sizes2)
+    _, token_ptr2, _ = batch_sizes_to_ptr(batch_sizes=token_sizes2)
     acc_token_sizes2 = token_sizes2.cumsum(dim=0)
     last = acc_token_sizes2 - 1
     acc_token_sizes2 = F.pad(acc_token_sizes2, [1, -1])
+    offsets = acc_token_sizes2.clone()
     mask = torch.ones_like(token_ptr2, dtype=torch.bool)
 
     base = 2 ** torch.arange(torch.iinfo(token_sizes1.dtype).bits - 1)
@@ -71,7 +71,7 @@ def tree_reduction_indices(batch_sizes: Tensor) -> TreeReductionIndices:
     for i in range(act_sizes.size()[1] - 1, -1, -1):
         activate_size = act_sizes[:, i]
         token_ptr, batch_ptr, _ = token_sizes_to_ptr(token_sizes=activate_size // 2)
-        base_ptr = offsets[batch_ptr] + acc_token_sizes2[batch_ptr] + token_ptr
+        base_ptr = offsets[batch_ptr] + token_ptr
 
         x = base_ptr + token_ptr
         z = base_ptr + activate_size[batch_ptr]

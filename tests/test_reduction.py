@@ -19,10 +19,10 @@ def test_tree_reduce_packed_sequence(data, token_sizes, dim, device):
         for token_size in token_sizes
     ]
 
-    pack = pack_sequence(sequences, enforce_sorted=False)
-    reduction_indices = tree_reduction_indices(batch_sizes=pack.batch_sizes.to(device=device))
-    prd = tree_reduce_packed_sequence(torch.add)(pack.data, reduction_indices=reduction_indices)
+    packed_sequence = pack_sequence(sequences, enforce_sorted=False)
+    reduction_indices = tree_reduction_indices(batch_sizes=packed_sequence.batch_sizes.to(device=device))
+    prediction = tree_reduce_packed_sequence(torch.add)(packed_sequence.data, reduction_indices=reduction_indices)
 
-    tgt = pad_sequence(sequences, batch_first=False).sum(dim=0)[pack.sorted_indices]
+    target = pad_sequence(sequences, batch_first=False).sum(dim=0)[packed_sequence.sorted_indices]
 
-    assert_close(prd, tgt)
+    assert_close(prediction, target)

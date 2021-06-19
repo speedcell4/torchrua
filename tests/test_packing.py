@@ -16,10 +16,10 @@ from torchrua import packing as rua
 def test_pack_sequence(data, token_sizes, dim, device):
     sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
 
-    pack_tgt = tgt.pack_sequence(sequences, enforce_sorted=False)
-    pack_prd = rua.pack_sequence(sequences, device=device)
+    target = tgt.pack_sequence(sequences, enforce_sorted=False)
+    prediction = rua.pack_sequence(sequences, device=device)
 
-    assert_packed_close(pack_tgt, pack_prd)
+    assert_packed_close(target, prediction)
 
 
 @given(
@@ -34,7 +34,7 @@ def test_pack_padded_sequence(data, token_sizes, dim, batch_first, device):
     padded_sequence = tgt.pad_sequence(sequences, batch_first=batch_first)
     token_sizes = torch.tensor(token_sizes, device=device)
 
-    pack_tgt = tgt.pack_sequence(sequences, enforce_sorted=False)
-    pack_prd = rua.pack_padded_sequence(padded_sequence, token_sizes, batch_first=batch_first)
+    pack_target = tgt.pack_sequence(sequences, enforce_sorted=False)
+    pack_prediction = rua.pack_padded_sequence(padded_sequence, token_sizes, batch_first=batch_first)
 
-    assert_packed_close(pack_tgt, pack_prd)
+    assert_packed_close(pack_target, pack_prediction)
