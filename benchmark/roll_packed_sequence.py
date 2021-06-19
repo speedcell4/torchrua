@@ -24,7 +24,7 @@ def roll_pack(num_examples: int = 2400, batch_size: int = 32, offset: int = 1,
         )
 
         with rua_f:
-            y = roll_packed_sequence(pack, offset=offset).data
+            y = roll_packed_sequence(pack, shifts=offset).data
         with rua_b:
             y.sum().backward()
 
