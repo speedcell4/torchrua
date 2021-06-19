@@ -62,7 +62,7 @@ def tree_reduction_indices(batch_sizes: Tensor) -> TreeReductionIndices:
     offsets = acc_token_sizes2.clone()
     mask = torch.ones_like(token_ptr2, dtype=torch.bool)
 
-    base = 2 ** torch.arange(torch.iinfo(token_sizes1.dtype).bits - 1)
+    base = 2 ** torch.arange(torch.iinfo(token_sizes1.dtype).bits - 1, device=batch_sizes.device)
     acc_base = F.pad(base.cumsum(dim=0), [1, -1])
     act_sizes = (token_sizes2[:, None] - acc_base[None, :]).clamp_min(0).min(base)
     act_sizes = act_sizes[:, 1:act_sizes.any(dim=0).long().sum()]
