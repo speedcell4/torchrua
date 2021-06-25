@@ -39,7 +39,7 @@ class TimerSuit(object):
 
             naive_forward = self.naive_forward.averaged_seconds
             naive_backward = self.naive_backward.averaged_seconds
-            print(f'PyTorch ({naive_forward + naive_backward :.4f}) = {naive_forward:.4f} + {naive_backward :.4f}')
+            print(f'PyTorch  ({naive_forward + naive_backward :.4f}) = {naive_forward:.4f} + {naive_backward :.4f}')
         else:
             rua_compile = self.rua_compile.averaged_seconds
             rua_forward = self.rua_forward.averaged_seconds
@@ -54,10 +54,11 @@ class TimerSuit(object):
 
 
 def timeit(fn):
-    def _timeit(func: Type[fn], num_runs: int = 241):
+    def _timeit(func: Type[fn], num_runs: int = 100):
         timer = TimerSuit()
         for _ in range(num_runs):
             func(timer=timer)
         timer.report()
 
+    _timeit.__name__ = fn.__name__
     return _timeit
