@@ -27,6 +27,7 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
         ]
         for _ in batch_sizes
     ]
+    flatten_sequences = [token for sequence in sequences for token in sequence]
     catted_sequences = [cat_sequence(sequence, device=device) for sequence in sequences]
     packed_sequences = [pack_sequence(sequence, device=device) for sequence in sequences]
 
@@ -47,6 +48,19 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
     target = pack_sequence(target).data
 
     assert_close(prediction, target)
+
+    prediction_grad = torch.autograd.grad(
+        prediction, flatten_sequences, torch.ones_like(prediction),
+        create_graph=False,
+    )
+
+    target_grad = torch.autograd.grad(
+        target, flatten_sequences, torch.ones_like(target),
+        create_graph=False,
+    )
+
+    for p, t in zip(prediction_grad, target_grad):
+        assert_close(p, t)
 
 
 @given(
