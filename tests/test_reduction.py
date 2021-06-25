@@ -1,14 +1,14 @@
 import torch
+from einops import rearrange
 from hypothesis import given, strategies as st
 from torch import nn
 from torch.nn.utils import rnn as tgt
 
 from tests.strategies import token_size_lists, embedding_dims, devices, batch_size_lists, TINY_BATCH_SIZE, \
     TINY_TOKEN_SIZE
-from tests.utils import assert_close
+from tests.utils import assert_close, assert_grad_close
 from torchrua import cat_sequence, pack_sequence
 from torchrua import reduction as rua
-from einops import rearrange
 
 
 @given(
@@ -48,19 +48,7 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
     target = pack_sequence(target).data
 
     assert_close(prediction, target)
-
-    prediction_grad = torch.autograd.grad(
-        prediction, flatten_sequences, torch.ones_like(prediction),
-        create_graph=False,
-    )
-
-    target_grad = torch.autograd.grad(
-        target, flatten_sequences, torch.ones_like(target),
-        create_graph=False,
-    )
-
-    for p, t in zip(prediction_grad, target_grad):
-        assert_close(p, t)
+    assert_grad_close(prediction, target, flatten_sequences)
 
 
 @given(
@@ -82,3 +70,4 @@ def test_tree_reduce_packed_sequence(data, token_sizes, dim, device):
     target = tgt.pad_sequence(sequences, batch_first=False).sum(dim=0)[packed_sequence.sorted_indices]
 
     assert_close(prediction, target)
+    assert_grad_close(prediction, target, inputs=sequences)

@@ -1,3 +1,5 @@
+from typing import List, Tuple, Union
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, pad_packed_sequence
@@ -35,3 +37,41 @@ def assert_packed_close(x: PackedSequence, y: PackedSequence) -> None:
 
     assert_close(data_x, data_y)
     assert_equal(token_sizes_x, token_sizes_y)
+
+
+def assert_grad_close(prediction: Tensor, target: Tensor, inputs: Union[List[Tensor], Tuple[Tensor, ...]]) -> None:
+    grad = torch.rand_like(prediction)
+
+    prediction = torch.autograd.grad(
+        prediction, inputs, grad,
+        create_graph=False,
+    )
+
+    target = torch.autograd.grad(
+        target, inputs, grad,
+        create_graph=False,
+    )
+
+    for grad_p, grad_t in zip(prediction, target):
+        assert_close(grad_p, grad_t)
+
+
+def assert_packed_grad_close(prediction: PackedSequence, target: PackedSequence,
+                             inputs: Union[List[Tensor], Tuple[Tensor, ...]]) -> None:
+    prediction, _ = pad_packed_sequence(prediction)
+    target, _ = pad_packed_sequence(target)
+
+    grad = torch.rand_like(prediction)
+
+    prediction = torch.autograd.grad(
+        prediction, inputs, grad,
+        create_graph=False,
+    )
+
+    target = torch.autograd.grad(
+        target, inputs, grad,
+        create_graph=False,
+    )
+
+    for grad_p, grad_t in zip(prediction, target):
+        assert_close(grad_p, grad_t)

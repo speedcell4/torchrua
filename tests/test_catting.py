@@ -3,7 +3,7 @@ from hypothesis import given, strategies as st
 from torch.nn.utils import rnn as tgt
 
 from tests.strategies import token_size_lists, embedding_dims, devices
-from tests.utils import assert_close, assert_equal
+from tests.utils import assert_close, assert_equal, assert_grad_close
 from torchrua import catting as rua
 
 
@@ -14,7 +14,7 @@ from torchrua import catting as rua
     device=devices(),
 )
 def test_cat_packed_sequence(data, token_sizes, dim, device):
-    sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
+    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
     packed_sequence = tgt.pack_sequence(sequences, enforce_sorted=False)
 
     data_target, token_sizes_target = rua.cat_sequence(sequences, device=device)
@@ -22,6 +22,7 @@ def test_cat_packed_sequence(data, token_sizes, dim, device):
 
     assert_close(data_target, data_prediction)
     assert_equal(token_sizes_target, token_sizes_prediction)
+    assert_grad_close(data_target, data_prediction, inputs=sequences)
 
 
 @given(
@@ -32,7 +33,7 @@ def test_cat_packed_sequence(data, token_sizes, dim, device):
     device=devices(),
 )
 def test_cat_padded_sequence(data, token_sizes, dim, batch_first, device):
-    sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
+    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
     padded_sequence = tgt.pad_sequence(sequences, batch_first=batch_first)
     token_sizes = torch.tensor(token_sizes, device=device)
 
@@ -42,3 +43,4 @@ def test_cat_padded_sequence(data, token_sizes, dim, batch_first, device):
 
     assert_close(data_target, data_prediction)
     assert_equal(token_sizes_target, token_sizes_prediction)
+    assert_grad_close(data_target, data_prediction, inputs=sequences)

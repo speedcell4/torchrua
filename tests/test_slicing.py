@@ -19,7 +19,7 @@ from torchrua.slicing import chunk_packed_sequence
 def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batch_first, device):
     target = sequences = [
         pack_sequence([
-            torch.randn((token_size, embedding_dim), device=device)
+            torch.randn((token_size, embedding_dim), device=device, requires_grad=True)
             for token_size in token_sizes
         ], enforce_sorted=False)
         for _ in range(batch_size)
@@ -30,8 +30,8 @@ def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batc
     )
 
     for t, p in zip(target, prediction):
-        data_target, token_sizes_target = pad_packed_sequence(t, batch_first=batch_first)
         data_prediction, token_sizes_prediction = pad_packed_sequence(p, batch_first=batch_first)
+        data_target, token_sizes_target = pad_packed_sequence(t, batch_first=batch_first)
 
-        assert_close(data_target, data_prediction)
-        assert_equal(token_sizes_target, token_sizes_prediction)
+        assert_close(data_prediction, data_target)
+        assert_equal(token_sizes_prediction, token_sizes_target)
