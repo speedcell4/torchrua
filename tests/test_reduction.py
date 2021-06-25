@@ -27,6 +27,8 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
         ]
         for _ in batch_sizes
     ]
+    catted_sequences = [cat_sequence(sequence, device=device) for sequence in sequences]
+    packed_sequences = [pack_sequence(sequence, device=device) for sequence in sequences]
 
     rnn = nn.LSTM(
         input_size=in_dim,
@@ -34,16 +36,13 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
         bidirectional=True, bias=True,
     ).to(device=device)
 
-    reduction_pack = rua.reduce_catted_sequences([
-        cat_sequence(sequence, device=device)
-        for sequence in sequences
-    ], device=device)
+    reduction_pack = rua.reduce_catted_sequences(catted_sequences, device=device)
     _, (prediction, _) = rnn(reduction_pack)
     prediction = rearrange(prediction, 'd n x -> n (d x)')
 
     target = []
-    for sequence in sequences:
-        _, (t, _) = rnn(pack_sequence(sequence))
+    for pack in packed_sequences:
+        _, (t, _) = rnn(pack)
         target.append(rearrange(t, 'd n x -> n (d x)'))
     target = pack_sequence(target).data
 
