@@ -1,44 +1,63 @@
 from datetime import datetime
-
-import torch
-from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, pack_sequence, pad_sequence
+from typing import Type
 
 
 class Timer(object):
-    def __init__(self):
+    def __init__(self) -> None:
         super(Timer, self).__init__()
         self.seconds = 0
+        self.num_runs = 0
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.start_tm = datetime.now()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.seconds += (datetime.now() - self.start_tm).total_seconds()
+        self.num_runs += 1
         del self.start_tm
 
-
-def report_performance(rua_f, rua_b, naive_f, naive_b):
-    rua_f = rua_f.seconds
-    rua_b = rua_b.seconds
-    print(f'torchrua (sec) => {rua_f + rua_b:.4f} = {rua_f:.4f} (forward) + {rua_b:.4f} (backward)')
-
-    naive_f = naive_f.seconds
-    naive_b = naive_b.seconds
-    print(f'naive (sec) => {naive_f + naive_b:.4f} = {naive_f:.4f} (forward) + {naive_b:.4f} (backward)')
-
-    return (rua_f, rua_b), (naive_f, naive_b)
+    @property
+    def averaged_seconds(self) -> float:
+        return self.seconds / max(1, self.num_runs)
 
 
-def gen_pad(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:
-    return pad_sequence([
-        torch.randn((length, embedding_dim), dtype=torch.float32, device=device, requires_grad=True)
-        for length in lengths.detach().cpu().tolist()
-    ], batch_first=True)
+class TimerSuit(object):
+    def __init__(self) -> None:
+        super(TimerSuit, self).__init__()
+        self.rua_compile = Timer()
+        self.rua_forward = Timer()
+        self.rua_backward = Timer()
+
+        self.naive_forward = Timer()
+        self.naive_backward = Timer()
+
+    def report(self) -> None:
+        if self.rua_compile.num_runs == 0:
+            rua_forward = self.rua_forward.averaged_seconds
+            rua_backward = self.rua_backward.averaged_seconds
+            print(f'TorchRua ({rua_forward + rua_backward :.4f}) = {rua_forward:.4f} + {rua_backward :.4f}')
+
+            naive_forward = self.naive_forward.averaged_seconds
+            naive_backward = self.naive_backward.averaged_seconds
+            print(f'PyTorch ({naive_forward + naive_backward :.4f}) = {naive_forward:.4f} + {naive_backward :.4f}')
+        else:
+            rua_compile = self.rua_compile.averaged_seconds
+            rua_forward = self.rua_forward.averaged_seconds
+            rua_backward = self.rua_backward.averaged_seconds
+            print(f'TorchRua ({rua_compile + rua_forward + rua_backward :.4f}) = '
+                  f'{rua_compile:.4f} + {rua_forward:.4f} + {rua_backward :.4f}')
+
+            naive_forward = self.naive_forward.averaged_seconds
+            naive_backward = self.naive_backward.averaged_seconds
+            print(f'PyTorch  ({naive_forward + naive_backward :.4f}) = '
+                  f'         {naive_forward:.4f} + {naive_backward :.4f}')
 
 
-def gen_pack(lengths: Tensor, embedding_dim: int, device: torch.device) -> PackedSequence:
-    return pack_sequence([
-        torch.randn((length, embedding_dim), dtype=torch.float32, device=device, requires_grad=True)
-        for length in lengths.detach().cpu().tolist()
-    ], enforce_sorted=False)
+def timeit(fn):
+    def _timeit(func: Type[fn], num_runs: int = 241):
+        timer = TimerSuit()
+        for _ in range(num_runs):
+            func(timer=timer)
+        timer.report()
+
+    return _timeit
