@@ -2,17 +2,29 @@ import torch
 
 from hypothesis import strategies as st
 
-MAX_BATCH_SIZE = 24
-MAX_TOKEN_SIZE = 128
-MAX_EMBEDDING_DIM = 50
+if torch.cuda.is_available():
+    MAX_BATCH_SIZE = 120
+    TINY_BATCH_SIZE = 24
+
+    MAX_TOKEN_SIZE = 512
+    MAX_EMBEDDING_DIM = 100
+
+else:
+    MAX_BATCH_SIZE = 24
+    TINY_BATCH_SIZE = 24
+
+    MAX_TOKEN_SIZE = 128
+    MAX_EMBEDDING_DIM = 50
 
 
 @st.composite
 def devices(draw):
     if not torch.cuda.is_available():
-        return torch.device('cpu')
+        device = torch.device('cpu')
     else:
-        return torch.device('cuda:0')
+        device = torch.device('cuda:0')
+    _ = torch.empty((1,), device=device)
+    return device
 
 
 @st.composite

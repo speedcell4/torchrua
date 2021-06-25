@@ -33,7 +33,7 @@ def test_pad_sequence(data, token_sizes, dim, batch_first, device):
 def test_pad_packed_sequence(data, token_sizes, dim, batch_first, device):
     sequences = [torch.randn((token_size, dim), device=device) for token_size in token_sizes]
     packed_sequence = tgt.pack_sequence(sequences, enforce_sorted=False)
-    token_sizes_target = torch.tensor(token_sizes, device=device)
+    token_sizes_target = torch.tensor(token_sizes, device=torch.device('cpu'))
 
     pad_target = tgt.pad_sequence(sequences, batch_first=batch_first)
     pad_prediction, token_sizes_prediction = rua.pad_packed_sequence(packed_sequence, batch_first=batch_first)
