@@ -26,11 +26,17 @@ def resize_sizes(sizes: Tensor, n: int) -> Tensor:
 
 
 @torch.no_grad()
-def sizes_to_sorting_indices(sizes: Tensor, descending: bool = True) -> Tuple[Tensor, Tensor]:
-    sorted_indices = sizes.argsort(dim=0, descending=descending)
+def sizes_to_sorting_indices(sizes: Tensor, descending: bool = True,
+                             device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor, Tensor]:
+    if device is None:
+        device = sizes.device
+
+    sorted_sizes, sorted_indices = sizes.cpu().sort(dim=0, descending=descending)
+    sorted_sizes = sorted_sizes.to(device=device)
+    sorted_indices = sorted_indices.to(device=device)
     unsorted_indices = invert_permutation(sorted_indices)
 
-    return sorted_indices, unsorted_indices
+    return sorted_sizes, sorted_indices, unsorted_indices
 
 
 @torch.no_grad()

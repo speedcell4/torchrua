@@ -18,7 +18,7 @@ else:
     MAX_TOKEN_SIZE = 128
     TINY_TOKEN_SIZE = 12
 
-    MAX_EMBEDDING_DIM = 50
+    MAX_EMBEDDING_DIM = 25
 
 
 @st.composite
