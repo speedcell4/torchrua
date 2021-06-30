@@ -1,75 +1,62 @@
-from typing import List
-
 import torch
+
 from hypothesis import strategies as st
 
-RTOL = 1e-5
-ATOL = 1e-5
+if torch.cuda.is_available():
+    MAX_BATCH_SIZE = 120
+    TINY_BATCH_SIZE = 24
+
+    MAX_TOKEN_SIZE = 512
+    TINY_TOKEN_SIZE = 12
+
+    MAX_EMBEDDING_DIM = 100
+
+else:
+    MAX_BATCH_SIZE = 24
+    TINY_BATCH_SIZE = 24
+
+    MAX_TOKEN_SIZE = 128
+    TINY_TOKEN_SIZE = 12
+
+    MAX_EMBEDDING_DIM = 25
 
 
 @st.composite
 def devices(draw):
     if not torch.cuda.is_available():
-        return torch.device('cpu')
+        device = torch.device('cpu')
     else:
-        return torch.device('cuda:0')
+        device = torch.device('cuda:0')
+    _ = torch.empty((1,), device=device)
+    return device
 
 
 @st.composite
-def batch_size_integer(draw, max_value: int = 7):
+def batch_sizes(draw, max_value: int = MAX_BATCH_SIZE):
     return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def total_length_integer(draw, min_value: int = 1, max_value: int = 11):
-    return draw(st.integers(min_value=min_value, max_value=max_value))
-
-
-@st.composite
-def embedding_dim_integer(draw, max_value: int = 13):
-    return draw(st.integers(min_value=1, max_value=max_value))
-
-
-@st.composite
-def list_of_sentence_lengths(
-        draw, batch_size: int = None, min_value: int = 1, total_length: int = None):
-    if batch_size is None:
-        batch_size = draw(batch_size_integer())
-    if total_length is None:
-        total_length = draw(total_length_integer(min_value=min_value))
-    return torch.randint(min_value, total_length + 1, (batch_size,), dtype=torch.long, device=draw(devices()))
-
-
-@st.composite
-def list_of_sentences(
-        draw, embedding_dim: int = None, min_value: int = 1,
-        sentence_lengths: List[int] = None, *, return_lengths: bool = False):
-    if embedding_dim is None:
-        embedding_dim = draw(embedding_dim_integer())
-    if sentence_lengths is None:
-        sentence_lengths = draw(list_of_sentence_lengths(min_value=min_value)).detach().cpu().tolist()
-
-    sentences = [
-        torch.randn((length, embedding_dim), dtype=torch.float32, device=draw(devices()))
-        for index, length in enumerate(sentence_lengths)
-    ]
-    if not return_lengths:
-        return sentences
-    return sentences, sentence_lengths
-
-
-@st.composite
-def list_of_homo_lists_of_sentences(
-        draw, num: int = None, embedding_dim: int = None, min_value: int = 1,
-        sentence_lengths: List[int] = None):
-    if num is None:
-        num = draw(batch_size_integer())
-    if embedding_dim is None:
-        embedding_dim = draw(embedding_dim_integer())
-    if sentence_lengths is None:
-        sentence_lengths = draw(list_of_sentence_lengths(min_value=min_value)).detach().cpu().tolist()
-
+def batch_size_lists(draw, max_batch_size: int = MAX_BATCH_SIZE):
     return [
-        draw(list_of_sentences(embedding_dim=embedding_dim, sentence_lengths=sentence_lengths))
-        for _ in range(num)
+        draw(batch_sizes(max_value=max_batch_size))
+        for _ in range(draw(batch_sizes(max_value=max_batch_size)))
     ]
+
+
+@st.composite
+def token_sizes(draw, max_value: int = MAX_TOKEN_SIZE):
+    return draw(st.integers(min_value=1, max_value=max_value))
+
+
+@st.composite
+def token_size_lists(draw, max_token_size: int = MAX_TOKEN_SIZE, max_batch_size: int = MAX_BATCH_SIZE):
+    return [
+        draw(token_sizes(max_value=max_token_size))
+        for _ in range(draw(batch_sizes(max_value=max_batch_size)))
+    ]
+
+
+@st.composite
+def embedding_dims(draw, max_value: int = MAX_EMBEDDING_DIM):
+    return draw(st.integers(min_value=1, max_value=max_value))

@@ -1,71 +1,91 @@
-from typing import List
+from typing import List, Optional, Tuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence, invert_permutation
 
 from torchrua.catting import cat_sequence
-from torchrua.indexing import lengths_to_ptr
-from torchrua.utils import lengths_to_sorting_indices, get_device, accumulate_lengths
+from torchrua.indexing import token_sizes_to_ptr
+from torchrua.utils import accumulate_sizes, sizes_to_sorting_indices
 
 __all__ = [
     'pack_sequence',
     'pack_catted_sequence',
     'pack_padded_sequence',
+    'pack_catted_sequences',
 ]
 
 
-def pack_sequence(sequences: List[Tensor]) -> PackedSequence:
-    sequence, lengths = cat_sequence(sequences=sequences)
-    return pack_catted_sequence(sequence=sequence, lengths=lengths)
+def pack_sequence(sequences: List[Tensor], device: Optional[torch.device] = None) -> PackedSequence:
+    sequence, token_sizes = cat_sequence(sequences=sequences, device=device)
+    return pack_catted_sequence(sequence=sequence, token_sizes=token_sizes)
 
 
-def pack_padded_sequence(input: Tensor, lengths: Tensor,
-                         batch_first: bool = False, enforce_sorted: bool = True) -> PackedSequence:
+def pack_padded_sequence(sequence: Tensor, token_sizes: Tensor, batch_first: bool = False) -> PackedSequence:
     with torch.no_grad():
-        device = get_device(input)
+        sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting_indices(
+            sizes=token_sizes, descending=True, device=sequence.device,
+        )
 
-        if not enforce_sorted:
-            sorted_indices, unsorted_indices = lengths_to_sorting_indices(lengths)
+        token_ptr, batch_ptr, batch_sizes = token_sizes_to_ptr(
+            token_sizes=sorted_token_sizes,
+            batch_ptr=sorted_indices,
+        )
+
+        if batch_first:
+            index = batch_ptr, token_ptr
         else:
-            sorted_indices = unsorted_indices = None
-
-        batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
-            lengths=lengths,
-            sorted_indices=sorted_indices,
-            device=device,
-        )
-
-    if batch_first:
-        data = input[batch_ptr, token_ptr]
-    else:
-        data = input[token_ptr, batch_ptr]
-
-    return PackedSequence(
-        data=data,
-        batch_sizes=batch_sizes.cpu(),
-        sorted_indices=sorted_indices,
-        unsorted_indices=unsorted_indices,
-    )
-
-
-def pack_catted_sequence(sequence: Tensor, lengths: Tensor) -> PackedSequence:
-    with torch.no_grad():
-        sorted_lengths, sorted_indices = torch.sort(lengths, descending=True)
-        unsorted_indices = invert_permutation(sorted_indices)
-
-        batch_ptr, token_ptr, batch_sizes = lengths_to_ptr(
-            lengths=sorted_lengths,
-            sorted_indices=sorted_indices,
-            device=sorted_lengths.device,
-        )
-
-        acc_lengths = accumulate_lengths(lengths=lengths)
-        index = acc_lengths[batch_ptr] + token_ptr
+            index = token_ptr, batch_ptr
 
     return PackedSequence(
         data=sequence[index],
         batch_sizes=batch_sizes.detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
+    )
+
+
+def pack_catted_sequence(sequence: Tensor, token_sizes: Tensor) -> PackedSequence:
+    with torch.no_grad():
+        sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting_indices(
+            sizes=token_sizes, descending=True, device=sequence.device,
+        )
+
+        token_ptr, batch_ptr, batch_sizes = token_sizes_to_ptr(
+            token_sizes=sorted_token_sizes,
+            batch_ptr=sorted_indices,
+        )
+
+        acc_token_sizes = accumulate_sizes(sizes=token_sizes)
+        indices = acc_token_sizes[batch_ptr] + token_ptr
+
+    return PackedSequence(
+        data=sequence[indices],
+        batch_sizes=batch_sizes.detach().cpu(),
+        sorted_indices=sorted_indices,
+        unsorted_indices=unsorted_indices,
+    )
+
+
+def pack_catted_sequences(sequences: List[Tuple[Tensor, Tensor]],
+                          device: Optional[torch.device] = None) -> PackedSequence:
+    if device is None:
+        device = sequences[0][0].device
+
+    sequence, token_sizes, batch_sizes = zip(*[
+        (sequence, token_sizes, token_sizes.size()[0])
+        for sequence, token_sizes in sequences
+    ])
+    sequence = torch.cat(sequence, dim=0).to(device=device)
+    token_sizes = torch.cat(token_sizes, dim=0).to(device=device)
+    batch_sizes = torch.tensor(batch_sizes, dtype=torch.long, device=device)
+
+    sequence = pack_catted_sequence(sequence=sequence, token_sizes=token_sizes)
+    unsorted_indices = pack_catted_sequence(sequence=sequence.unsorted_indices, token_sizes=batch_sizes)
+
+    return PackedSequence(
+        data=sequence.data,
+        batch_sizes=sequence.batch_sizes,
+        sorted_indices=invert_permutation(unsorted_indices.data),
+        unsorted_indices=unsorted_indices.data,
     )

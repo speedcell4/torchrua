@@ -7,7 +7,8 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.nn.utils.rnn import invert_permutation
 
 __all__ = [
-    'stack_packed_sequences', 'stack_data', 'stack_indices_dim0', 'stack_indices_dim1',
+    'stack_packed_sequences', 'stack_data',
+    'stack_indices_dim0', 'stack_indices_dim1',
 ]
 
 

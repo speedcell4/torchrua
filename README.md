@@ -190,8 +190,8 @@ x = pack_sequence([
     torch.arange(3) + 1,
 ], enforce_sorted=False)
 y = reverse_packed_sequence(x)
-z = roll_packed_sequence(x, offset=+1)
-w = roll_packed_sequence(x, offset=-1)
+z = roll_packed_sequence(x, shifts=+1)
+w = roll_packed_sequence(x, shifts=-1)
 
 x, _ = pad_packed_sequence(x, batch_first=True)
 print(x)
