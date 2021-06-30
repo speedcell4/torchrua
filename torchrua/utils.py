@@ -73,7 +73,7 @@ def batch_sizes_to_token_sizes(batch_sizes: Tensor,
 @torch.no_grad()
 def token_sizes_to_mask(token_sizes: Tensor,
                         token_ptr: Optional[Tensor] = None,
-                        token_first: bool = False,
+                        batch_first: bool = False,
                         dtype: torch.dtype = torch.bool) -> Tensor:
     t = token_sizes.max().item()
 
@@ -81,7 +81,7 @@ def token_sizes_to_mask(token_sizes: Tensor,
         token_ptr = torch.arange(t, device=token_sizes.device)
     assert token_ptr.size() == (t,)
 
-    if token_first:
+    if batch_first:
         mask = token_ptr[None, :] < token_sizes[:, None]
     else:
         mask = token_ptr[:, None] < token_sizes[None, :]
@@ -96,6 +96,6 @@ def token_sizes_to_batch_sizes(token_sizes: Tensor,
     return token_sizes_to_mask(
         token_sizes=token_sizes,
         token_ptr=token_ptr,
-        token_first=False,
+        batch_first=False,
         dtype=dtype,
     ).sum(dim=1)
