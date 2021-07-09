@@ -38,11 +38,11 @@ def chunk_batch_sizes_dim0(sequence: PackedSequence, chunks: int) -> Tuple[Tenso
         sorted_indices = None
 
     if sequence.unsorted_indices is not None:
-        unsorted_indices = sequence.unsorted_indices[::chunks] // chunks
+        unsorted_indices = torch.div(sequence.unsorted_indices[::chunks], chunks, rounding_mode='trunc')
     else:
         unsorted_indices = None
 
-    return sequence.batch_sizes // chunks, sorted_indices, unsorted_indices
+    return torch.div(sequence.batch_sizes, chunks, rounding_mode='trunc'), sorted_indices, unsorted_indices
 
 
 @torch.no_grad()
@@ -54,8 +54,8 @@ def chunk_batch_sizes_dim1(sequence: PackedSequence, chunks: int) -> Tuple[Tenso
 
     num_batches = sequence.batch_sizes[0].item() // chunks
     if sequence.unsorted_indices is not None:
-        unsorted_indices = sequence.unsorted_indices[:num_batches] // chunks
+        unsorted_indices = torch.div(sequence.unsorted_indices[:num_batches], chunks, rounding_mode='trunc')
     else:
         unsorted_indices = None
 
-    return sequence.batch_sizes // chunks, sorted_indices, unsorted_indices
+    return torch.div(sequence.batch_sizes, chunks, rounding_mode='trunc'), sorted_indices, unsorted_indices

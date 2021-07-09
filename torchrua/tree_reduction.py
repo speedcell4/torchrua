@@ -48,7 +48,9 @@ def tree_reduce_indices(token_sizes1: Tensor):
     xs, ys, zs = [], [], []
     for index in range(opt_sizes.size()[1] - 1, -1, -1):
         opt_size = opt_sizes[:, index]
-        token_ptr, batch_ptr, _ = token_sizes_to_ptr(token_sizes=opt_size // 2)
+        token_ptr, batch_ptr, _ = token_sizes_to_ptr(
+            token_sizes=torch.div(opt_size, 2, rounding_mode='trunc'),
+        )
         ptr = offsets[batch_ptr] + token_ptr
 
         x = ptr + token_ptr
