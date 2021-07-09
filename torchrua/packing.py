@@ -17,6 +17,9 @@ __all__ = [
 
 
 def pack_sequence(sequences: List[Tensor], device: Device = None) -> PackedSequence:
+    if device is None:
+        device = sequences[0].device
+
     sequence, token_sizes = cat_sequence(sequences=sequences, device=device)
     return pack_catted_sequence(sequence=sequence, token_sizes=token_sizes, device=device)
 

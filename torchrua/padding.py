@@ -1,21 +1,27 @@
-from typing import Union, Tuple, List, Optional
+from typing import Tuple, List, Union
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
+from torch.types import Device, Number
 
 from torchrua.catting import cat_sequence
 from torchrua.indexing import batch_sizes_to_ptr
 
 __all__ = [
-    'pad_sequence',
+    'PaddedSequence', 'pad_sequence',
     'pad_catted_sequence',
     'pad_packed_sequence',
 ]
 
+PaddedSequence = Union[Tensor, Tuple[Tensor, Tensor]]
+
 
 def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
-                 padding_value: Union[int, float, bool] = 0, device: Optional[torch.device] = None) -> Tensor:
+                 padding_value: Number = 0, device: Device = None) -> Tensor:
+    if device is None:
+        device = sequences[0].device
+
     sequence, token_sizes = cat_sequence(sequences=sequences, device=device)
     return pad_catted_sequence(
         sequence=sequence, token_sizes=token_sizes,
@@ -25,7 +31,7 @@ def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
 
 def pad_packed_sequence(sequence: PackedSequence,
                         batch_first: bool = False,
-                        padding_value: Union[int, float, bool] = 0) -> Tuple[Tensor, Tensor]:
+                        padding_value: Number = 0) -> Tuple[Tensor, Tensor]:
     with torch.no_grad():
         device = sequence.data.device
         batch_sizes = sequence.batch_sizes.to(device=device)
@@ -57,7 +63,7 @@ def pad_packed_sequence(sequence: PackedSequence,
 
 def pad_catted_sequence(sequence: Tensor, token_sizes: Tensor,
                         batch_first: bool = False,
-                        padding_value: Union[int, float, bool] = 0) -> Tensor:
+                        padding_value: Number = 0) -> Tensor:
     with torch.no_grad():
         device = sequence.device
         token_sizes = token_sizes.to(device=device)
