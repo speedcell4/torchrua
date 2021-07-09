@@ -13,7 +13,7 @@ if torch.cuda.is_available():
 
 else:
     MAX_BATCH_SIZE = 24
-    TINY_BATCH_SIZE = 24
+    TINY_BATCH_SIZE = 8
 
     MAX_TOKEN_SIZE = 128
     TINY_TOKEN_SIZE = 12
