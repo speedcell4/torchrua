@@ -10,7 +10,7 @@ from torchrua.indexing import token_sizes_to_ptr
 from torchrua.utils import accumulate_sizes, sizes_to_sorting_indices
 
 __all__ = [
-    'pack_sequence',
+    'PackedSequence', 'pack_sequence',
     'pack_padded_indices', 'pack_catted_sequence',
     'pack_catted_indices', 'pack_padded_sequence',
 ]
