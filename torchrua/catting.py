@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import torch
 from torch import Tensor
@@ -29,19 +29,31 @@ def cat_sequence(sequences: List[Tensor], device: Device = None) -> CattedSequen
     return sequence, token_sizes
 
 
+@torch.no_grad()
+def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor], device: Device = None):
+    if device is None:
+        device = unsorted_indices.device
+
+    batch_sizes = batch_sizes.to(device=device)
+    batch_ptr, token_ptr, token_sizes = token_sizes_to_ptr(
+        token_sizes=batch_sizes,
+        token_ptr=unsorted_indices,
+    )
+    acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
+
+    indices = acc_batch_sizes[token_ptr] + batch_ptr
+    return indices, token_sizes
+
+
 def cat_packed_sequence(sequence: PackedSequence, device: Device = None) -> CattedSequence:
-    with torch.no_grad():
-        if device is None:
-            device = sequence.data.device
+    if device is None:
+        device = sequence.data.device
 
-        batch_sizes = sequence.batch_sizes.to(device=device)
-        batch_ptr, token_ptr, token_sizes = token_sizes_to_ptr(
-            token_sizes=batch_sizes,
-            token_ptr=sequence.unsorted_indices,
-        )
-        acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-
-        indices = acc_batch_sizes[token_ptr] + batch_ptr
+    indices, token_sizes = cat_packed_indices(
+        batch_sizes=sequence.batch_sizes,
+        unsorted_indices=sequence.unsorted_indices,
+        device=device,
+    )
 
     return sequence.data[indices], token_sizes
 
