@@ -4,7 +4,7 @@ from hypothesis import given, strategies as st
 from torch import nn
 
 from tests.strategies import batch_size_lists, TINY_BATCH_SIZE, embedding_dims, devices, token_size_lists, \
-    TINY_TOKEN_SIZE
+    TINY_TOKEN_SIZE, TINY_EMBEDDING_DIM
 from tests.utils import assert_close, assert_grad_close
 from torchrua import cat_sequence, pack_sequence, reduce_catted_sequences
 
@@ -12,8 +12,8 @@ from torchrua import cat_sequence, pack_sequence, reduce_catted_sequences
 @given(
     data=st.data(),
     batch_sizes=batch_size_lists(max_batch_size=TINY_BATCH_SIZE),
-    in_dim=embedding_dims(),
-    hidden_dim=embedding_dims(),
+    in_dim=embedding_dims(max_value=TINY_EMBEDDING_DIM),
+    hidden_dim=embedding_dims(max_value=TINY_EMBEDDING_DIM),
     device=devices(),
 )
 def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):

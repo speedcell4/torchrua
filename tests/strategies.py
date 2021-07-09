@@ -2,23 +2,18 @@ import torch
 
 from hypothesis import strategies as st
 
+TINY_BATCH_SIZE = 5
+TINY_TOKEN_SIZE = 5
+TINY_EMBEDDING_DIM = 25
+
+MAX_BATCH_SIZE = 25
+MAX_TOKEN_SIZE = 100
+MAX_EMBEDDING_DIM = 25
+
 if torch.cuda.is_available():
-    MAX_BATCH_SIZE = 120
-    TINY_BATCH_SIZE = 24
-
-    MAX_TOKEN_SIZE = 512
-    TINY_TOKEN_SIZE = 12
-
-    MAX_EMBEDDING_DIM = 100
-
-else:
-    MAX_BATCH_SIZE = 24
-    TINY_BATCH_SIZE = 8
-
-    MAX_TOKEN_SIZE = 128
-    TINY_TOKEN_SIZE = 12
-
-    MAX_EMBEDDING_DIM = 25
+    MAX_BATCH_SIZE *= 4
+    MAX_TOKEN_SIZE *= 4
+    MAX_EMBEDDING_DIM *= 4
 
 
 @st.composite
