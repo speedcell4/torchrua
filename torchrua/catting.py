@@ -10,8 +10,8 @@ from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'CattedSequence', 'cat_sequence',
-    'cat_packed_sequence',
-    'cat_padded_sequence',
+    'cat_padded_indices', 'cat_packed_sequence',
+    'cat_padded_indices', 'cat_padded_sequence',
 ]
 
 CattedSequence = Tuple[Tensor, Tensor]
@@ -58,16 +58,31 @@ def cat_packed_sequence(sequence: PackedSequence, device: Device = None) -> Catt
     return sequence.data[indices], token_sizes
 
 
-def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor, batch_first: bool = False,
-                        device: Device = None) -> CattedSequence:
-    with torch.no_grad():
-        if device is None:
-            device = sequence[0].device
+@torch.no_grad()
+def cat_padded_indices(token_sizes: Tensor, batch_first: bool,
+                       device: Device = None) -> Tuple[Tuple[Tensor, Tensor], Tensor]:
+    if device is None:
+        device = token_sizes.device
 
-        token_sizes = token_sizes.to(device=device)
-        batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+    token_sizes = token_sizes.to(device=device)
+    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
 
     if batch_first:
-        return sequence[batch_ptr, token_ptr], token_sizes
+        indices = batch_ptr, token_ptr
     else:
-        return sequence[token_ptr, batch_ptr], token_sizes
+        indices = token_ptr, batch_ptr
+    return indices, token_sizes
+
+
+def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor,
+                        batch_first: bool = False, device: Device = None) -> CattedSequence:
+    if device is None:
+        device = sequence.device
+
+    indices, token_sizes = cat_padded_indices(
+        token_sizes=token_sizes,
+        batch_first=batch_first,
+        device=device,
+    )
+
+    return sequence[indices], token_sizes
