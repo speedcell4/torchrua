@@ -11,7 +11,7 @@ from torchrua.indexing import batch_sizes_to_ptr
 __all__ = [
     'PaddedSequence', 'pad_sequence',
     'pad_packed_indices', 'pad_catted_sequence',
-    'pad_packed_sequence',
+    'pad_packed_indices', 'pad_packed_sequence',
 ]
 
 PaddedSequence = Union[Tensor, Tuple[Tensor, Tensor]]
@@ -64,7 +64,7 @@ def pad_packed_sequence(sequence: PackedSequence,
     if device is None:
         device = sequence.data.device
 
-    size, indices, token_sizes = pad_packed_indices(
+    sizes, indices, token_sizes = pad_packed_indices(
         batch_sizes=sequence.batch_sizes,
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
@@ -72,39 +72,52 @@ def pad_packed_sequence(sequence: PackedSequence,
         device=device,
     )
 
-    tensor = torch.full(
-        (*size, *sequence.data.size()[1:]),
-        fill_value=padding_value, dtype=sequence.data.dtype,
-        device=device, requires_grad=False,
+    data = torch.full(
+        (*sizes, *sequence.data.size()[1:]), fill_value=padding_value,
+        dtype=sequence.data.dtype, device=device, requires_grad=False,
     )
-    tensor[indices] = sequence.data
+    data[indices] = sequence.data
 
-    return tensor, token_sizes.cpu()
+    return data, token_sizes.cpu()
 
 
-def pad_catted_sequence(sequence: Tensor, token_sizes: Tensor,
-                        batch_first: bool = False,
-                        padding_value: Number = 0) -> Tensor:
-    with torch.no_grad():
-        device = sequence.device
-        token_sizes = token_sizes.to(device=device)
+@torch.no_grad()
+def pad_catted_indices(token_sizes: Tensor, batch_first: bool, device: Device = None):
+    if device is None:
+        device = token_sizes.device
 
-        t = token_sizes.max().item()
-        b = token_sizes.size()[0]
+    token_sizes = token_sizes.to(device=device)
+    t = token_sizes.max().item()
+    b = token_sizes.size()[0]
 
-        batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(
+        batch_sizes=token_sizes,
+    )
 
     if batch_first:
-        data = torch.full(
-            (b, t, *sequence.size()[1:]), fill_value=padding_value,
-            dtype=sequence.dtype, device=sequence.device, requires_grad=False,
-        )
-        data[batch_ptr, token_ptr] = sequence
+        return (b, t), (batch_ptr, token_ptr)
     else:
-        data = torch.full(
-            (t, b, *sequence.size()[1:]), fill_value=padding_value,
-            dtype=sequence.dtype, device=sequence.device, requires_grad=False,
-        )
-        data[token_ptr, batch_ptr] = sequence
+        return (t, b), (token_ptr, batch_ptr)
+
+
+def pad_catted_sequence(sequence: Tensor,
+                        token_sizes: Tensor,
+                        batch_first: bool = False,
+                        padding_value: Number = 0,
+                        device: Device = None) -> Tensor:
+    if device is None:
+        device = sequence.device
+
+    sizes, indices = pad_catted_indices(
+        token_sizes=token_sizes,
+        batch_first=batch_first,
+        device=device,
+    )
+
+    data = torch.full(
+        (*sizes, *sequence.size()[1:]), fill_value=padding_value,
+        dtype=sequence.dtype, device=device, requires_grad=False,
+    )
+    data[indices] = sequence
 
     return data
