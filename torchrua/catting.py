@@ -1,29 +1,35 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
+from torch.types import Device
 
 from torchrua.indexing import token_sizes_to_ptr, batch_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
 __all__ = [
-    'cat_sequence',
+    'CattedSequence', 'cat_sequence',
     'cat_packed_sequence',
     'cat_padded_sequence',
 ]
 
+CattedSequence = Tuple[Tensor, Tensor]
 
-def cat_sequence(sequences: List[Tensor], device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor]:
+
+def cat_sequence(sequences: List[Tensor], device: Device = None) -> CattedSequence:
     if device is None:
         device = sequences[0].device
 
     sequence = torch.cat(sequences, dim=0).to(device=device)
-    token_sizes = torch.tensor([s.size()[0] for s in sequences], dtype=torch.long, device=device)
+    token_sizes = torch.tensor(
+        [seq.size()[0] for seq in sequences],
+        dtype=torch.long, device=device,
+    )
     return sequence, token_sizes
 
 
-def cat_packed_sequence(sequence: PackedSequence, device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor]:
+def cat_packed_sequence(sequence: PackedSequence, device: Device = None) -> CattedSequence:
     with torch.no_grad():
         if device is None:
             device = sequence.data.device
@@ -41,7 +47,7 @@ def cat_packed_sequence(sequence: PackedSequence, device: Optional[torch.device]
 
 
 def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor, batch_first: bool = False,
-                        device: Optional[torch.device] = None) -> Tuple[Tensor, Tensor]:
+                        device: Device = None) -> CattedSequence:
     with torch.no_grad():
         if device is None:
             device = sequence[0].device
