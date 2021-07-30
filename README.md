@@ -10,12 +10,12 @@ help you rua tensors with `PackedSequence` and `CattedSequence`!
 
 ## Requirements
 
-- Python 3.7 or higher
-- PyTorch 1.6.0 or higher
+- Python 3.7
+- PyTorch 1.6.0
 
-## Install
+## Installation
 
-`python -m pip install torchrua --upgrade`
+`python -m pip install torchrua`
 
 ## Usage
 
