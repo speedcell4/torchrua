@@ -33,24 +33,31 @@ class TimerSuit(object):
 
     def report(self) -> None:
         if self.rua_compile.num_runs == 0:
-            rua_forward = self.rua_forward.averaged_seconds
-            rua_backward = self.rua_backward.averaged_seconds
-            print(f'TorchRua ({rua_forward + rua_backward :.4f}) = {rua_forward:.4f} + {rua_backward :.4f}')
-
             naive_forward = self.naive_forward.averaged_seconds
             naive_backward = self.naive_backward.averaged_seconds
-            print(f'PyTorch  ({naive_forward + naive_backward :.4f}) = {naive_forward:.4f} + {naive_backward :.4f}')
+            print(f'PyTorch  ({naive_forward + naive_backward :.4f} sec) = '
+                  f'forward ({naive_forward:.4f} sec) + '
+                  f'backward ({naive_backward :.4f} sec)')
+
+            rua_forward = self.rua_forward.averaged_seconds
+            rua_backward = self.rua_backward.averaged_seconds
+            print(f'TorchRua ({rua_forward + rua_backward :.4f} sec) = '
+                  f'forward ({rua_forward:.4f} sec) + '
+                  f'backward ({rua_backward :.4f} sec)')
         else:
+            naive_forward = self.naive_forward.averaged_seconds
+            naive_backward = self.naive_backward.averaged_seconds
+            print(f'PyTorch  ({naive_forward + naive_backward :.4f} sec) = '
+                  f'         forward ({naive_forward:.4f} sec) + '
+                  f'backward ({naive_backward :.4f} sec)')
+
             rua_compile = self.rua_compile.averaged_seconds
             rua_forward = self.rua_forward.averaged_seconds
             rua_backward = self.rua_backward.averaged_seconds
-            print(f'TorchRua ({rua_compile + rua_forward + rua_backward :.4f}) = '
-                  f'{rua_compile:.4f} + {rua_forward:.4f} + {rua_backward :.4f}')
-
-            naive_forward = self.naive_forward.averaged_seconds
-            naive_backward = self.naive_backward.averaged_seconds
-            print(f'PyTorch  ({naive_forward + naive_backward :.4f}) = '
-                  f'         {naive_forward:.4f} + {naive_backward :.4f}')
+            print(f'TorchRua ({rua_compile + rua_forward + rua_backward :.4f} sec) = '
+                  f'compile ({rua_compile:.4f} sec) + '
+                  f'forward ({rua_forward:.4f} sec) + '
+                  f'backward ({rua_backward :.4f} sec)')
 
 
 def timeit(fn):
