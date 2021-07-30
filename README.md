@@ -224,12 +224,10 @@ print(data)
 
 ### Joining & Slicing
 
-* `cat_packed_sequences` (`uncat_packed_sequences`)
 * `stack_packed_sequences` (`unstack_packed_sequences`)
 
-If you have several `PackedSequence`s of exactly the same shape, then you can `cat_packed_sequences`
-or `stack_packed_sequences` them before feeding them into `nn.LSTM`, joining `PackedSequence`s will significantly
-accelerate computing. `uncat_packed_sequence` and `unstack_packed_sequence` converts them back to the
+If you have several `PackedSequence`s of exactly the same shape, then you can `stack_packed_sequences` them before feeding them into `nn.LSTM`, joining `PackedSequence`s will significantly
+accelerate computing. `unstack_packed_sequence` converts them back to the
 original `List[PackedSequence]`.
 
 ```python
@@ -307,7 +305,7 @@ print(data)
 * `pack_sequence`, `pack_padded_sequence`
 * `pad_sequence`, `pad_packed_sequence`
 
-These 4 functions run much faster than the corresponding functions under `torch.nn.utils.rnn`.
+These four off-the-shelf alternatives run much faster than the corresponding functions under `torch.nn.utils.rnn`.
 
 ```shell script
 ~ python -m benchmark pack_sequence
