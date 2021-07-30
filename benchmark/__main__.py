@@ -1,17 +1,20 @@
 from aku import Aku
 
-from benchmark.cat_packed_sequence import cat_pack
-from benchmark.pack_padded_sequence import pack_padded
-from benchmark.pad_packed_sequence import pad_packed
-from benchmark.reverse_packed_sequence import reverse_pack
-from benchmark.roll_packed_sequence import roll_pack
+from benchmark.packing import pack_sequence, pack_padded_sequence
+from benchmark.reduction import reduce_catted_sequences
+from benchmark.padding import pad_sequence, pad_packed_sequence
+from benchmark.tree_reduction import tree_reduce_packed_sequence, tree_reduce_padded_sequence, \
+    tree_reduce_catted_sequence
 
 app = Aku()
 
-app.option(reverse_pack)
-app.option(roll_pack)
-app.option(cat_pack)
-app.option(pack_padded)
-app.option(pad_packed)
+app.option(pack_sequence)
+app.option(pack_padded_sequence)
+app.option(pad_sequence)
+app.option(pad_packed_sequence)
+app.option(reduce_catted_sequences)
+app.option(tree_reduce_packed_sequence)
+app.option(tree_reduce_padded_sequence)
+app.option(tree_reduce_catted_sequence)
 
 app.run()

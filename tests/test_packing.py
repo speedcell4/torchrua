@@ -1,41 +1,42 @@
 import torch
 from hypothesis import given, strategies as st
-from torch.nn.utils.rnn import pad_packed_sequence as pad_packed_sequence_naive
-from torch.nn.utils.rnn import pad_sequence, pack_sequence
+from torch.nn.utils import rnn as tgt
 
-from tests.strategies import list_of_sentences
-from tests.utils import assert_equal
-from torchrua import pad_packed_sequence, pack_padded_sequence
-
-
-@given(
-    sentences_and_lengths=list_of_sentences(return_lengths=True),
-    batch_first=st.booleans(),
-)
-def test_pack_padded_sequence(sentences_and_lengths, batch_first):
-    sentences, lengths = sentences_and_lengths
-    lengths = torch.tensor(lengths, dtype=torch.long, device=sentences[0].device)
-
-    y = pad_sequence(sentences, batch_first=batch_first)
-    x = pack_padded_sequence(y, lengths=lengths, batch_first=batch_first, enforce_sorted=False)
-    x, _ = pad_packed_sequence_naive(x, batch_first=batch_first)
-
-    assert_equal(x, y)
+from tests.strategies import token_size_lists, embedding_dims, devices
+from tests.utils import assert_packed_close, assert_packed_grad_close
+from torchrua import packing as rua
 
 
 @given(
-    sentences_and_lengths=list_of_sentences(return_lengths=True),
-    batch_first=st.booleans(),
+    data=st.data(),
+    token_sizes=token_size_lists(),
+    dim=embedding_dims(),
+    device=devices(),
 )
-def test_pack_padded_sequence(sentences_and_lengths, batch_first):
-    sentences, lengths = sentences_and_lengths
+def test_pack_sequence(data, token_sizes, dim, device):
+    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
 
-    x_lengths = torch.tensor(lengths, dtype=torch.long, device=torch.device('cpu'))
+    target = tgt.pack_sequence(sequences, enforce_sorted=False)
+    prediction = rua.pack_sequence(sequences, device=device)
 
-    pack = pack_sequence(sentences, enforce_sorted=False)
-    y_data, y_lengths = pad_packed_sequence(pack, batch_first=batch_first)
+    assert_packed_close(prediction, target)
+    assert_packed_grad_close(prediction, target, inputs=sequences)
 
-    x_data = pad_sequence(sentences, batch_first=batch_first)
 
-    assert_equal(x_data, y_data)
-    assert_equal(x_lengths, y_lengths)
+@given(
+    data=st.data(),
+    token_sizes=token_size_lists(),
+    dim=embedding_dims(),
+    batch_first=st.booleans(),
+    device=devices(),
+)
+def test_pack_padded_sequence(data, token_sizes, dim, batch_first, device):
+    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
+    padded_sequence = tgt.pad_sequence(sequences, batch_first=batch_first)
+    token_sizes = torch.tensor(token_sizes, device=device)
+
+    prediction = rua.pack_padded_sequence(padded_sequence, token_sizes, batch_first=batch_first)
+    target = tgt.pack_sequence(sequences, enforce_sorted=False)
+
+    assert_packed_close(prediction, target)
+    assert_packed_grad_close(prediction, target, inputs=sequences)

@@ -4,16 +4,18 @@
 [![PyPI version](https://badge.fury.io/py/torchrua.svg)](https://badge.fury.io/py/torchrua)
 [![Downloads](https://pepy.tech/badge/torchrua)](https://pepy.tech/project/torchrua)
 
-*Rua* derives from the Szechwanese character <ruby>挼<rt>ruá</rt></ruby> which means "pack, rumple, screw up, manipulate". TorchRua provides tons of easy-to-use functions to help you rua variable-length Tensors with `PackedSequence`s!
+**Rua** derives from the [Szechwanese](https://en.wikipedia.org/wiki/Sichuanese_dialects) character <ruby>挼<rt>
+ruá</rt></ruby> which means "pack, rumple, screw up, manipulate". TorchRua provides tons of easy-to-use functions to
+help you rua tensors with `PackedSequence` and `CattedSequence`!
 
 ## Requirements
 
-- Python 3.7 or higher
-- PyTorch 1.6.0 or higher
+- Python 3.7
+- PyTorch 1.6.0
 
-## Install
+## Installation
 
-`python -m pip install torchrua --upgrade`
+`python -m pip install torchrua`
 
 ## Usage
 
@@ -21,14 +23,16 @@
 
 * `packed_fn`, `packed_method`, `Packed`
 
-Converting existing function, method, and `nn.Module` to versions that support receiving `PackedSequence` as the first argument, respectively.
+Converting existing function, method, and `nn.Module` to versions that support receiving `PackedSequence` as the first
+argument, respectively.
 
 ```python
 import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import packed_fn, packed_method, Packed, pad_packed_sequence
+from torchrua import packed_fn, packed_method, Packed
+from torchrua.padding import pad_packed_sequence
 
 linear = nn.Linear(7, 13)
 
@@ -64,7 +68,8 @@ print(w.size())
 * `PackedMeta`
 * `PackedSequential`
 
-`PackedMeta` is used to define new `nn.Module`s which support both `PackedSequence` and `torch.Tensor` more naturally. `PackedSequential` is a packed version `nn.Sequential` which is just defined by using `PackedMeta`.
+`PackedMeta` is used to define new `nn.Module`s which support both `PackedSequence` and `torch.Tensor` more
+naturally. `PackedSequential` is a packed version `nn.Sequential` which is just defined by using `PackedMeta`.
 
 ```python
 import torch
@@ -74,7 +79,8 @@ from torch.nn import functional as F
 from torch.nn import init
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import PackedMeta, pad_packed_sequence, PackedSequential
+from torchrua import PackedMeta, PackedSequential
+from torchrua.padding import pad_packed_sequence
 
 
 class MyLinear(nn.Module, metaclass=PackedMeta):
@@ -129,14 +135,15 @@ print(z.size())
 
 * `select_head` (`head_indices`)
 * `select_last` (`last_indices`)
-* `select_init` (`init_indices`) 
+* `select_init` (`init_indices`)
 * `select_tail` (`tail_indices`)
 
 ```python
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import select_head, select_last, select_init, select_tail, pad_packed_sequence
+from torchrua import select_head, select_last, select_init, select_tail
+from torchrua.padding import pad_packed_sequence
 
 pack = pack_sequence([
     torch.arange(5) + 1,
@@ -178,7 +185,8 @@ print(z)
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import reverse_packed_sequence, roll_packed_sequence, pad_packed_sequence
+from torchrua import reverse_packed_sequence, roll_packed_sequence
+from torchrua.padding import pad_packed_sequence
 
 x = pack_sequence([
     torch.arange(5) + 1,
@@ -186,56 +194,48 @@ x = pack_sequence([
     torch.arange(3) + 1,
 ], enforce_sorted=False)
 y = reverse_packed_sequence(x)
-z = roll_packed_sequence(x, offset=+1)
-w = roll_packed_sequence(x, offset=-1)
+z = roll_packed_sequence(x, shifts=+1)
+w = roll_packed_sequence(x, shifts=-1)
 
-x, _ = pad_packed_sequence(x, batch_first=True)
-print(x)
+data, _ = pad_packed_sequence(x, batch_first=True)
+print(data)
 # tensor([[1, 2, 3, 4, 5],
 #         [1, 2, 0, 0, 0],
 #         [1, 2, 3, 0, 0]])
 
-y, _ = pad_packed_sequence(y, batch_first=True)
-print(y)
+data, _ = pad_packed_sequence(y, batch_first=True)
+print(data)
 # tensor([[5, 4, 3, 2, 1],
 #         [2, 1, 0, 0, 0],
 #         [3, 2, 1, 0, 0]])
 
-z, _ = pad_packed_sequence(z, batch_first=True)
-print(z)
+data, _ = pad_packed_sequence(z, batch_first=True)
+print(data)
 # tensor([[5, 1, 2, 3, 4],
 #         [2, 1, 0, 0, 0],
 #         [3, 1, 2, 0, 0]])
 
-w, _ = pad_packed_sequence(w, batch_first=True)
-print(w)
+data, _ = pad_packed_sequence(w, batch_first=True)
+print(data)
 # tensor([[2, 3, 4, 5, 1],
 #         [2, 1, 0, 0, 0],
 #         [2, 3, 1, 0, 0]])
 ```
 
-```shell script
-~ python -m benchmark reverse_pack --device 0
-torchrua (sec) => 13.9069 = 3.2287 (forward) + 10.6782 (backward)
-naive (sec) => 43.9063 = 8.6442 (forward) + 35.2621 (backward)
-
-~ python -m benchmark roll_pack --device 0
-torchrua (sec) => 14.5345 = 3.3659 (forward) + 11.1686 (backward)
-naive (sec) => 46.0561 = 8.9097 (forward) + 37.1464 (backward)
-```
-
 ### Joining & Slicing
 
-* `cat_packed_sequences` (`uncat_packed_sequences`)
 * `stack_packed_sequences` (`unstack_packed_sequences`)
 
-If you have several `PackedSequence`s of exactly the same shape, then you can `cat_packed_sequences` or `stack_packed_sequences` them before feeding them into `nn.LSTM`, joining `PackedSequence`s will significantly accelerate computing. `uncat_packed_sequence` and `unstack_packed_sequence` converts them back to the original `List[PackedSequence]`.
+If you have several `PackedSequence`s of exactly the same shape, then you can `stack_packed_sequences` them before
+feeding them into `nn.LSTM`, joining `PackedSequence`s will significantly accelerate
+computing. `unstack_packed_sequence` converts them back to the original `List[PackedSequence]`.
 
 ```python
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import cat_packed_sequences, stack_packed_sequences, pad_packed_sequence
+from torchrua import stack_packed_sequences
+from torchrua.padding import pad_packed_sequence
 
 x1 = pack_sequence([
     torch.arange(5) + 1,
@@ -255,42 +255,27 @@ x3 = pack_sequence([
     torch.arange(3) + 21,
 ], enforce_sorted=False)
 
-y = cat_packed_sequences([x1, x2, x3])
-
-z = stack_packed_sequences([x1, x2, x3])
-
-x1, _ = pad_packed_sequence(x1, batch_first=True)
-print(x1)
+data, _ = pad_packed_sequence(x1, batch_first=True)
+print(data)
 # tensor([[1, 2, 3, 4, 5],
 #         [1, 2, 0, 0, 0],
 #         [1, 2, 3, 0, 0]])
 
-x2, _ = pad_packed_sequence(x2, batch_first=True)
-print(x2)
+data, _ = pad_packed_sequence(x2, batch_first=True)
+print(data)
 # tensor([[11, 12, 13, 14, 15],
 #         [11, 12,  0,  0,  0],
 #         [11, 12, 13,  0,  0]])
 
-x3, _ = pad_packed_sequence(x3, batch_first=True)
-print(x3)
+data, _ = pad_packed_sequence(x3, batch_first=True)
+print(data)
 # tensor([[21, 22, 23, 24, 25],
 #         [21, 22,  0,  0,  0],
 #         [21, 22, 23,  0,  0]])
 
-y, _ = pad_packed_sequence(y, batch_first=True)
-print(y)
-# tensor([[ 1,  2,  3,  4,  5],
-#         [ 1,  2,  0,  0,  0],
-#         [ 1,  2,  3,  0,  0],
-#         [11, 12, 13, 14, 15],
-#         [11, 12,  0,  0,  0],
-#         [11, 12, 13,  0,  0],
-#         [21, 22, 23, 24, 25],
-#         [21, 22,  0,  0,  0],
-#         [21, 22, 23,  0,  0]])
-
-z, _ = pad_packed_sequence(z, batch_first=True)
-print(z)
+y = stack_packed_sequences([x1, x2, x3], dim=0)
+data, _ = pad_packed_sequence(y, batch_first=True)
+print(data)
 # tensor([[ 1,  2,  3,  4,  5],
 #         [11, 12, 13, 14, 15],
 #         [21, 22, 23, 24, 25],
@@ -300,28 +285,42 @@ print(z)
 #         [ 1,  2,  3,  0,  0],
 #         [11, 12, 13,  0,  0],
 #         [21, 22, 23,  0,  0]])
-```
 
-```shell script
-~ python -m benchmark cat_pack --device 0
-torchrua (sec) => 23.5499 = 8.6669 (forward) + 14.8830 (backward)
-naive (sec) => 72.9520 = 30.8352 (forward) + 42.1168 (backward)
+z = stack_packed_sequences([x1, x2, x3], dim=1)
+data, _ = pad_packed_sequence(z, batch_first=True)
+print(data)
+# tensor([[ 1,  2,  3,  4,  5],
+#         [ 1,  2,  0,  0,  0],
+#         [ 1,  2,  3,  0,  0],
+#         [11, 12, 13, 14, 15],
+#         [11, 12,  0,  0,  0],
+#         [11, 12, 13,  0,  0],
+#         [21, 22, 23, 24, 25],
+#         [21, 22,  0,  0,  0],
+#         [21, 22, 23,  0,  0]])
 ```
 
 ### Packing
 
-* `pack_padded_sequence`
-* `pad_packed_sequence`
+* `pack_sequence`, `pack_padded_sequence`
+* `pad_sequence`, `pad_packed_sequence`
 
-These two functions are the same as `torch.nn.utils.rnn.pack_padded_sequence` and `torch.nn.utils.rnn.pad_packed_sequence`, with sightly lower speed on forward pass but much higher speed on backward pass.
-
+These four off-the-shelf alternatives run much faster than the corresponding functions under `torch.nn.utils.rnn`.
 
 ```shell script
-~ python -m benchmark pack_padded --device 0
-torchrua (sec) => 9.2755 = 2.4933 (forward) + 6.7822 (backward)
-naive (sec) => 11.9262 = 1.9409 (forward) + 9.9852 (backward)
+~ python -m benchmark pack_sequence
+PyTorch  (0.0087 sec) = forward (0.0016 sec) + backward (0.0071 sec)
+TorchRua (0.0015 sec) = forward (0.0008 sec) + backward (0.0007 sec)
 
-~ python -m benchmark pad_packed --device 0
-torchrua (sec) => 14.1087 = 2.5054 (forward) + 11.6034 (backward)
-naive (sec) => 21.5252 = 2.5133 (forward) + 19.0119 (backward)
+~ python -m benchmark pack_padded_sequence
+PyTorch  (0.0055 sec) = forward (0.0010 sec) + backward (0.0045 sec)
+TorchRua (0.0011 sec) = forward (0.0006 sec) + backward (0.0005 sec)
+
+~ python -m benchmark pad_sequence
+PyTorch  (0.0037 sec) = forward (0.0009 sec) + backward (0.0028 sec)
+TorchRua (0.0011 sec) = forward (0.0006 sec) + backward (0.0005 sec)
+
+~ python -m benchmark pad_packed_sequence
+PyTorch  (0.0060 sec) = forward (0.0017 sec) + backward (0.0043 sec)
+TorchRua (0.0008 sec) = forward (0.0005 sec) + backward (0.0003 sec)
 ```
