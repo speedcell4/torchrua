@@ -10,7 +10,7 @@ setup(
     license='MIT',
     author='speedcell4',
     author_email='speedcell4@gmail.com',
-    description='Manipulate tensor batch with PackedSequence and CattedSequence',
+    description='Manipulate tensors with PackedSequence and CattedSequence',
     python_requires='>=3.7',
     install_requires=[
         'numpy',

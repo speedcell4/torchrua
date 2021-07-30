@@ -4,9 +4,9 @@
 [![PyPI version](https://badge.fury.io/py/torchrua.svg)](https://badge.fury.io/py/torchrua)
 [![Downloads](https://pepy.tech/badge/torchrua)](https://pepy.tech/project/torchrua)
 
-*Rua* derives from the [Szechwanese](https://en.wikipedia.org/wiki/Sichuanese_dialects) character <ruby>挼<rt>
+**Rua** derives from the [Szechwanese](https://en.wikipedia.org/wiki/Sichuanese_dialects) character <ruby>挼<rt>
 ruá</rt></ruby> which means "pack, rumple, screw up, manipulate". TorchRua provides tons of easy-to-use functions to
-help you rua tensor batch with `PackedSequence` and `CattedSequence`!
+help you rua tensors with `PackedSequence` and `CattedSequence`!
 
 ## Requirements
 
@@ -226,9 +226,9 @@ print(data)
 
 * `stack_packed_sequences` (`unstack_packed_sequences`)
 
-If you have several `PackedSequence`s of exactly the same shape, then you can `stack_packed_sequences` them before feeding them into `nn.LSTM`, joining `PackedSequence`s will significantly
-accelerate computing. `unstack_packed_sequence` converts them back to the
-original `List[PackedSequence]`.
+If you have several `PackedSequence`s of exactly the same shape, then you can `stack_packed_sequences` them before
+feeding them into `nn.LSTM`, joining `PackedSequence`s will significantly accelerate
+computing. `unstack_packed_sequence` converts them back to the original `List[PackedSequence]`.
 
 ```python
 import torch
