@@ -9,7 +9,6 @@ from torchrua.utils import accumulate_sizes
 __all__ = [
     'scatter_index_to_ptr',
     'scatter_add',
-    'scatter_sub',
     'scatter_mean',
     'scatter_max',
     'scatter_min',
@@ -40,15 +39,6 @@ def scatter_add(tensor: Tensor, index: Tensor) -> Tensor:
     indices, offsets = scatter_index_to_ptr(index=index, device=tensor.device)
     ret, _, _, _ = torch.embedding_bag(
         weight=tensor.view((tensor.size()[0], -1)),
-        indices=indices, offsets=offsets, mode=0,
-    )
-    return ret.view((ret.size()[0], *tensor.size()[1:]))
-
-
-def scatter_sub(tensor: Tensor, index: Tensor) -> Tensor:
-    indices, offsets = scatter_index_to_ptr(index=index, device=tensor.device)
-    ret, _, _, _ = torch.embedding_bag(
-        weight=tensor.neg().view((tensor.size()[0], -1)),
         indices=indices, offsets=offsets, mode=0,
     )
     return ret.view((ret.size()[0], *tensor.size()[1:]))

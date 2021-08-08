@@ -90,3 +90,24 @@ def test_scatter_min(data, token_size, num, dim, device):
 
     assert_close(actual=actual, expected=excepted)
     assert_grad_close(actual=actual, expected=excepted, inputs=inputs)
+
+
+@given(
+    data=st.data(),
+    token_size=token_sizes(),
+    num=token_sizes(),
+    dim=embedding_dims(),
+    device=devices(),
+)
+def test_scatter_softmax(data, token_size, num, dim, device):
+    if num > token_size:
+        num, token_size = token_size, num
+
+    inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
+    index = torch.randint(0, num, (token_size,), device=device)
+
+    actual = rua_scatter.scatter_softmax(tensor=inputs, index=index)
+    excepted = torch_scatter.scatter_softmax(src=inputs, index=index, dim=0)
+
+    assert_close(actual=actual, expected=excepted)
+    assert_grad_close(actual=actual, expected=excepted, inputs=inputs)
