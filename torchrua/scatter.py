@@ -81,11 +81,11 @@ def scatter_logsumexp(tensor: Tensor, index: Tensor) -> Tensor:
             indices=indices, offsets=offsets, mode=2,
         )
 
-    s, _, _, _ = torch.embedding_bag(
+    z, _, _, _ = torch.embedding_bag(
         weight=(tensor_view - m[index]).exp(),
         indices=indices, offsets=offsets, mode=0,
     )
-    ret = torch.masked_fill(s, s == 0, 1.).log() + m
+    ret = torch.masked_fill(z, z == 0, 1.).log() + m
     return ret.view((ret.size()[0], *tensor.size()[1:]))
 
 
@@ -94,4 +94,4 @@ def scatter_log_softmax(tensor: Tensor, index: Tensor) -> Tensor:
 
 
 def scatter_softmax(tensor: Tensor, index: Tensor) -> Tensor:
-    return (tensor - scatter_logsumexp(tensor=tensor, index=index)[index]).exp()
+    return scatter_log_softmax(tensor=tensor, index=index).exp()
