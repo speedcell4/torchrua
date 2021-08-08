@@ -37,17 +37,17 @@ def assert_packed_close(actual: PackedSequence, expected: PackedSequence) -> Non
 def assert_grad_close(actual: Tensor, expected: Tensor, inputs: Union[List[Tensor], Tuple[Tensor, ...]]) -> None:
     grad = torch.rand_like(actual)
 
-    actual = torch.autograd.grad(
+    actual_grad = torch.autograd.grad(
         actual, inputs, grad,
         create_graph=False,
     )
 
-    expected = torch.autograd.grad(
+    expected_grad = torch.autograd.grad(
         expected, inputs, grad,
         create_graph=False,
     )
 
-    for a_grad, e_grad in zip(actual, expected):
+    for a_grad, e_grad in zip(actual_grad, expected_grad):
         assert_close(a_grad, e_grad)
 
 
