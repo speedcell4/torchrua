@@ -45,5 +45,5 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
         target.append(rearrange(t, 'd n x -> n (d x)'))
     target = pack_sequence(target).data
 
-    assert_close(prediction, target)
+    assert_close(prediction, target, check_stride=False)
     assert_grad_close(prediction, target, flatten_sequences)
