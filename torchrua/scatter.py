@@ -1,7 +1,6 @@
 from typing import Tuple
 
 import torch
-import torch_scatter
 from torch import Tensor
 from torch.types import Device
 
@@ -60,7 +59,7 @@ def scatter_mul(tensor: Tensor, index: Tensor) -> Tensor:
     )
     sgn = (sgn % 4).neg().add(1.)
 
-    return (sgn * ret.exp()).view((ret.size()[0], *tensor.size()[1:]))
+    return (sgn.detach() * ret.exp()).view((ret.size()[0], *tensor.size()[1:]))
 
 
 def scatter_mean(tensor: Tensor, index: Tensor) -> Tensor:
@@ -114,11 +113,3 @@ def scatter_log_softmax(tensor: Tensor, index: Tensor) -> Tensor:
 
 def scatter_softmax(tensor: Tensor, index: Tensor) -> Tensor:
     return scatter_log_softmax(tensor=tensor, index=index).exp()
-
-
-if __name__ == '__main__':
-    x = torch.randn((10, 1))
-    y = torch.randint(0, 4, (10,))
-
-    print(scatter_mul(x, y))
-    print(torch_scatter.scatter_mul(x, y, dim=0))
