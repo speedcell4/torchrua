@@ -17,12 +17,12 @@ def test_cat_packed_sequence(data, token_sizes, dim, device):
     sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
     packed_sequence = tgt.pack_sequence(sequences, enforce_sorted=False)
 
-    data_target, token_sizes_target = rua.cat_sequence(sequences, device=device)
-    data_prediction, token_sizes_prediction = rua.cat_packed_sequence(packed_sequence, device=device)
+    data_actual, token_sizes_actual = rua.cat_sequence(sequences, device=device)
+    data_expected, token_sizes_expected = rua.cat_packed_sequence(packed_sequence, device=device)
 
-    assert_close(data_target, data_prediction)
-    assert_equal(token_sizes_target, token_sizes_prediction)
-    assert_grad_close(data_target, data_prediction, inputs=sequences)
+    assert_close(data_actual, data_expected)
+    assert_equal(token_sizes_actual, token_sizes_expected)
+    assert_grad_close(data_actual, data_expected, inputs=sequences)
 
 
 @given(
@@ -37,10 +37,10 @@ def test_cat_padded_sequence(data, token_sizes, dim, batch_first, device):
     padded_sequence = tgt.pad_sequence(sequences, batch_first=batch_first)
     token_sizes = torch.tensor(token_sizes, device=device)
 
-    data_target, token_sizes_target = rua.cat_sequence(sequences, device=device)
-    data_prediction, token_sizes_prediction = rua.cat_padded_sequence(
+    data_actual, token_sizes_actual = rua.cat_sequence(sequences, device=device)
+    data_expected, token_sizes_expected = rua.cat_padded_sequence(
         padded_sequence, token_sizes, batch_first=batch_first, device=device)
 
-    assert_close(data_target, data_prediction)
-    assert_equal(token_sizes_target, token_sizes_prediction)
-    assert_grad_close(data_target, data_prediction, inputs=sequences)
+    assert_close(data_actual, data_expected)
+    assert_equal(token_sizes_actual, token_sizes_expected)
+    assert_grad_close(data_actual, data_expected, inputs=sequences)
