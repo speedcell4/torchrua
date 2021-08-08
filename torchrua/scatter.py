@@ -29,9 +29,8 @@ def scatter_index_to_ptr(index: Tensor,
     index = index.to(dtype=dtype, device=device)
     sorted_indices = torch.argsort(index, dim=0, descending=False)
 
-    token_ptr = torch.arange(index.max().item() + 1, dtype=dtype, device=device)
-    tb_mask = token_ptr[:, None] == index[None, :]
-    token_sizes = tb_mask.long().sum(dim=-1)
+    token_sizes = torch.zeros(index.max().item() + 1, dtype=dtype, device=device)
+    token_sizes = token_sizes.scatter_add_(dim=0, index=index, src=torch.ones_like(index))
 
     return sorted_indices, accumulate_sizes(sizes=token_sizes)
 
