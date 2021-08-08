@@ -3,8 +3,9 @@ from typing import Tuple
 import torch
 from torch import Tensor
 
-from torchrua import batch_sizes_to_ptr, accumulate_sizes
+from torchrua.indexing import batch_sizes_to_ptr
 from torchrua.scatter import scatter_index_to_ptr
+from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'attention_indices',

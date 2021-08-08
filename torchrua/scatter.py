@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.types import Device
 
-from torchrua import accumulate_sizes
+from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'scatter_index_to_ptr',

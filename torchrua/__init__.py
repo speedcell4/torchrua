@@ -1,4 +1,5 @@
 from torchrua.adaptor import *
+from torchrua.attention import *
 from torchrua.catting import *
 from torchrua.indexing import *
 from torchrua.joining import *
