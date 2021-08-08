@@ -3,7 +3,7 @@ import torch_scatter
 from hypothesis import given, strategies as st
 from torch.testing import assert_close
 
-from tests.strategies import embedding_dims, devices, token_sizes
+from tests.strategies import embedding_dims, devices, token_sizes, TINY_TOKEN_SIZE
 from tests.utils import assert_grad_close
 from torchrua import scatter as rua_scatter
 
@@ -94,8 +94,8 @@ def test_scatter_min(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
+    token_size=token_sizes(max_value=TINY_TOKEN_SIZE),
+    num=token_sizes(max_value=TINY_TOKEN_SIZE),
     dim=embedding_dims(),
     device=devices(),
 )
@@ -119,8 +119,8 @@ def test_scatter_logsumexp(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
+    token_size=token_sizes(max_value=TINY_TOKEN_SIZE),
+    num=token_sizes(max_value=TINY_TOKEN_SIZE),
     dim=embedding_dims(),
     device=devices(),
 )
@@ -140,8 +140,8 @@ def test_scatter_softmax(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
+    token_size=token_sizes(max_value=TINY_TOKEN_SIZE),
+    num=token_sizes(max_value=TINY_TOKEN_SIZE),
     dim=embedding_dims(),
     device=devices(),
 )
