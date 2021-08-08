@@ -3,8 +3,8 @@ from einops import rearrange
 from hypothesis import given, strategies as st
 from torch import nn
 
-from tests.strategies import batch_size_lists, TINY_BATCH_SIZE, embedding_dims, devices, token_size_lists, \
-    TINY_TOKEN_SIZE, TINY_EMBEDDING_DIM
+from tests.strategies import TINY_BATCH_SIZE, TINY_TOKEN_SIZE, TINY_EMBEDDING_DIM
+from tests.strategies import embedding_dims, devices, token_size_lists, batch_size_lists
 from tests.utils import assert_close, assert_grad_close
 from torchrua import cat_sequence, pack_sequence, reduce_catted_sequences
 
@@ -25,7 +25,7 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
         ]
         for _ in batch_sizes
     ]
-    flatten_sequences = [token for sequence in sequences for token in sequence]
+    inputs = [token for sequence in sequences for token in sequence]
     catted_sequences = [cat_sequence(sequence, device=device) for sequence in sequences]
     packed_sequences = [pack_sequence(sequence, device=device) for sequence in sequences]
 
@@ -36,14 +36,14 @@ def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
     ).to(device=device)
 
     reduction_pack = reduce_catted_sequences(catted_sequences, device=device)
-    _, (prediction, _) = rnn(reduction_pack)
-    prediction = rearrange(prediction, 'd n x -> n (d x)')
+    _, (actual, _) = rnn(reduction_pack)
+    actual = rearrange(actual, 'd n x -> n (d x)')
 
-    target = []
+    excepted = []
     for pack in packed_sequences:
         _, (t, _) = rnn(pack)
-        target.append(rearrange(t, 'd n x -> n (d x)'))
-    target = pack_sequence(target).data
+        excepted.append(rearrange(t, 'd n x -> n (d x)'))
+    excepted = pack_sequence(excepted).data
 
-    assert_close(prediction, target, check_stride=False)
-    assert_grad_close(prediction, target, flatten_sequences)
+    assert_close(actual, excepted, check_stride=False)
+    assert_grad_close(actual, excepted, inputs=inputs)
