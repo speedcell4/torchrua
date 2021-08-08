@@ -16,17 +16,20 @@ from torchrua.indexing import select_head, select_last, select_init, select_tail
     device=devices(),
 )
 def test_select_head(data, token_sizes, dim, unsort, device):
-    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
-    packed_pack_sequence = pack_sequence(sequences, enforce_sorted=False)
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    packed_pack_sequence = pack_sequence(inputs, enforce_sorted=False)
 
     actual = select_head(sequence=packed_pack_sequence, unsort=unsort)
     if not unsort:
         actual = actual[packed_pack_sequence.unsorted_indices]
 
-    expected = torch.stack([sequence[0] for sequence in sequences], dim=0)
+    expected = torch.stack([sequence[0] for sequence in inputs], dim=0)
 
     assert_close(actual, expected)
-    assert_grad_close(actual, expected, inputs=sequences)
+    assert_grad_close(actual, expected, inputs=inputs)
 
 
 @given(
@@ -37,17 +40,20 @@ def test_select_head(data, token_sizes, dim, unsort, device):
     device=devices(),
 )
 def test_select_last(data, token_sizes, dim, unsort, device):
-    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
-    packed_sequence = pack_sequence(sequences, enforce_sorted=False)
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
     actual = select_last(sequence=packed_sequence, unsort=unsort)
     if not unsort:
         actual = actual[packed_sequence.unsorted_indices]
 
-    expected = torch.stack([sequence[-1] for sequence in sequences], dim=0)
+    expected = torch.stack([sequence[-1] for sequence in inputs], dim=0)
 
     assert_close(actual, expected)
-    assert_grad_close(actual, expected, inputs=sequences)
+    assert_grad_close(actual, expected, inputs=inputs)
 
 
 @given(
@@ -58,14 +64,18 @@ def test_select_last(data, token_sizes, dim, unsort, device):
 )
 def test_select_init(data, token_sizes, dim, device):
     drop_last_n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
-    sequences = [torch.randn((token_size + 1, dim), device=device, requires_grad=True) for token_size in token_sizes]
-    packed_sequence = pack_sequence(sequences, enforce_sorted=False)
+
+    inputs = [
+        torch.randn((token_size + 1, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
     actual = select_init(sequence=packed_sequence, drop_last_n=drop_last_n)
-    expected = pack_sequence([sequence[:-drop_last_n] for sequence in sequences], enforce_sorted=False)
+    expected = pack_sequence([sequence[:-drop_last_n] for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
-    assert_grad_close(actual.data, expected.data, inputs=sequences)
+    assert_grad_close(actual.data, expected.data, inputs=inputs)
 
 
 @given(
@@ -76,14 +86,19 @@ def test_select_init(data, token_sizes, dim, device):
 )
 def test_select_tail(data, token_sizes, dim, device):
     drop_first_n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
-    sequences = [torch.randn((token_size + 1, dim), device=device, requires_grad=True) for token_size in token_sizes]
-    packed_sequence = pack_sequence(sequences, enforce_sorted=False)
+
+    inputs = [
+        torch.randn((token_size + 1, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
     actual = select_tail(sequence=packed_sequence, drop_first_n=drop_first_n)
-    expected = pack_sequence([sequence[drop_first_n:] for sequence in sequences], enforce_sorted=False)
+    expected = pack_sequence([
+        sequence[drop_first_n:] for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
-    assert_grad_close(actual.data, expected.data, inputs=sequences)
+    assert_grad_close(actual.data, expected.data, inputs=inputs)
 
 
 @given(
@@ -94,14 +109,19 @@ def test_select_tail(data, token_sizes, dim, device):
 )
 def test_roll_packed_sequence(data, token_sizes, dim, device):
     offset = data.draw(st.integers(min_value=-max(token_sizes), max_value=+max(token_sizes)))
-    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
-    packed_sequence = pack_sequence(sequences, enforce_sorted=False)
+
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
     actual = roll_packed_sequence(sequence=packed_sequence, shifts=offset)
-    expected = pack_sequence([sequence.roll(offset, dims=[0]) for sequence in sequences], enforce_sorted=False)
+    expected = pack_sequence([
+        sequence.roll(offset, dims=[0]) for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
-    assert_grad_close(actual.data, expected.data, inputs=sequences)
+    assert_grad_close(actual.data, expected.data, inputs=inputs)
 
 
 @given(
@@ -111,11 +131,15 @@ def test_roll_packed_sequence(data, token_sizes, dim, device):
     device=devices(),
 )
 def test_reverse_packed_sequence(data, token_sizes, dim, device):
-    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
-    packed_sequence = pack_sequence(sequences, enforce_sorted=False)
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
     actual = reverse_packed_sequence(sequence=packed_sequence)
-    expected = pack_sequence([sequence.flip(dims=[0]) for sequence in sequences], enforce_sorted=False)
+    expected = pack_sequence([
+        sequence.flip(dims=[0]) for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
-    assert_grad_close(actual.data, expected.data, inputs=sequences)
+    assert_grad_close(actual.data, expected.data, inputs=inputs)
