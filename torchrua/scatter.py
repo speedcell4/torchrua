@@ -8,8 +8,15 @@ from torchrua import accumulate_sizes
 
 __all__ = [
     'scatter_index_to_ptr',
-    'scatter_add', 'scatter_mean', 'scatter_max', 'scatter_min', 'scatter_logsumexp',
-    'scatter_softmax', 'scatter_log_softmax',
+    'scatter_add',
+    'scatter_sub',
+    'scatter_mean',
+    'scatter_max',
+    'scatter_min',
+    'scatter_logsumexp',
+    'scatter_softmax',
+    'scatter_log_softmax',
+    'scatter_multi_head_attention',
 ]
 
 
@@ -33,6 +40,15 @@ def scatter_add(tensor: Tensor, index: Tensor) -> Tensor:
     indices, offsets = scatter_index_to_ptr(index=index, device=tensor.device)
     ret, _, _, _ = torch.embedding_bag(
         weight=tensor.view((tensor.size()[0], -1)),
+        indices=indices, offsets=offsets, mode=0,
+    )
+    return ret.view((ret.size()[0], *tensor.size()[1:]))
+
+
+def scatter_sub(tensor: Tensor, index: Tensor) -> Tensor:
+    indices, offsets = scatter_index_to_ptr(index=index, device=tensor.device)
+    ret, _, _, _ = torch.embedding_bag(
+        weight=tensor.neg().view((tensor.size()[0], -1)),
         indices=indices, offsets=offsets, mode=0,
     )
     return ret.view((ret.size()[0], *tensor.size()[1:]))
@@ -89,3 +105,28 @@ def scatter_log_softmax(tensor: Tensor, index: Tensor) -> Tensor:
 
 def scatter_softmax(tensor: Tensor, index: Tensor) -> Tensor:
     return (tensor - scatter_logsumexp(tensor=tensor, index=index)[index]).exp()
+
+
+def scatter_multi_head_attention(query: Tensor, key: Tensor, value: Tensor, tau: float, index: Tensor) -> Tensor:
+    indices, offsets = scatter_index_to_ptr(index=index, device=query.device)
+    score_view = (query[..., None, :] @ key[..., :, None] * tau).view((query.size()[0], -1))
+
+    with torch.no_grad():
+        m, _, _, _ = torch.embedding_bag(
+            weight=score_view,
+            indices=indices, offsets=offsets, mode=2,
+        )
+
+    s, _, _, _ = torch.embedding_bag(
+        weight=(score_view - m[index]).exp(),
+        indices=indices, offsets=offsets, mode=0,
+    )
+    log_partition = torch.masked_fill(s, s == 0, 1.).log() + m
+
+    attention = (score_view - log_partition[index]).exp()
+    ret, _, _, _ = torch.embedding_bag(
+        weight=(attention[..., None] * value).view((attention.size()[0], -1)),
+        indices=indices, offsets=offsets, mode=0,
+    )
+
+    return ret.view((ret.size()[0], *value.size()[1:]))
