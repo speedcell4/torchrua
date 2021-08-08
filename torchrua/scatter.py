@@ -8,7 +8,8 @@ from torchrua import accumulate_sizes
 
 __all__ = [
     'scatter_index_to_ptr',
-    'scatter_add', 'scatter_mean', 'scatter_max', 'scatter_min',
+    'scatter_add', 'scatter_mean', 'scatter_max', 'scatter_min', 'scatter_logsumexp',
+    'scatter_softmax', 'scatter_log_softmax',
 ]
 
 
@@ -62,3 +63,29 @@ def scatter_min(tensor: Tensor, index: Tensor) -> Tensor:
         indices=indices, offsets=offsets, mode=2,
     )
     return ret.neg().view((ret.size()[0], *tensor.size()[1:]))
+
+
+def scatter_logsumexp(tensor: Tensor, index: Tensor) -> Tensor:
+    indices, offsets = scatter_index_to_ptr(index=index, device=tensor.device)
+    tensor_view = tensor.view((tensor.size()[0], -1))
+
+    with torch.no_grad():
+        m, _, _, _ = torch.embedding_bag(
+            weight=tensor_view,
+            indices=indices, offsets=offsets, mode=2,
+        )
+
+    s, _, _, _ = torch.embedding_bag(
+        weight=(tensor_view - m[index]).exp(),
+        indices=indices, offsets=offsets, mode=0,
+    )
+    ret = torch.masked_fill(s, s == 0, 1.).log() + m
+    return ret.view((ret.size()[0], *tensor.size()[1:]))
+
+
+def scatter_log_softmax(tensor: Tensor, index: Tensor) -> Tensor:
+    return tensor - scatter_logsumexp(tensor=tensor, index=index)[index]
+
+
+def scatter_softmax(tensor: Tensor, index: Tensor) -> Tensor:
+    return (tensor - scatter_logsumexp(tensor=tensor, index=index)[index]).exp()
