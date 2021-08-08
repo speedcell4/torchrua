@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import torch
+import torch_scatter
 from torch import Tensor
 from torch.types import Device
 
@@ -9,6 +10,7 @@ from torchrua.utils import accumulate_sizes
 __all__ = [
     'scatter_index_to_ptr',
     'scatter_add',
+    'scatter_mul',
     'scatter_mean',
     'scatter_max',
     'scatter_min',
@@ -42,6 +44,23 @@ def scatter_add(tensor: Tensor, index: Tensor) -> Tensor:
         indices=indices, offsets=offsets, mode=0,
     )
     return ret.view((ret.size()[0], *tensor.size()[1:]))
+
+
+def scatter_mul(tensor: Tensor, index: Tensor) -> Tensor:
+    indices, offsets = scatter_index_to_ptr(index=index, device=tensor.device)
+    tensor_view = tensor.view((tensor.size()[0], -1))
+
+    ret, _, _, _ = torch.embedding_bag(
+        weight=tensor_view.abs().log(),
+        indices=indices, offsets=offsets, mode=0,
+    )
+    sgn, _, _, _ = torch.embedding_bag(
+        weight=tensor_view.sign().neg().add(1.),
+        indices=indices, offsets=offsets, mode=0,
+    )
+    sgn = (sgn % 4).neg().add(1.)
+
+    return (sgn * ret.exp()).view((ret.size()[0], *tensor.size()[1:]))
 
 
 def scatter_mean(tensor: Tensor, index: Tensor) -> Tensor:
@@ -95,3 +114,11 @@ def scatter_log_softmax(tensor: Tensor, index: Tensor) -> Tensor:
 
 def scatter_softmax(tensor: Tensor, index: Tensor) -> Tensor:
     return scatter_log_softmax(tensor=tensor, index=index).exp()
+
+
+if __name__ == '__main__':
+    x = torch.randn((10, 1))
+    y = torch.randint(0, 4, (10,))
+
+    print(scatter_mul(x, y))
+    print(torch_scatter.scatter_mul(x, y, dim=0))
