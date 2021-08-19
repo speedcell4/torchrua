@@ -17,21 +17,21 @@ from torchrua.slicing import chunk_packed_sequence
     device=devices(),
 )
 def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batch_first, device):
-    target = sequences = [
+    excepted_sequences = sequences = [
         pack_sequence([
             torch.randn((token_size, embedding_dim), device=device, requires_grad=True)
             for token_size in token_sizes
         ], enforce_sorted=False)
         for _ in range(batch_size)
     ]
-    prediction = chunk_packed_sequence(
+    actual_sequences = chunk_packed_sequence(
         sequence=stack_packed_sequences(sequences=sequences, dim=dim),
         chunks=len(sequences), dim=dim,
     )
 
-    for t, p in zip(target, prediction):
-        data_prediction, token_sizes_prediction = pad_packed_sequence(p, batch_first=batch_first)
-        data_target, token_sizes_target = pad_packed_sequence(t, batch_first=batch_first)
+    for actual_sequence, excepted_sequence in zip(actual_sequences, excepted_sequences):
+        actual, actual_token_sizes = pad_packed_sequence(actual_sequence, batch_first=batch_first)
+        excepted, excepted_token_sizes = pad_packed_sequence(excepted_sequence, batch_first=batch_first)
 
-        assert_close(data_prediction, data_target)
-        assert_equal(token_sizes_prediction, token_sizes_target)
+        assert_close(actual, excepted)
+        assert_equal(actual_token_sizes, excepted_token_sizes)

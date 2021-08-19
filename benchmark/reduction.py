@@ -28,7 +28,7 @@ def reduce_catted_sequences(device: Type[draw_devices],
         ]
         for _ in batch_sizes
     ]
-    flatten_sequences = [token for sequence in sequences for token in sequence]
+    inputs = [token for sequence in sequences for token in sequence]
     catted_sequences = [cat_sequence(sequence, device=device) for sequence in sequences]
     packed_sequences = [pack_sequence(sequence, device=device) for sequence in sequences]
 
@@ -42,24 +42,24 @@ def reduce_catted_sequences(device: Type[draw_devices],
         reduction_pack = rua.reduce_catted_sequences(catted_sequences, device=device)
 
     with timer.rua_forward:
-        _, (prediction, _) = rnn(reduction_pack)
-        prediction = rearrange(prediction, 'd n x -> n (d x)')
+        _, (actual, _) = rnn(reduction_pack)
+        actual = rearrange(actual, 'd n x -> n (d x)')
 
     with timer.naive_forward:
-        target = []
+        excepted = []
         for pack in packed_sequences:
             _, (t, _) = rnn(pack)
-            target.append(rearrange(t, 'd n x -> n (d x)'))
-        target = pack_sequence(target).data
+            excepted.append(rearrange(t, 'd n x -> n (d x)'))
+        excepted = pack_sequence(excepted).data
 
     with timer.rua_backward:
         torch.autograd.grad(
-            prediction, flatten_sequences, torch.ones_like(prediction),
+            actual, inputs, torch.ones_like(actual),
             create_graph=False,
         )
 
     with timer.naive_backward:
         torch.autograd.grad(
-            target, flatten_sequences, torch.ones_like(target),
+            excepted, inputs, torch.ones_like(excepted),
             create_graph=False,
         )

@@ -15,13 +15,16 @@ from torchrua import padding as rua
     device=devices(),
 )
 def test_pad_sequence(data, token_sizes, dim, batch_first, device):
-    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
 
-    target = tgt.pad_sequence(sequences, batch_first=batch_first)
-    prediction = rua.pad_sequence(sequences, batch_first=batch_first)
+    actual = rua.pad_sequence(inputs, batch_first=batch_first)
+    excepted = tgt.pad_sequence(inputs, batch_first=batch_first)
 
-    assert_close(prediction, target)
-    assert_grad_close(prediction, target, inputs=sequences)
+    assert_close(actual, excepted)
+    assert_grad_close(actual, excepted, inputs=inputs)
 
 
 @given(
@@ -32,13 +35,16 @@ def test_pad_sequence(data, token_sizes, dim, batch_first, device):
     device=devices(),
 )
 def test_pad_packed_sequence(data, token_sizes, dim, batch_first, device):
-    sequences = [torch.randn((token_size, dim), device=device, requires_grad=True) for token_size in token_sizes]
-    packed_sequence = tgt.pack_sequence(sequences, enforce_sorted=False)
-    token_sizes_target = torch.tensor(token_sizes, device=torch.device('cpu'))
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    packed_sequence = tgt.pack_sequence(inputs, enforce_sorted=False)
+    excepted_token_sizes = torch.tensor(token_sizes, device=torch.device('cpu'))
 
-    target = tgt.pad_sequence(sequences, batch_first=batch_first)
-    prediction, token_sizes_prediction = rua.pad_packed_sequence(packed_sequence, batch_first=batch_first)
+    excepted = tgt.pad_sequence(inputs, batch_first=batch_first)
+    actual, actual_token_sizes = rua.pad_packed_sequence(packed_sequence, batch_first=batch_first)
 
-    assert_close(prediction, target)
-    assert_grad_close(prediction, target, inputs=sequences)
-    assert_equal(token_sizes_prediction, token_sizes_target)
+    assert_close(actual, excepted)
+    assert_grad_close(actual, excepted, inputs=inputs)
+    assert_equal(actual_token_sizes, excepted_token_sizes)

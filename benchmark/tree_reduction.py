@@ -19,30 +19,30 @@ def tree_reduce_packed_sequence(token_sizes: Type[draw_token_size_lists],
     dim = dim()
     device = device()
 
-    sequences = pack_sequence([
+    inputs = pack_sequence([
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ], device=device)
 
     with timer.rua_compile:
-        indices = tree_reduce_packed_indices(batch_sizes=sequences.batch_sizes)
+        indices = tree_reduce_packed_indices(batch_sizes=inputs.batch_sizes)
 
     with timer.rua_forward:
-        prediction = tree_reduce_sequence(torch.add)(sequences.data, indices)
+        actual = tree_reduce_sequence(torch.add)(inputs.data, indices)
 
     with timer.naive_forward:
-        target, _ = pad_packed_sequence(sequences, batch_first=False)
-        target = target.sum(dim=0)
+        excepted, _ = pad_packed_sequence(inputs, batch_first=False)
+        excepted = excepted.sum(dim=0)
 
     with timer.rua_backward:
         _ = torch.autograd.grad(
-            prediction, sequences.data, torch.ones_like(prediction),
+            actual, inputs.data, torch.ones_like(actual),
             create_graph=False,
         )
 
     with timer.naive_backward:
         _ = torch.autograd.grad(
-            target, sequences.data, torch.ones_like(target),
+            excepted, inputs.data, torch.ones_like(excepted),
             create_graph=False,
         )
 
