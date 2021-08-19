@@ -48,7 +48,7 @@ class TimerSuit(object):
             naive_forward = self.naive_forward.averaged_seconds
             naive_backward = self.naive_backward.averaged_seconds
             print(f'PyTorch  ({naive_forward + naive_backward :.4f} sec) = '
-                  f'         forward ({naive_forward:.4f} sec) + '
+                  f'                       forward ({naive_forward:.4f} sec) + '
                   f'backward ({naive_backward :.4f} sec)')
 
             rua_compile = self.rua_compile.averaged_seconds
