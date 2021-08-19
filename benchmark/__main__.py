@@ -1,6 +1,5 @@
 from aku import Aku
 
-from benchmark.attention import scatter_attention
 from benchmark.packing import pack_sequence, pack_padded_sequence
 from benchmark.padding import pad_sequence, pad_packed_sequence
 from benchmark.reduction import reduce_catted_sequences
@@ -23,6 +22,5 @@ app.option(scatter_mul)
 app.option(scatter_max)
 app.option(scatter_logsumexp)
 app.option(scatter_softmax)
-app.option(scatter_attention)
 
 app.run()
