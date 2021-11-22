@@ -51,10 +51,10 @@ def test_tree_reduce_padded_sequence(data, token_sizes, dim, batch_first, device
     padded_sequence = pad_sequence(inputs, device=device, batch_first=batch_first)
     token_sizes = torch.tensor(token_sizes, device=device)
     indices = tree_reduce_padded_indices(token_sizes=token_sizes, batch_first=batch_first)
-    actual = tree_reduce_sequence(torch.add)(padded_sequence.data, indices)
+    actual = tree_reduce_sequence(torch.add)(padded_sequence, indices)
 
     assert_close(actual, excepted)
-    # assert_grad_close(actual, excepted, inputs=inputs) TODO
+    assert_grad_close(actual, excepted, inputs=inputs)
 
 
 @given(
@@ -71,9 +71,9 @@ def test_tree_reduce_catted_sequence(data, token_sizes, dim, device):
 
     excepted = pad_sequence(inputs, device=device).sum(dim=0)
 
-    catted_sequence, token_sizes = cat_sequence(inputs, device=device)
-    indices = tree_reduce_catted_indices(token_sizes=token_sizes)
+    catted_sequence = cat_sequence(inputs, device=device)
+    indices = tree_reduce_catted_indices(token_sizes=catted_sequence.token_sizes)
     actual = tree_reduce_sequence(torch.add)(catted_sequence.data, indices)
 
     assert_close(actual, excepted)
-    # assert_grad_close(actual, excepted, inputs=inputs) TODO
+    assert_grad_close(actual, excepted, inputs=inputs)

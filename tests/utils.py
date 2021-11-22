@@ -14,16 +14,8 @@ __all__ = [
 ]
 
 
-def assert_equal(actual: Tensor, expected: Tensor, *,
-                 check_device: bool = True, check_dtype: bool = True, check_stride: bool = True):
-    if check_device and actual.device != expected.device:
-        return False
-    if check_dtype and actual.dtype != expected.dtype:
-        return False
-    if check_stride and actual.stride() != expected.stride():
-        return False
-
-    return torch.equal(actual, expected)
+def assert_equal(actual: Tensor, expected: Tensor, **kwargs):
+    assert torch.equal(actual, expected)
 
 
 def assert_packed_sequence_equal(
