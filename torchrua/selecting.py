@@ -60,6 +60,32 @@ def tail_catted_sequence(sequence: CattedSequence, n: int = 1) -> CattedSequence
     return CattedSequence(data=sequence.data[indices], token_sizes=token_sizes)
 
 
+@torch.no_grad()
+def reversed_catted_indices(sequence: CattedSequence) -> Tensor:
+    token_sizes = sequence.token_sizes.to(device=sequence.data.device)
+    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
+    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+
+    return token_sizes[batch_ptr] - token_ptr - 1 + acc_token_sizes[batch_ptr]
+
+
+def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
+    indices = reversed_catted_indices(sequence)
+    return CattedSequence(
+        data=sequence.data[indices],
+        token_sizes=sequence.token_sizes,
+    )
+
+
+@torch.no_grad()
+def rolled_catted_indices(sequence: CattedSequence, shifts: int) -> Tensor:
+    raise NotImplementedError
+
+
+def roll_catted_sequence(sequence: CattedSequence, shifts: int) -> CattedSequence:
+    raise NotImplementedError
+
+
 if __name__ == '__main__':
     data = cat_sequence([
         torch.arange(5),
@@ -67,4 +93,4 @@ if __name__ == '__main__':
         torch.arange(3),
     ])
     print(data)
-    print(tail_catted_sequence(data, n=2))
+    print(reverse_catted_sequence(data))
