@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
-from torch.testing import assert_equal, assert_close
+from torch.testing import assert_close
 
 __all__ = [
     'assert_equal',
@@ -12,6 +12,18 @@ __all__ = [
     'assert_packed_sequence_close',
     'assert_grad_close',
 ]
+
+
+def assert_equal(actual: Tensor, expected: Tensor, *,
+                 check_device: bool = True, check_dtype: bool = True, check_stride: bool = True):
+    if check_device and actual.device != expected.device:
+        return False
+    if check_dtype and actual.dtype != expected.dtype:
+        return False
+    if check_stride and actual.stride() != expected.stride():
+        return False
+
+    return torch.equal(actual, expected)
 
 
 def assert_packed_sequence_equal(
