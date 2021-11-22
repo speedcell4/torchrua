@@ -13,7 +13,7 @@ def head_catted_indices(sequence: CattedSequence) -> Tensor:
 
 @torch.no_grad()
 def last_catted_indices(sequence: CattedSequence) -> Tensor:
-    raise NotImplementedError
+    return torch.cumsum(sequence.token_sizes, dim=0) - 1
 
 
 @torch.no_grad()
@@ -32,7 +32,8 @@ def head_catted_sequence(sequence: CattedSequence) -> Tensor:
 
 
 def last_catted_sequence(sequence: CattedSequence) -> Tensor:
-    raise NotImplementedError
+    indices = last_catted_indices(sequence=sequence)
+    return sequence.data[indices]
 
 
 def init_catted_sequence(sequence: CattedSequence, drop_n: int = 1) -> CattedSequence:
@@ -50,4 +51,4 @@ if __name__ == '__main__':
         torch.arange(3),
     ])
     print(data)
-    print(head_catted_sequence(data))
+    print(last_catted_sequence(data))
