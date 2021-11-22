@@ -3,9 +3,18 @@ from typing import Tuple
 import torch
 from torch import Tensor
 
-from torchrua import CattedSequence
+from torchrua.catting import CattedSequence
 from torchrua.indexing import batch_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
+
+__all__ = [
+    'head_catted_indices', 'head_catted_sequence',
+    'last_catted_indices', 'last_catted_sequence',
+    'init_catted_mask', 'init_catted_sequence',
+    'tail_catted_mask', 'tail_catted_sequence',
+    'reversed_catted_indices', 'reverse_catted_sequence',
+    'rolled_catted_indices', 'roll_catted_sequence',
+]
 
 
 @torch.no_grad()

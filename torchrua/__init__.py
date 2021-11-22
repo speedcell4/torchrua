@@ -1,3 +1,4 @@
+from torchrua.selecting import *
 from torchrua.adaptor import *
 from torchrua.catting import *
 from torchrua.indexing import *
