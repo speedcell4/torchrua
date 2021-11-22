@@ -4,7 +4,6 @@ import torch
 from torch import Tensor
 
 from torchrua import CattedSequence
-from torchrua.catting import cat_sequence
 from torchrua.indexing import batch_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
@@ -66,7 +65,8 @@ def reversed_catted_indices(sequence: CattedSequence) -> Tensor:
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
     batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
 
-    return token_sizes[batch_ptr] - token_ptr - 1 + acc_token_sizes[batch_ptr]
+    token_ptr = token_sizes[batch_ptr] - token_ptr - 1
+    return token_ptr + acc_token_sizes[batch_ptr]
 
 
 def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
@@ -79,18 +79,17 @@ def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
 
 @torch.no_grad()
 def rolled_catted_indices(sequence: CattedSequence, shifts: int) -> Tensor:
-    raise NotImplementedError
+    token_sizes = sequence.token_sizes.to(device=sequence.data.device)
+    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
+    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+
+    token_ptr = (token_ptr + token_sizes[batch_ptr] - shifts) % token_sizes[batch_ptr]
+    return token_ptr + acc_token_sizes[batch_ptr]
 
 
 def roll_catted_sequence(sequence: CattedSequence, shifts: int) -> CattedSequence:
-    raise NotImplementedError
-
-
-if __name__ == '__main__':
-    data = cat_sequence([
-        torch.arange(5),
-        torch.arange(2),
-        torch.arange(3),
-    ])
-    print(data)
-    print(reverse_catted_sequence(data))
+    indices = rolled_catted_indices(sequence, shifts=shifts)
+    return CattedSequence(
+        data=sequence.data[indices],
+        token_sizes=sequence.token_sizes,
+    )
