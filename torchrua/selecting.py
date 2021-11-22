@@ -1,5 +1,9 @@
+from typing import Tuple
+
 import torch
 from torch import Tensor
+from torchrua.indexing import token_sizes_to_ptr, batch_sizes_to_ptr
+
 from torchrua.catting import cat_sequence
 
 from torchrua import CattedSequence
@@ -17,8 +21,14 @@ def last_catted_indices(sequence: CattedSequence) -> Tensor:
 
 
 @torch.no_grad()
-def init_catted_indices(sequence: CattedSequence, drop_n: int = 1) -> Tensor:
-    raise NotImplementedError
+def init_catted_mask(sequence: CattedSequence, n: int = 1) -> Tuple[Tensor, Tensor]:
+    assert (sequence.token_sizes >= n).all().item()
+
+    token_sizes = sequence.token_sizes.to(device=sequence.data.device)
+    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+
+    token_sizes = token_sizes - n
+    return token_ptr < token_sizes[batch_ptr], token_sizes
 
 
 @torch.no_grad()
@@ -36,8 +46,9 @@ def last_catted_sequence(sequence: CattedSequence) -> Tensor:
     return sequence.data[indices]
 
 
-def init_catted_sequence(sequence: CattedSequence, drop_n: int = 1) -> CattedSequence:
-    raise NotImplementedError
+def init_catted_sequence(sequence: CattedSequence, n: int = 1) -> CattedSequence:
+    indices, token_sizes = init_catted_mask(sequence=sequence, n=n)
+    return CattedSequence(data=sequence.data[indices], token_sizes=token_sizes)
 
 
 def tail_catted_sequence(sequence: CattedSequence, drop_n: int = 1) -> CattedSequence:
@@ -51,4 +62,4 @@ if __name__ == '__main__':
         torch.arange(3),
     ])
     print(data)
-    print(last_catted_sequence(data))
+    print(init_catted_sequence(data, n=2))
