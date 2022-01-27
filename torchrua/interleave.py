@@ -1,14 +1,14 @@
-from typing import Tuple
-
 import torch
 from torch import Tensor
+from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.catting import CattedSequence
+from torchrua import pack_catted_indices
+from torchrua.catting import CattedSequence, cat_packed_indices
 from torchrua.indexing import batch_sizes_to_ptr
 
 
 @torch.no_grad()
-def repeat_interleave_catted_indices(repeats: Tensor, token_sizes: Tensor) -> Tuple[Tensor, Tensor]:
+def repeat_interleave_catted_indices(repeats: Tensor, token_sizes: Tensor):
     index, _, _ = batch_sizes_to_ptr(batch_sizes=repeats)
 
     batch_ptr, _, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
@@ -18,5 +18,36 @@ def repeat_interleave_catted_indices(repeats: Tensor, token_sizes: Tensor) -> Tu
 
 
 def repeat_interleave_catted_sequence(sequence: CattedSequence, repeats: Tensor) -> CattedSequence:
-    index, token_sizes = repeat_interleave_catted_indices(repeats, sequence.token_sizes)
-    return CattedSequence(data=sequence.data[index], token_sizes=token_sizes)
+    index, token_sizes = repeat_interleave_catted_indices(
+        repeats=repeats,
+        token_sizes=sequence.token_sizes,
+    )
+    return CattedSequence(
+        data=sequence.data[index],
+        token_sizes=token_sizes,
+    )
+
+
+@torch.no_grad()
+def repeat_interleave_packed_indices(repeats: Tensor, batch_sizes: Tensor, unsorted_indices: Tensor):
+    index1, token_sizes = cat_packed_indices(
+        batch_sizes=batch_sizes, device=repeats.device,
+        unsorted_indices=unsorted_indices,
+    )
+    index2, token_sizes = repeat_interleave_catted_indices(repeats=repeats[index1], token_sizes=token_sizes)
+    index3, batch_sizes, sorted_indices, unsorted_indices = pack_catted_indices(token_sizes=token_sizes)
+    return index1[index2[index3]], batch_sizes, sorted_indices, unsorted_indices
+
+
+def repeat_interleave_packed_sequence(sequence: PackedSequence, repeats: Tensor) -> PackedSequence:
+    index, batch_sizes, sorted_indices, unsorted_indices = repeat_interleave_packed_indices(
+        repeats=repeats,
+        batch_sizes=sequence.batch_sizes,
+        unsorted_indices=sequence.unsorted_indices,
+    )
+    return PackedSequence(
+        data=sequence.data[index],
+        batch_sizes=batch_sizes,
+        sorted_indices=sorted_indices,
+        unsorted_indices=unsorted_indices,
+    )
