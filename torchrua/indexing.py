@@ -10,8 +10,8 @@ __all__ = [
     'last_indices', 'select_last',
     'init_indices', 'select_init',
     'tail_indices', 'select_tail',
-    'reversed_indices', 'reverse_packed_sequence',
-    'rolled_indices', 'roll_packed_sequence',
+    'reverse_packed_indices', 'reverse_packed_sequence',
+    'roll_packed_indices', 'roll_packed_sequence',
 ]
 
 
@@ -94,20 +94,21 @@ def select_tail(sequence: PackedSequence, drop_first_n: int = 1) -> PackedSequen
 
 
 @torch.no_grad()
-def reversed_indices(sequence: PackedSequence) -> Tensor:
+def reverse_packed_indices(sequence: PackedSequence) -> Tensor:
     device = sequence.data.device
 
     batch_sizes = sequence.batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    token_ptr, batch_ptr, sorted_lengths = batch_sizes_to_ptr(batch_sizes=batch_sizes)
-    token_ptr = (sorted_lengths - 1)[batch_ptr] - token_ptr
+    token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
+    token_ptr = token_sizes[batch_ptr] - token_ptr - 1
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
 
 def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
+    indices = reverse_packed_indices(sequence)
     return PackedSequence(
-        data=sequence.data[reversed_indices(sequence)],
+        data=sequence.data[indices],
         batch_sizes=sequence.batch_sizes,
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
@@ -115,22 +116,23 @@ def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
 
 
 @torch.no_grad()
-def rolled_indices(sequence: PackedSequence, shifts: int) -> Tensor:
+def roll_packed_indices(sequence: PackedSequence, shifts: int) -> Tensor:
     device = sequence.data.device
 
     batch_sizes = sequence.batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    token_ptr, batch_ptr, sorted_lengths = batch_sizes_to_ptr(batch_sizes=batch_sizes)
+    token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
 
-    lengths = sorted_lengths[batch_ptr]
-    token_ptr = (token_ptr - shifts + lengths) % lengths
+    token_sizes = token_sizes[batch_ptr]
+    token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
 
 def roll_packed_sequence(sequence: PackedSequence, shifts: int) -> PackedSequence:
+    indices = roll_packed_indices(sequence, shifts=shifts)
     return PackedSequence(
-        data=sequence.data[rolled_indices(sequence, shifts=shifts)],
+        data=sequence.data[indices],
         batch_sizes=sequence.batch_sizes,
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
