@@ -7,6 +7,7 @@ from torch.types import Device
 from torchrua.utils import accumulate_sizes
 
 __all__ = [
+    'scatter_counts',
     'scatter_index_to_ptr',
     'scatter_add',
     'scatter_mul',
@@ -20,19 +21,17 @@ __all__ = [
 
 
 @torch.no_grad()
-def scatter_index_to_ptr(index: Tensor,
-                         dtype: torch.dtype = torch.long,
-                         device: Device = None) -> Tuple[Tensor, Tensor]:
-    if device is None:
-        device = index.device
+def scatter_counts(index: Tensor, src: Tensor = None) -> Tensor:
+    counts = torch.zeros(index.max().item() + 1, dtype=index.dtype, device=index.device)
+    return counts.scatter_add_(dim=0, index=index, src=src or torch.ones_like(index))
 
-    index = index.to(dtype=dtype, device=device)
+
+@torch.no_grad()
+def scatter_index_to_ptr(index: Tensor, device: Device = None) -> Tuple[Tensor, Tensor]:
+    index = index.to(device=device)
     sorted_indices = torch.argsort(index, dim=0, descending=False)
 
-    token_sizes = torch.zeros(index.max().item() + 1, dtype=dtype, device=device)
-    token_sizes = token_sizes.scatter_add_(dim=0, index=index, src=torch.ones_like(index))
-
-    return sorted_indices, accumulate_sizes(sizes=token_sizes)
+    return sorted_indices, accumulate_sizes(sizes=scatter_counts(index=index))
 
 
 def scatter_add(tensor: Tensor, index: Tensor) -> Tensor:
