@@ -2,8 +2,8 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua import pack_catted_indices
 from torchrua.catting import CattedSequence, cat_packed_indices
+from torchrua.packing import pack_catted_indices
 
 
 @torch.no_grad()
@@ -46,7 +46,7 @@ def repeat_interleave_packed_sequence(sequence: PackedSequence, repeats: Tensor)
     )
     return PackedSequence(
         data=sequence.data[index],
-        batch_sizes=batch_sizes,
+        batch_sizes=batch_sizes.cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
