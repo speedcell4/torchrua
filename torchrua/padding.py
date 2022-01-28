@@ -78,7 +78,7 @@ def pad_packed_sequence(sequence: PackedSequence,
     )
     data[indices] = sequence.data
 
-    return data, token_sizes.cpu()
+    return data, token_sizes
 
 
 @torch.no_grad()
