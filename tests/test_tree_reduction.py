@@ -21,7 +21,8 @@ def test_tree_reduce_packed_sequence(data, token_sizes, dim, device):
         for token_size in token_sizes
     ]
 
-    excepted = pad_sequence(inputs, device=device).sum(dim=0)
+    excepted, _ = pad_sequence(inputs, device=device)
+    excepted = excepted.sum(dim=0)
 
     packed_sequence = pack_sequence(inputs, device=device)
     indices = tree_reduce_packed_indices(batch_sizes=packed_sequence.batch_sizes)
@@ -46,9 +47,10 @@ def test_tree_reduce_padded_sequence(data, token_sizes, dim, batch_first, device
         for token_size in token_sizes
     ]
 
-    excepted = pad_sequence(inputs, device=device).sum(dim=0)
+    excepted, _ = pad_sequence(inputs, device=device)
+    excepted = excepted.sum(dim=0)
 
-    padded_sequence = pad_sequence(inputs, device=device, batch_first=batch_first)
+    padded_sequence, _ = pad_sequence(inputs, device=device, batch_first=batch_first)
     token_sizes = torch.tensor(token_sizes, device=device)
     indices = tree_reduce_padded_indices(token_sizes=token_sizes, batch_first=batch_first)
     actual = tree_reduce_sequence(torch.add)(padded_sequence, indices)
@@ -69,7 +71,8 @@ def test_tree_reduce_catted_sequence(data, token_sizes, dim, device):
         for token_size in token_sizes
     ]
 
-    excepted = pad_sequence(inputs, device=device).sum(dim=0)
+    excepted, _ = pad_sequence(inputs, device=device)
+    excepted = excepted.sum(dim=0)
 
     catted_sequence = cat_sequence(inputs, device=device)
     indices = tree_reduce_catted_indices(token_sizes=catted_sequence.token_sizes)

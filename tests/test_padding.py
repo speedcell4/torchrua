@@ -20,7 +20,7 @@ def test_pad_sequence(data, token_sizes, dim, batch_first, device):
         for token_size in token_sizes
     ]
 
-    actual = rua.pad_sequence(inputs, batch_first=batch_first)
+    actual, _ = rua.pad_sequence(inputs, batch_first=batch_first)
     excepted = tgt.pad_sequence(inputs, batch_first=batch_first)
 
     assert_close(actual, excepted)
@@ -40,7 +40,7 @@ def test_pad_packed_sequence(data, token_sizes, dim, batch_first, device):
         for token_size in token_sizes
     ]
     packed_sequence = tgt.pack_sequence(inputs, enforce_sorted=False)
-    excepted_token_sizes = torch.tensor(token_sizes, device=torch.device('cpu'))
+    excepted_token_sizes = torch.tensor(token_sizes, device=device)
 
     excepted = tgt.pad_sequence(inputs, batch_first=batch_first)
     actual, actual_token_sizes = rua.pad_packed_sequence(packed_sequence, batch_first=batch_first)

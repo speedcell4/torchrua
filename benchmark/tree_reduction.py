@@ -93,29 +93,29 @@ def tree_reduce_catted_sequence(token_sizes: Type[draw_token_size_lists],
     dim = dim()
     device = device()
 
-    sequences, token_sizes = cat_sequence([
+    sequence = cat_sequence([
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ], device=device)
 
     with timer.rua_compile:
-        indices = tree_reduce_catted_indices(token_sizes=token_sizes)
+        indices = tree_reduce_catted_indices(token_sizes=sequence.token_sizes)
 
     with timer.rua_forward:
-        prediction = tree_reduce_sequence(torch.add)(sequences, indices)
+        prediction = tree_reduce_sequence(torch.add)(sequence, indices)
 
     with timer.naive_forward:
-        target = pad_catted_sequence(sequences, token_sizes, batch_first=False)
+        target, _ = pad_catted_sequence(sequence, batch_first=False)
         target = target.sum(dim=0)
 
     with timer.rua_backward:
         _ = torch.autograd.grad(
-            prediction, sequences, torch.ones_like(prediction),
+            prediction, sequence, torch.ones_like(prediction),
             create_graph=False,
         )
 
     with timer.naive_backward:
         _ = torch.autograd.grad(
-            target, sequences, torch.ones_like(target),
+            target, sequence, torch.ones_like(target),
             create_graph=False,
         )
