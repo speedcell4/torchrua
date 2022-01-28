@@ -71,7 +71,7 @@ def test_select_init(data, token_sizes, dim, device):
     ]
     packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_init(sequence=packed_sequence, drop_last_n=drop_last_n)
+    actual = select_init(sequence=packed_sequence, n=drop_last_n)
     expected = pack_sequence([sequence[:-drop_last_n] for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
@@ -93,7 +93,7 @@ def test_select_tail(data, token_sizes, dim, device):
     ]
     packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_tail(sequence=packed_sequence, drop_first_n=drop_first_n)
+    actual = select_tail(sequence=packed_sequence, n=drop_first_n)
     expected = pack_sequence([
         sequence[drop_first_n:] for sequence in inputs], enforce_sorted=False)
 

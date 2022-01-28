@@ -163,14 +163,14 @@ print(select_head(pack))
 print(select_last(pack))
 # tensor([5, 2, 3])
 
-y = select_init(pack, drop_last_n=1)
+y = select_init(pack, n=1)
 y, _ = pad_packed_sequence(y, batch_first=True)
 print(y)
 # tensor([[1, 2, 3, 4],
 #         [1, 0, 0, 0],
 #         [1, 2, 0, 0]])
 
-z = select_tail(pack, drop_first_n=1)
+z = select_tail(pack, n=1)
 z, _ = pad_packed_sequence(z, batch_first=True)
 print(z)
 # tensor([[2, 3, 4, 5],

@@ -56,47 +56,39 @@ def select_last(sequence: PackedSequence, unsort: bool = True) -> Tensor:
 
 
 @torch.no_grad()
-def init_indices(sequence: PackedSequence, drop_last_n: int = 1) -> Tensor:
-    device = sequence.data.device
-    n = sequence.batch_sizes.size()[0] - drop_last_n
-
-    batch_sizes = sequence.batch_sizes.to(device=device)
+def init_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    batch_sizes = resize_sizes(sizes=batch_sizes, n=n)
+
+    batch_sizes = resize_sizes(sizes=batch_sizes, n=batch_sizes.size()[0] - n)
     token_ptr, batch_ptr, _ = batch_sizes_to_ptr(batch_sizes=batch_sizes)
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
 
-def select_init(sequence: PackedSequence, drop_last_n: int = 1) -> PackedSequence:
+def select_init(sequence: PackedSequence, n: int = 1) -> PackedSequence:
+    device = sequence.data.device
+
+    indices = init_indices(batch_sizes=sequence.batch_sizes.to(device=device), n=n)
     return PackedSequence(
-        data=sequence.data[init_indices(sequence, drop_last_n=drop_last_n)],
-        batch_sizes=sequence.batch_sizes[drop_last_n:],
+        data=sequence.data[indices],
+        batch_sizes=sequence.batch_sizes[n:],
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )
 
 
 @torch.no_grad()
-def tail_indices(sequence: PackedSequence, drop_first_n: int = 1) -> Tensor:
-    assert sequence.batch_sizes[0] == sequence.batch_sizes[drop_first_n], \
-        f'some sequences contain less than {drop_first_n} elements, truncating is not allowed.'
+def tail_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
+    return torch.arange(batch_sizes[0].item() * n, batch_sizes.sum().item(), device=batch_sizes.device)
 
+
+def select_tail(sequence: PackedSequence, n: int = 1) -> PackedSequence:
     device = sequence.data.device
-    return torch.arange(
-        sequence.batch_sizes[0].item() * drop_first_n,
-        sequence.batch_sizes.sum().item(),
-        device=device,
-    )
 
-
-def select_tail(sequence: PackedSequence, drop_first_n: int = 1) -> PackedSequence:
-    assert sequence.batch_sizes[0] == sequence.batch_sizes[1], \
-        'some sequences contain only one element, truncating is not allowed.'
-
+    indices = tail_indices(batch_sizes=sequence.batch_sizes.to(device=device), n=n)
     return PackedSequence(
-        data=sequence.data[tail_indices(sequence, drop_first_n=drop_first_n)],
-        batch_sizes=sequence.batch_sizes[drop_first_n:],
+        data=sequence.data[indices],
+        batch_sizes=sequence.batch_sizes[n:],
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )
