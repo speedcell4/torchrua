@@ -20,7 +20,7 @@ def test_pad_sequence(data, token_sizes, dim, batch_first, device):
         for token_size in token_sizes
     ]
 
-    actual = rua.pad_sequence(inputs, batch_first=batch_first)
+    actual, _ = rua.pad_sequence(inputs, batch_first=batch_first)
     excepted = tgt.pad_sequence(inputs, batch_first=batch_first)
 
     assert_close(actual, excepted)

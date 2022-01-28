@@ -37,9 +37,9 @@ def test_repeat_interleave(token_sizes: List[int], dim: int, device: Device) -> 
     catted_sequence = repeat_interleave_catted_sequence(sequence=catted_sequence, repeats=catted_repeats)
     packed_sequence = repeat_interleave_packed_sequence(sequence=packed_sequence, repeats=packed_repeats)
 
-    catted_data = pad_catted_sequence(*catted_sequence, batch_first=True, device=device)
+    catted_data, catted_token_sizes = pad_catted_sequence(catted_sequence, batch_first=True, device=device)
     packed_data, packed_token_sizes = pad_packed_sequence(packed_sequence, batch_first=True, device=device)
 
     assert_close(catted_data, packed_data)
-    assert_close(catted_sequence.token_sizes, packed_token_sizes)
+    assert_close(catted_token_sizes, packed_token_sizes)
     assert_grad_close(catted_data, packed_data, inputs=sequence)
