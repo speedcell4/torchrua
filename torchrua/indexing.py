@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import batch_sizes_to_ptr
+from torchrua.core import sizes_to_ptr, transpose_sizes
 from torchrua.utils import accumulate_sizes, resize_sizes, batch_sizes_to_token_sizes
 
 __all__ = [
@@ -60,7 +60,7 @@ def init_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
     batch_sizes = resize_sizes(sizes=batch_sizes, n=batch_sizes.size()[0] - n)
-    token_ptr, batch_ptr, _ = batch_sizes_to_ptr(batch_sizes=batch_sizes)
+    token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
@@ -98,7 +98,8 @@ def select_tail(sequence: PackedSequence, n: int = 1) -> PackedSequence:
 def reverse_packed_indices(batch_sizes: Tensor) -> Tensor:
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
+    token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
+    token_sizes = transpose_sizes(sizes=batch_sizes)
     token_ptr = token_sizes[batch_ptr] - token_ptr - 1
 
     return acc_batch_sizes[token_ptr] + batch_ptr
@@ -120,8 +121,8 @@ def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
 def roll_packed_indices(batch_sizes: Tensor, shifts: int) -> Tensor:
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
-    token_sizes = token_sizes[batch_ptr]
+    token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
+    token_sizes = transpose_sizes(sizes=batch_sizes)[batch_ptr]
     token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
 
     return acc_batch_sizes[token_ptr] + batch_ptr
