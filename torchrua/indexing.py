@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
@@ -16,34 +18,41 @@ __all__ = [
 
 
 @torch.no_grad()
-def head_indices(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    device = sequence.data.device
+def head_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor] = None) -> Tensor:
+    if unsorted_indices is not None:
+        return unsorted_indices
 
-    if unsort and sequence.unsorted_indices is not None:
-        return sequence.unsorted_indices.to(device=device)
-
-    b = sequence.batch_sizes[0].item()
-    return torch.arange(0, b, device=device)
+    return torch.arange(batch_sizes[0].item(), device=batch_sizes.device)
 
 
 def select_head(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    return sequence.data[head_indices(sequence=sequence, unsort=unsort)]
+    device = sequence.data.device
+
+    indices = head_indices(
+        batch_sizes=sequence.batch_sizes.to(device=device),
+        unsorted_indices=sequence.unsorted_indices if unsort else None,
+    )
+    return sequence.data[indices]
 
 
 @torch.no_grad()
-def last_indices(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    device = sequence.data.device
-
-    batch_sizes = sequence.batch_sizes.to(device=device)
+def last_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor] = None) -> Tensor:
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    batch_ptr = head_indices(sequence=sequence, unsort=unsort)
+
+    batch_ptr = head_indices(batch_sizes=batch_sizes, unsorted_indices=unsorted_indices)
     token_ptr = batch_sizes_to_token_sizes(batch_sizes=batch_sizes, batch_ptr=batch_ptr) - 1
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
 
 def select_last(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    return sequence.data[last_indices(sequence=sequence, unsort=unsort)]
+    device = sequence.data.device
+
+    indices = last_indices(
+        batch_sizes=sequence.batch_sizes.to(device=device),
+        unsorted_indices=sequence.unsorted_indices if unsort else None,
+    )
+    return sequence.data[indices]
 
 
 @torch.no_grad()
