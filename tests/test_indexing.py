@@ -63,7 +63,7 @@ def test_select_last(data, token_sizes, dim, unsort, device):
     device=devices(),
 )
 def test_select_init(data, token_sizes, dim, device):
-    drop_last_n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
+    n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
 
     inputs = [
         torch.randn((token_size + 1, dim), device=device, requires_grad=True)
@@ -71,8 +71,8 @@ def test_select_init(data, token_sizes, dim, device):
     ]
     packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_init(sequence=packed_sequence, n=drop_last_n)
-    expected = pack_sequence([sequence[:-drop_last_n] for sequence in inputs], enforce_sorted=False)
+    actual = select_init(sequence=packed_sequence, n=n)
+    expected = pack_sequence([sequence[:-n] for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
     assert_grad_close(actual.data, expected.data, inputs=inputs)
@@ -85,7 +85,7 @@ def test_select_init(data, token_sizes, dim, device):
     device=devices(),
 )
 def test_select_tail(data, token_sizes, dim, device):
-    drop_first_n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
+    n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
 
     inputs = [
         torch.randn((token_size + 1, dim), device=device, requires_grad=True)
@@ -93,9 +93,8 @@ def test_select_tail(data, token_sizes, dim, device):
     ]
     packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_tail(sequence=packed_sequence, n=drop_first_n)
-    expected = pack_sequence([
-        sequence[drop_first_n:] for sequence in inputs], enforce_sorted=False)
+    actual = select_tail(sequence=packed_sequence, n=n)
+    expected = pack_sequence([sequence[n:] for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
     assert_grad_close(actual.data, expected.data, inputs=inputs)

@@ -95,11 +95,9 @@ def select_tail(sequence: PackedSequence, n: int = 1) -> PackedSequence:
 
 
 @torch.no_grad()
-def reverse_packed_indices(sequence: PackedSequence) -> Tensor:
-    device = sequence.data.device
-
-    batch_sizes = sequence.batch_sizes.to(device=device)
+def reverse_packed_indices(batch_sizes: Tensor) -> Tensor:
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
+
     token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
     token_ptr = token_sizes[batch_ptr] - token_ptr - 1
 
@@ -107,7 +105,9 @@ def reverse_packed_indices(sequence: PackedSequence) -> Tensor:
 
 
 def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
-    indices = reverse_packed_indices(sequence)
+    device = sequence.data.device
+
+    indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device))
     return PackedSequence(
         data=sequence.data[indices],
         batch_sizes=sequence.batch_sizes,
@@ -117,13 +117,10 @@ def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
 
 
 @torch.no_grad()
-def roll_packed_indices(sequence: PackedSequence, shifts: int) -> Tensor:
-    device = sequence.data.device
-
-    batch_sizes = sequence.batch_sizes.to(device=device)
+def roll_packed_indices(batch_sizes: Tensor, shifts: int) -> Tensor:
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
 
+    token_ptr, batch_ptr, token_sizes = batch_sizes_to_ptr(batch_sizes=batch_sizes)
     token_sizes = token_sizes[batch_ptr]
     token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
 
@@ -131,7 +128,9 @@ def roll_packed_indices(sequence: PackedSequence, shifts: int) -> Tensor:
 
 
 def roll_packed_sequence(sequence: PackedSequence, shifts: int) -> PackedSequence:
-    indices = roll_packed_indices(sequence, shifts=shifts)
+    device = sequence.data.device
+
+    indices = roll_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device), shifts=shifts)
     return PackedSequence(
         data=sequence.data[indices],
         batch_sizes=sequence.batch_sizes,
