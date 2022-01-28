@@ -4,14 +4,13 @@ from torch.nn.utils.rnn import PackedSequence
 
 from torchrua import pack_catted_indices
 from torchrua.catting import CattedSequence, cat_packed_indices
-from torchrua.indexing import batch_sizes_to_ptr
 
 
 @torch.no_grad()
 def repeat_interleave_catted_indices(repeats: Tensor, token_sizes: Tensor):
-    index, _, _ = batch_sizes_to_ptr(batch_sizes=repeats)
+    index = torch.repeat_interleave(repeats)
 
-    batch_ptr, _, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+    batch_ptr = torch.repeat_interleave(token_sizes)
     token_sizes = torch.zeros_like(token_sizes).scatter_add_(dim=0, index=batch_ptr, src=repeats)
 
     return index, token_sizes
