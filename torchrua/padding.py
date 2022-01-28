@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device, Number
 
 from torchrua.catting import cat_sequence, CattedSequence
-from torchrua.indexing import batch_sizes_to_ptr
+from torchrua.core import batch_sizes_to_ptr
 
 __all__ = [
     'PaddedSequence', 'pad_sequence',

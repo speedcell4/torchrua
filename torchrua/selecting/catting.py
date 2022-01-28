@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 from torchrua.catting import CattedSequence
-from torchrua.indexing import batch_sizes_to_ptr
+from torchrua.core import batch_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
 __all__ = [

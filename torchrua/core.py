@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 import torch
 from torch import Tensor
@@ -26,3 +26,51 @@ def transpose_sizes(sizes: Tensor) -> Tensor:
     rolled_sizes[-1] = 0
 
     return torch.repeat_interleave(sorted_sizes - rolled_sizes).add(1).flip(dims=[0])
+
+
+@torch.no_grad()
+def batch_sizes_to_ptr(batch_sizes: Tensor,
+                       token_ptr: Optional[Tensor] = None,
+                       batch_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
+    t = batch_sizes.size()[0]
+    b = batch_sizes.max().item()
+
+    if token_ptr is None:
+        token_ptr = torch.arange(t, device=batch_sizes.device)
+    assert token_ptr.size() == (t,)
+
+    if batch_ptr is None:
+        batch_ptr = torch.arange(b, device=batch_sizes.device)
+    assert batch_ptr.size() == (b,)
+
+    tb_mask = batch_ptr[None, :] < batch_sizes[:, None]
+
+    token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
+    batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
+    sorted_token_sizes = tb_mask.long().sum(dim=0)
+
+    return token_ptr, batch_ptr, sorted_token_sizes
+
+
+@torch.no_grad()
+def token_sizes_to_ptr(token_sizes: Tensor,
+                       token_ptr: Optional[Tensor] = None,
+                       batch_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
+    t = token_sizes.max().item()
+    b = token_sizes.size()[0]
+
+    if token_ptr is None:
+        token_ptr = torch.arange(t, device=token_sizes.device)
+    assert token_ptr.size() == (t,)
+
+    if batch_ptr is None:
+        batch_ptr = torch.arange(b, device=token_sizes.device)
+    assert batch_ptr.size() == (b,)
+
+    tb_mask = token_ptr[:, None] < token_sizes[None, :]
+
+    token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
+    batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
+    sorted_batch_sizes = tb_mask.long().sum(dim=1)
+
+    return token_ptr, batch_ptr, sorted_batch_sizes

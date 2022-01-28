@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.catting import cat_sequence
-from torchrua.indexing import token_sizes_to_ptr
+from torchrua.core import token_sizes_to_ptr
 from torchrua.utils import accumulate_sizes, sizes_to_sorting_indices
 
 __all__ = [

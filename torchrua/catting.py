@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.indexing import token_sizes_to_ptr, batch_sizes_to_ptr
+from torchrua.core import batch_sizes_to_ptr, token_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
 

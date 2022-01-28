@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.nn.utils.rnn import invert_permutation
 
-from torchrua.indexing import token_sizes_to_ptr, batch_sizes_to_ptr
+from torchrua.core import batch_sizes_to_ptr, token_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
 __all__ = [
