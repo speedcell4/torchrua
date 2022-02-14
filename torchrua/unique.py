@@ -5,7 +5,8 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua import CattedSequence, batch_sizes_to_ptr
+from torchrua.catting import CattedSequence
+from torchrua.core import batch_sizes_to_ptr
 
 
 def unique_catted_sequence(sequence: CattedSequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
@@ -15,7 +16,7 @@ def unique_catted_sequence(sequence: CattedSequence, device: Device = None) -> T
     data = sequence.data.to(device=device)
     token_sizes = sequence.token_sizes.to(device=device)
 
-    unique1, token_ptr, _ = torch.unique(data, sorted=True, return_inverse=True, return_counts=True)
+    unique1, token_ptr = torch.unique(data, sorted=True, return_inverse=True)
     batch_ptr = torch.repeat_interleave(token_sizes)
 
     n = unique1.size()[0]
@@ -34,7 +35,7 @@ def unique_packed_sequence(sequence: PackedSequence, device: Device = None) -> T
     data = sequence.data.to(device=device)
     batch_sizes = sequence.batch_sizes.to(device=device)
 
-    unique1, token_ptr, _ = torch.unique(data, sorted=True, return_inverse=True, return_counts=True)
+    unique1, token_ptr = torch.unique(data, sorted=True, return_inverse=True)
     _, batch_ptr, _ = batch_sizes_to_ptr(batch_sizes=batch_sizes)
 
     n = unique1.size()[0]
@@ -44,4 +45,3 @@ def unique_packed_sequence(sequence: PackedSequence, device: Device = None) -> T
     )
 
     return unique1[unique2 % n], inverse_ptr, counts
-
