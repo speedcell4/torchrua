@@ -3,27 +3,23 @@ from typing import Tuple, Optional
 import torch
 from torch import Tensor
 
+from torchrua.utils import accumulate_sizes
+
 
 @torch.no_grad()
-def sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
-    major_ptr = torch.repeat_interleave(sizes)
+def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
+    minor_ptr = torch.repeat_interleave(repeats=sizes)
 
-    index = torch.arange(major_ptr.size()[0], device=major_ptr.device)
-    acc_sizes = sizes.cumsum(dim=0)
-    acc_sizes[-1] = 0
+    major_ptr = torch.repeat_interleave(accumulate_sizes(sizes), repeats=sizes)
+    major_ptr = torch.arange(major_ptr.size()[0], device=major_ptr.device) - major_ptr
 
-    minor_ptr = index - acc_sizes[major_ptr - 1]
     return major_ptr, minor_ptr
 
 
 @torch.no_grad()
 def transpose_sizes(sizes: Tensor) -> Tensor:
-    sorted_sizes, _ = torch.sort(sizes, descending=True)
-
-    rolled_sizes = torch.roll(sorted_sizes, -1, dims=0)
-    rolled_sizes[-1] = 0
-
-    return torch.repeat_interleave(sorted_sizes - rolled_sizes).add(1).flip(dims=[0])
+    index = torch.arange(sizes.max().item(), device=sizes.device)
+    return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
 
 
 @torch.no_grad()

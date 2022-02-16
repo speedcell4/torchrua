@@ -1,140 +1,184 @@
-from typing import Optional
+from typing import Tuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
+from torch.types import Device
 
-from torchrua.core import sizes_to_ptr, transpose_sizes
-from torchrua.utils import accumulate_sizes, resize_sizes, batch_sizes_to_token_sizes
+from torchrua import CattedSequence
+from torchrua.core import major_sizes_to_ptr, transpose_sizes
+from torchrua.utils import accumulate_sizes, resize_sizes
 
 __all__ = [
-    'head_indices', 'select_head',
-    'last_indices', 'select_last',
-    'init_indices', 'select_init',
-    'tail_indices', 'select_tail',
-    'reverse_packed_indices', 'reverse_packed_sequence',
-    'roll_packed_indices', 'roll_packed_sequence',
+    'head_catted_indices', 'head_catted_sequence',
+    'last_catted_indices', 'last_catted_sequence',
+    'init_catted_indices', 'init_catted_sequence',
+    'tail_catted_indices', 'tail_catted_sequence',
+
+    'head_packed_indices', 'head_packed_sequence',
+    'last_packed_indices', 'last_packed_sequence',
+    'init_packed_indices', 'init_packed_sequence',
+    'tail_packed_indices', 'tail_packed_sequence',
 ]
 
 
 @torch.no_grad()
-def head_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor] = None) -> Tensor:
-    if unsorted_indices is not None:
-        return unsorted_indices
+def head_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
+    if device is None:
+        device = token_sizes.device
 
-    return torch.arange(batch_sizes[0].item(), device=batch_sizes.device)
+    return accumulate_sizes(sizes=token_sizes.to(device=device))
 
 
-def select_head(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    device = sequence.data.device
+def head_catted_sequence(sequence: CattedSequence) -> Tensor:
+    indices = head_catted_indices(token_sizes=sequence.token_sizes, device=sequence.data.device)
 
-    indices = head_indices(
-        batch_sizes=sequence.batch_sizes.to(device=device),
-        unsorted_indices=sequence.unsorted_indices if unsort else None,
-    )
     return sequence.data[indices]
 
 
 @torch.no_grad()
-def last_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor] = None) -> Tensor:
+def last_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
+    if device is None:
+        device = token_sizes.device
+
+    return torch.cumsum(token_sizes.to(device=device), dim=0) - 1
+
+
+def last_catted_sequence(sequence: CattedSequence) -> Tensor:
+    indices = last_catted_indices(token_sizes=sequence.token_sizes, device=sequence.data.device)
+
+    return sequence.data[indices]
+
+
+@torch.no_grad()
+def init_catted_indices(token_sizes: Tensor, n: int = 1, device: Device = None) -> Tuple[Tensor, Tensor]:
+    if device is None:
+        device = token_sizes.device
+
+    token_sizes = token_sizes.to(device=device)
+    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes - n)
+
+    return token_ptr + acc_token_sizes[batch_ptr]
+
+
+def init_catted_sequence(sequence: CattedSequence, n: int = 1) -> CattedSequence:
+    indices = init_catted_indices(token_sizes=sequence.token_sizes, n=n, device=sequence.data.device)
+
+    return CattedSequence(
+        data=sequence.data[indices],
+        token_sizes=sequence.token_sizes - n,
+    )
+
+
+@torch.no_grad()
+def tail_catted_indices(token_sizes: Tensor, n: int = 1, device: Device = None) -> Tuple[Tensor, Tensor]:
+    if device is None:
+        device = token_sizes.device
+
+    token_sizes = token_sizes.to(device=device)
+    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes - n)
+
+    return token_ptr + acc_token_sizes[batch_ptr] + n
+
+
+def tail_catted_sequence(sequence: CattedSequence, n: int = 1) -> CattedSequence:
+    indices = tail_catted_indices(token_sizes=sequence.token_sizes, n=n, device=sequence.data.device)
+
+    return CattedSequence(
+        data=sequence.data[indices],
+        token_sizes=sequence.token_sizes - n,
+    )
+
+
+@torch.no_grad()
+def head_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    if unsorted_indices is not None:
+        return unsorted_indices.to(device=device)
+    else:
+        return torch.arange(batch_sizes[0].item(), device=device)
+
+
+def head_packed_sequence(sequence: PackedSequence, unsort: bool = True) -> Tensor:
+    indices = head_packed_indices(
+        batch_sizes=sequence.batch_sizes,
+        unsorted_indices=sequence.unsorted_indices if unsort else None,
+        device=sequence.data.device,
+    )
+
+    return sequence.data[indices]
+
+
+@torch.no_grad()
+def last_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    batch_ptr = head_indices(batch_sizes=batch_sizes, unsorted_indices=unsorted_indices)
-    token_ptr = batch_sizes_to_token_sizes(batch_sizes=batch_sizes, batch_ptr=batch_ptr) - 1
+    batch_ptr = head_packed_indices(batch_sizes=batch_sizes, unsorted_indices=None, device=device)
+    token_ptr = transpose_sizes(sizes=batch_sizes) - 1
+    indices = acc_batch_sizes[token_ptr] + batch_ptr
 
-    return acc_batch_sizes[token_ptr] + batch_ptr
+    if unsorted_indices is not None:
+        indices = indices[unsorted_indices]
+    return indices
 
 
-def select_last(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    device = sequence.data.device
-
-    indices = last_indices(
-        batch_sizes=sequence.batch_sizes.to(device=device),
+def last_packed_sequence(sequence: PackedSequence, unsort: bool = True) -> Tensor:
+    indices = last_packed_indices(
+        batch_sizes=sequence.batch_sizes,
         unsorted_indices=sequence.unsorted_indices if unsort else None,
+        device=sequence.data.device,
     )
+
     return sequence.data[indices]
 
 
 @torch.no_grad()
-def init_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
+def init_packed_indices(batch_sizes: Tensor, n: int = 1, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
     batch_sizes = resize_sizes(sizes=batch_sizes, n=batch_sizes.size()[0] - n)
-    token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
+    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 
 
-def select_init(sequence: PackedSequence, n: int = 1) -> PackedSequence:
-    device = sequence.data.device
+def init_packed_sequence(sequence: PackedSequence, n: int = 1) -> PackedSequence:
+    indices = init_packed_indices(batch_sizes=sequence.batch_sizes, n=n, device=sequence.data.device)
 
-    indices = init_indices(batch_sizes=sequence.batch_sizes.to(device=device), n=n)
     return PackedSequence(
         data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes[n:],
+        batch_sizes=sequence.batch_sizes[n:].detach().cpu(),
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )
 
 
 @torch.no_grad()
-def tail_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
-    return torch.arange(batch_sizes[0].item() * n, batch_sizes.sum().item(), device=batch_sizes.device)
+def tail_packed_indices(batch_sizes: Tensor, n: int = 1, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    return torch.arange(batch_sizes[0].item() * n, batch_sizes.sum().item(), device=device)
 
 
-def select_tail(sequence: PackedSequence, n: int = 1) -> PackedSequence:
-    device = sequence.data.device
+def tail_packed_sequence(sequence: PackedSequence, n: int = 1) -> PackedSequence:
+    indices = tail_packed_indices(batch_sizes=sequence.batch_sizes, n=n, device=sequence.data.device)
 
-    indices = tail_indices(batch_sizes=sequence.batch_sizes.to(device=device), n=n)
     return PackedSequence(
         data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes[n:],
-        sorted_indices=sequence.sorted_indices,
-        unsorted_indices=sequence.unsorted_indices,
-    )
-
-
-@torch.no_grad()
-def reverse_packed_indices(batch_sizes: Tensor) -> Tensor:
-    acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-
-    token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
-    token_sizes = transpose_sizes(sizes=batch_sizes)
-    token_ptr = token_sizes[batch_ptr] - token_ptr - 1
-
-    return acc_batch_sizes[token_ptr] + batch_ptr
-
-
-def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
-    device = sequence.data.device
-
-    indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device))
-    return PackedSequence(
-        data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes,
-        sorted_indices=sequence.sorted_indices,
-        unsorted_indices=sequence.unsorted_indices,
-    )
-
-
-@torch.no_grad()
-def roll_packed_indices(batch_sizes: Tensor, shifts: int) -> Tensor:
-    acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-
-    token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
-    token_sizes = transpose_sizes(sizes=batch_sizes)[batch_ptr]
-    token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
-
-    return acc_batch_sizes[token_ptr] + batch_ptr
-
-
-def roll_packed_sequence(sequence: PackedSequence, shifts: int) -> PackedSequence:
-    device = sequence.data.device
-
-    indices = roll_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device), shifts=shifts)
-    return PackedSequence(
-        data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes,
+        batch_sizes=sequence.batch_sizes[n:].detach().cpu(),
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )

@@ -142,7 +142,7 @@ print(z.size())
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import select_head, select_last, select_init, select_tail
+from torchrua import head_packed_sequence, last_packed_sequence, init_packed_sequence, tail_packed_sequence
 from torchrua.padding import pad_packed_sequence
 
 pack = pack_sequence([
@@ -157,20 +157,20 @@ print(x)
 #         [1, 2, 0, 0, 0],
 #         [1, 2, 3, 0, 0]])
 
-print(select_head(pack))
+print(head_packed_sequence(pack))
 # tensor([1, 1, 1])
 
-print(select_last(pack))
+print(last_packed_sequence(pack))
 # tensor([5, 2, 3])
 
-y = select_init(pack, n=1)
+y = init_packed_sequence(pack, n=1)
 y, _ = pad_packed_sequence(y, batch_first=True)
 print(y)
 # tensor([[1, 2, 3, 4],
 #         [1, 0, 0, 0],
 #         [1, 2, 0, 0]])
 
-z = select_tail(pack, n=1)
+z = tail_packed_sequence(pack, n=1)
 z, _ = pad_packed_sequence(z, batch_first=True)
 print(z)
 # tensor([[2, 3, 4, 5],
@@ -185,7 +185,8 @@ print(z)
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import reverse_packed_sequence, roll_packed_sequence
+from torchrua.roll import roll_packed_sequence
+from torchrua.reverse import reverse_packed_sequence
 from torchrua.padding import pad_packed_sequence
 
 x = pack_sequence([

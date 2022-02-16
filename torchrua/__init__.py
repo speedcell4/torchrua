@@ -7,7 +7,6 @@ from torchrua.packing import *
 from torchrua.padding import *
 from torchrua.reduction import *
 from torchrua.scatter import *
-from torchrua.selecting import *
 from torchrua.slicing import *
 from torchrua.tree_reduction import *
 from torchrua.utils import *
