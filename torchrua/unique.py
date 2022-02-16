@@ -6,7 +6,12 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.catting import CattedSequence
-from torchrua.core import batch_sizes_to_ptr
+from torchrua.core import major_sizes_to_ptr
+
+__all__ = [
+    'unique_catted_sequence',
+    'unique_packed_sequence',
+]
 
 
 def unique_catted_sequence(sequence: CattedSequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
@@ -36,7 +41,7 @@ def unique_packed_sequence(sequence: PackedSequence, device: Device = None) -> T
     batch_sizes = sequence.batch_sizes.to(device=device)
 
     unique1, token_ptr = torch.unique(data, sorted=True, return_inverse=True)
-    _, batch_ptr, _ = batch_sizes_to_ptr(batch_sizes=batch_sizes)
+    batch_ptr, _ = major_sizes_to_ptr(sizes=batch_sizes)
 
     n = unique1.size()[0]
     unique2, inverse_ptr, counts = torch.unique(
