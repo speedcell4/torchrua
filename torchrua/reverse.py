@@ -7,9 +7,14 @@ from torchrua.catting import CattedSequence
 from torchrua.core import major_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
+__all__ = [
+    'reverse_catted_indices', 'reverse_catted_sequence',
+    'reverse_packed_indices', 'reverse_packed_sequence',
+]
+
 
 @torch.no_grad()
-def reversed_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
+def reverse_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
     if device is None:
         device = token_sizes.device
 
@@ -24,7 +29,7 @@ def reversed_catted_indices(token_sizes: Tensor, device: Device = None) -> Tenso
 
 
 def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
-    indices = reversed_catted_indices(sequence.token_sizes, device=sequence.data.device)
+    indices = reverse_catted_indices(sequence.token_sizes, device=sequence.data.device)
 
     return CattedSequence(
         data=sequence.data[indices],
