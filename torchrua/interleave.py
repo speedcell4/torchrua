@@ -22,12 +22,12 @@ def repeat_interleave_catted_indices(repeats: Tensor, token_sizes: Tensor):
 
 
 def repeat_interleave_catted_sequence(sequence: CattedSequence, repeats: Tensor) -> CattedSequence:
-    index, token_sizes = repeat_interleave_catted_indices(
+    indices, token_sizes = repeat_interleave_catted_indices(
         repeats=repeats,
         token_sizes=sequence.token_sizes,
     )
     return CattedSequence(
-        data=sequence.data[index],
+        data=sequence.data[indices],
         token_sizes=token_sizes,
     )
 
@@ -44,14 +44,14 @@ def repeat_interleave_packed_indices(repeats: Tensor, batch_sizes: Tensor, unsor
 
 
 def repeat_interleave_packed_sequence(sequence: PackedSequence, repeats: Tensor) -> PackedSequence:
-    index, batch_sizes, sorted_indices, unsorted_indices = repeat_interleave_packed_indices(
+    indices, batch_sizes, sorted_indices, unsorted_indices = repeat_interleave_packed_indices(
         repeats=repeats,
         batch_sizes=sequence.batch_sizes,
         unsorted_indices=sequence.unsorted_indices,
     )
     return PackedSequence(
-        data=sequence.data[index],
-        batch_sizes=batch_sizes.cpu(),
+        data=sequence.data[indices],
+        batch_sizes=batch_sizes.detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
