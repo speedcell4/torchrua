@@ -31,8 +31,17 @@ def head_catted_sequence(sequence: CattedSequence) -> Tensor:
 
 
 @torch.no_grad()
-def last_catted_indices(sequence: CattedSequence) -> Tensor:
-    return torch.cumsum(sequence.token_sizes, dim=0) - 1
+def last_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
+    if device is None:
+        device = token_sizes.device
+
+    return torch.cumsum(token_sizes.to(device=device), dim=0) - 1
+
+
+def last_catted_sequence(sequence: CattedSequence) -> Tensor:
+    indices = last_catted_indices(token_sizes=sequence.token_sizes, device=sequence.data.device)
+
+    return sequence.data[indices]
 
 
 @torch.no_grad()
@@ -54,11 +63,6 @@ def tail_catted_mask(sequence: CattedSequence, n: int = 1) -> Tuple[Tensor, Tens
     batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
 
     return token_ptr >= n, token_sizes - n
-
-
-def last_catted_sequence(sequence: CattedSequence) -> Tensor:
-    indices = last_catted_indices(sequence=sequence)
-    return sequence.data[indices]
 
 
 def init_catted_sequence(sequence: CattedSequence, n: int = 1) -> CattedSequence:
