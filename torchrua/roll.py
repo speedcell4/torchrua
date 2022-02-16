@@ -53,7 +53,7 @@ def roll_packed_indices(batch_sizes: Tensor, shifts: int, device: Device = None)
 
 
 def roll_packed_sequence(sequence: PackedSequence, shifts: int) -> PackedSequence:
-    indices = roll_packed_indices(batch_sizes=sequence.batch_sizes, shifts=shifts, device=sequence.data.device)
+    indices = roll_packed_indices(sequence.batch_sizes, shifts=shifts, device=sequence.data.device)
 
     return PackedSequence(
         data=sequence.data[indices],
