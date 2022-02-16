@@ -33,7 +33,11 @@ def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
 
 
 @torch.no_grad()
-def reverse_packed_indices(batch_sizes: Tensor) -> Tensor:
+def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
     token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
@@ -44,12 +48,11 @@ def reverse_packed_indices(batch_sizes: Tensor) -> Tensor:
 
 
 def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
-    device = sequence.data.device
+    indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes, device=sequence.data.device)
 
-    indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device))
     return PackedSequence(
         data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes,
+        batch_sizes=sequence.batch_sizes.detach().cpu(),
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )
