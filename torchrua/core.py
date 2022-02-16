@@ -18,12 +18,8 @@ def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
 
 @torch.no_grad()
 def transpose_sizes(sizes: Tensor) -> Tensor:
-    sorted_sizes, _ = torch.sort(sizes, descending=True)
-
-    rolled_sizes = torch.roll(sorted_sizes, -1, dims=0)
-    rolled_sizes[-1] = 0
-
-    return torch.repeat_interleave(sorted_sizes - rolled_sizes).add(1).flip(dims=[0])
+    index = torch.arange(sizes.max().item(), device=sizes.device)
+    return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
 
 
 @torch.no_grad()

@@ -1,12 +1,10 @@
-from typing import Optional
-
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import major_sizes_to_ptr
-from torchrua.utils import accumulate_sizes, resize_sizes, batch_sizes_to_token_sizes
+from torchrua.core import major_sizes_to_ptr, transpose_sizes
+from torchrua.utils import accumulate_sizes, resize_sizes
 
 __all__ = [
     'head_packed_indices', 'head_packed_sequence',
@@ -38,22 +36,29 @@ def head_packed_sequence(sequence: PackedSequence, unsort: bool = True) -> Tenso
 
 
 @torch.no_grad()
-def last_packed_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor] = None) -> Tensor:
+def last_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    batch_ptr = head_packed_indices(batch_sizes=batch_sizes, unsorted_indices=unsorted_indices)
-    token_ptr = batch_sizes_to_token_sizes(batch_sizes=batch_sizes, batch_ptr=batch_ptr) - 1
+    batch_ptr = head_packed_indices(batch_sizes=batch_sizes, unsorted_indices=None, device=device)
+    token_ptr = transpose_sizes(sizes=batch_sizes) - 1
+    indices = acc_batch_sizes[token_ptr] + batch_ptr
 
-    return acc_batch_sizes[token_ptr] + batch_ptr
+    if unsorted_indices is not None:
+        indices = indices[unsorted_indices]
+    return indices
 
 
 def last_packed_sequence(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    device = sequence.data.device
-
     indices = last_packed_indices(
-        batch_sizes=sequence.batch_sizes.to(device=device),
+        batch_sizes=sequence.batch_sizes,
         unsorted_indices=sequence.unsorted_indices if unsort else None,
+        device=sequence.data.device,
     )
+
     return sequence.data[indices]
 
 
