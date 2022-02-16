@@ -5,6 +5,11 @@ from torch.nn.utils.rnn import PackedSequence
 from torchrua.catting import CattedSequence, cat_packed_indices
 from torchrua.packing import pack_catted_indices
 
+__all__ = [
+    'repeat_interleave_catted_indices', 'repeat_interleave_catted_sequence',
+    'repeat_interleave_packed_indices', 'repeat_interleave_packed_sequence',
+]
+
 
 @torch.no_grad()
 def repeat_interleave_catted_indices(repeats: Tensor, token_sizes: Tensor):
