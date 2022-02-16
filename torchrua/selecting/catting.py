@@ -2,6 +2,7 @@ from typing import Tuple
 
 import torch
 from torch import Tensor
+from torch.types import Device
 
 from torchrua.catting import CattedSequence
 from torchrua.core import batch_sizes_to_ptr
@@ -16,8 +17,17 @@ __all__ = [
 
 
 @torch.no_grad()
-def head_catted_indices(sequence: CattedSequence) -> Tensor:
-    return accumulate_sizes(sizes=sequence.token_sizes)
+def head_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
+    if device is None:
+        device = token_sizes.device
+
+    return accumulate_sizes(sizes=token_sizes.to(device=device))
+
+
+def head_catted_sequence(sequence: CattedSequence) -> Tensor:
+    indices = head_catted_indices(token_sizes=sequence.token_sizes, device=sequence.data.device)
+
+    return sequence.data[indices]
 
 
 @torch.no_grad()
@@ -44,11 +54,6 @@ def tail_catted_mask(sequence: CattedSequence, n: int = 1) -> Tuple[Tensor, Tens
     batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
 
     return token_ptr >= n, token_sizes - n
-
-
-def head_catted_sequence(sequence: CattedSequence) -> Tensor:
-    indices = head_catted_indices(sequence=sequence)
-    return sequence.data[indices]
 
 
 def last_catted_sequence(sequence: CattedSequence) -> Tensor:
