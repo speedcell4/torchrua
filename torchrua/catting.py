@@ -1,11 +1,11 @@
-from typing import List, Tuple, Optional, NamedTuple
+from typing import List, Optional, NamedTuple
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import batch_sizes_to_ptr, token_sizes_to_ptr
+from torchrua.core import token_sizes_to_ptr, major_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
 
@@ -64,19 +64,17 @@ def cat_packed_sequence(sequence: PackedSequence, device: Device = None) -> Catt
 
 
 @torch.no_grad()
-def cat_padded_indices(token_sizes: Tensor, batch_first: bool,
-                       device: Device = None) -> Tuple[Tuple[Tensor, Tensor], Tensor]:
+def cat_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device = None):
     if device is None:
         device = token_sizes.device
 
     token_sizes = token_sizes.to(device=device)
-    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
     if batch_first:
-        indices = batch_ptr, token_ptr
+        return (batch_ptr, token_ptr), token_sizes
     else:
-        indices = token_ptr, batch_ptr
-    return indices, token_sizes
+        return (token_ptr, batch_ptr), token_sizes
 
 
 def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor,
