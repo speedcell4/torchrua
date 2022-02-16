@@ -12,7 +12,6 @@ __all__ = [
     'last_catted_indices', 'last_catted_sequence',
     'init_catted_mask', 'init_catted_sequence',
     'tail_catted_mask', 'tail_catted_sequence',
-    'rolled_catted_indices', 'roll_catted_sequence',
 ]
 
 
@@ -65,21 +64,3 @@ def init_catted_sequence(sequence: CattedSequence, n: int = 1) -> CattedSequence
 def tail_catted_sequence(sequence: CattedSequence, n: int = 1) -> CattedSequence:
     indices, token_sizes = tail_catted_mask(sequence=sequence, n=n)
     return CattedSequence(data=sequence.data[indices], token_sizes=token_sizes)
-
-
-@torch.no_grad()
-def rolled_catted_indices(sequence: CattedSequence, shifts: int) -> Tensor:
-    token_sizes = sequence.token_sizes.to(device=sequence.data.device)
-    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
-    batch_ptr, token_ptr, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
-
-    token_ptr = (token_ptr + token_sizes[batch_ptr] - shifts) % token_sizes[batch_ptr]
-    return token_ptr + acc_token_sizes[batch_ptr]
-
-
-def roll_catted_sequence(sequence: CattedSequence, shifts: int) -> CattedSequence:
-    indices = rolled_catted_indices(sequence, shifts=shifts)
-    return CattedSequence(
-        data=sequence.data[indices],
-        token_sizes=sequence.token_sizes,
-    )
