@@ -7,7 +7,7 @@ from torch.types import Device
 
 from torchrua import CattedSequence
 from torchrua.core import major_sizes_to_ptr, transpose_sizes
-from torchrua.utils import accumulate_sizes, resize_sizes
+from torchrua.utils import accumulate_sizes
 
 __all__ = [
     'head_catted_indices', 'head_catted_sequence',
@@ -148,8 +148,7 @@ def init_packed_indices(batch_sizes: Tensor, n: int = 1, device: Device = None) 
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    batch_sizes = resize_sizes(sizes=batch_sizes, n=batch_sizes.size()[0] - n)
-    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
+    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes[n:])
 
     return acc_batch_sizes[token_ptr] + batch_ptr
 

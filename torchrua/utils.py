@@ -8,7 +8,6 @@ from torch.types import Device
 
 __all__ = [
     'accumulate_sizes',
-    'resize_sizes',
     'sizes_to_sorting_indices',
 ]
 
@@ -16,14 +15,6 @@ __all__ = [
 @torch.no_grad()
 def accumulate_sizes(sizes: Tensor) -> Tensor:
     return F.pad(sizes.cumsum(dim=0), pad=[1, -1])
-
-
-@torch.no_grad()
-def resize_sizes(sizes: Tensor, n: int) -> Tensor:
-    if n <= sizes.size()[0]:
-        assert sizes[0] == sizes[-n]
-        return sizes[-n:]
-    return F.pad(sizes, [n - sizes.size()[0], 0], value=sizes[0])
 
 
 @torch.no_grad()
