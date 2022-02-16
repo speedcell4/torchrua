@@ -1,10 +1,10 @@
 import torch
 from hypothesis import given, strategies as st
-from torchrua.packing import pack_sequence
 
 from tests.strategies import token_size_lists, embedding_dims, devices
 from tests.utils import assert_packed_sequence_close, assert_close, assert_grad_close
 from torchrua.indexing import head_packed_sequence, last_packed_sequence, init_packed_sequence, tail_packed_sequence
+from torchrua.packing import pack_sequence
 
 
 @given(
@@ -59,20 +59,20 @@ def test_last_packed_sequence(token_sizes, dim, unsort, device):
     dim=embedding_dims(),
     device=devices(),
 )
-def test_select_init(data, token_sizes, dim, device):
+def test_init_packed_sequence(data, token_sizes, dim, device):
     n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
 
-    inputs = [
+    sequences = [
         torch.randn((token_size + 1, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
-    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
+    packed_sequence = pack_sequence(sequences)
 
     actual = init_packed_sequence(sequence=packed_sequence, n=n)
-    expected = pack_sequence([sequence[:-n] for sequence in inputs], enforce_sorted=False)
+    expected = pack_sequence([sequence[:-n] for sequence in sequences])
 
     assert_packed_sequence_close(actual, expected)
-    assert_grad_close(actual.data, expected.data, inputs=inputs)
+    assert_grad_close(actual.data, expected.data, inputs=sequences)
 
 
 @given(
@@ -81,17 +81,17 @@ def test_select_init(data, token_sizes, dim, device):
     dim=embedding_dims(),
     device=devices(),
 )
-def test_select_tail(data, token_sizes, dim, device):
+def test_tail_packed_sequence(data, token_sizes, dim, device):
     n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
 
-    inputs = [
+    sequences = [
         torch.randn((token_size + 1, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
-    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
+    packed_sequence = pack_sequence(sequences)
 
     actual = tail_packed_sequence(sequence=packed_sequence, n=n)
-    expected = pack_sequence([sequence[n:] for sequence in inputs], enforce_sorted=False)
+    expected = pack_sequence([sequence[n:] for sequence in sequences])
 
     assert_packed_sequence_close(actual, expected)
-    assert_grad_close(actual.data, expected.data, inputs=inputs)
+    assert_grad_close(actual.data, expected.data, inputs=sequences)
