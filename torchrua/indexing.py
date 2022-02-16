@@ -3,6 +3,7 @@ from typing import Optional
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
+from torch.types import Device
 
 from torchrua.core import major_sizes_to_ptr
 from torchrua.utils import accumulate_sizes, resize_sizes, batch_sizes_to_token_sizes
@@ -16,20 +17,23 @@ __all__ = [
 
 
 @torch.no_grad()
-def head_packed_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor] = None) -> Tensor:
-    if unsorted_indices is not None:
-        return unsorted_indices
+def head_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
 
-    return torch.arange(batch_sizes[0].item(), device=batch_sizes.device)
+    if unsorted_indices is not None:
+        return unsorted_indices.to(device=device)
+    else:
+        return torch.arange(batch_sizes[0].item(), device=device)
 
 
 def head_packed_sequence(sequence: PackedSequence, unsort: bool = True) -> Tensor:
-    device = sequence.data.device
-
     indices = head_packed_indices(
-        batch_sizes=sequence.batch_sizes.to(device=device),
+        batch_sizes=sequence.batch_sizes,
         unsorted_indices=sequence.unsorted_indices if unsort else None,
+        device=sequence.data.device,
     )
+
     return sequence.data[indices]
 
 
