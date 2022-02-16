@@ -4,7 +4,7 @@ from torch.nn.utils.rnn import pack_sequence
 
 from tests.strategies import token_size_lists, embedding_dims, devices
 from tests.utils import assert_packed_sequence_close, assert_close, assert_grad_close
-from torchrua.indexing import select_head, select_last, select_init, select_tail
+from torchrua.indexing import head_packed_sequence, last_packed_sequence, init_packed_sequence, tail_packed_sequence
 
 
 @given(
@@ -21,7 +21,7 @@ def test_select_head(data, token_sizes, dim, unsort, device):
     ]
     packed_pack_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_head(sequence=packed_pack_sequence, unsort=unsort)
+    actual = head_packed_sequence(sequence=packed_pack_sequence, unsort=unsort)
     if not unsort:
         actual = actual[packed_pack_sequence.unsorted_indices]
 
@@ -45,7 +45,7 @@ def test_select_last(data, token_sizes, dim, unsort, device):
     ]
     packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_last(sequence=packed_sequence, unsort=unsort)
+    actual = last_packed_sequence(sequence=packed_sequence, unsort=unsort)
     if not unsort:
         actual = actual[packed_sequence.unsorted_indices]
 
@@ -70,7 +70,7 @@ def test_select_init(data, token_sizes, dim, device):
     ]
     packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_init(sequence=packed_sequence, n=n)
+    actual = init_packed_sequence(sequence=packed_sequence, n=n)
     expected = pack_sequence([sequence[:-n] for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
@@ -92,7 +92,7 @@ def test_select_tail(data, token_sizes, dim, device):
     ]
     packed_sequence = pack_sequence(inputs, enforce_sorted=False)
 
-    actual = select_tail(sequence=packed_sequence, n=n)
+    actual = tail_packed_sequence(sequence=packed_sequence, n=n)
     expected = pack_sequence([sequence[n:] for sequence in inputs], enforce_sorted=False)
 
     assert_packed_sequence_close(actual, expected)
