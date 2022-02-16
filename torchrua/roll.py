@@ -22,7 +22,8 @@ def roll_catted_indices(token_sizes: Tensor, shifts: int, device: Device = None)
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-    token_ptr = (token_ptr + token_sizes[batch_ptr] - shifts) % token_sizes[batch_ptr]
+    token_sizes = token_sizes[batch_ptr]
+    token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
 
     return token_ptr + acc_token_sizes[batch_ptr]
 
