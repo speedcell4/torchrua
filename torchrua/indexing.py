@@ -88,17 +88,19 @@ def init_packed_sequence(sequence: PackedSequence, n: int = 1) -> PackedSequence
 
 
 @torch.no_grad()
-def tail_packed_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
-    return torch.arange(batch_sizes[0].item() * n, batch_sizes.sum().item(), device=batch_sizes.device)
+def tail_packed_indices(batch_sizes: Tensor, n: int = 1, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    return torch.arange(batch_sizes[0].item() * n, batch_sizes.sum().item(), device=device)
 
 
 def tail_packed_sequence(sequence: PackedSequence, n: int = 1) -> PackedSequence:
-    device = sequence.data.device
+    indices = tail_packed_indices(batch_sizes=sequence.batch_sizes, n=n, device=sequence.data.device)
 
-    indices = tail_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device), n=n)
     return PackedSequence(
         data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes[n:],
+        batch_sizes=sequence.batch_sizes[n:].detach().cpu(),
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )
