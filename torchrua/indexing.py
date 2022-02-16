@@ -12,7 +12,6 @@ __all__ = [
     'last_indices', 'select_last',
     'init_indices', 'select_init',
     'tail_indices', 'select_tail',
-    'reverse_packed_indices', 'reverse_packed_sequence',
     'roll_packed_indices', 'roll_packed_sequence',
 ]
 
@@ -89,29 +88,6 @@ def select_tail(sequence: PackedSequence, n: int = 1) -> PackedSequence:
     return PackedSequence(
         data=sequence.data[indices],
         batch_sizes=sequence.batch_sizes[n:],
-        sorted_indices=sequence.sorted_indices,
-        unsorted_indices=sequence.unsorted_indices,
-    )
-
-
-@torch.no_grad()
-def reverse_packed_indices(batch_sizes: Tensor) -> Tensor:
-    acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-
-    token_ptr, batch_ptr = sizes_to_ptr(sizes=batch_sizes)
-    token_sizes = transpose_sizes(sizes=batch_sizes)
-    token_ptr = token_sizes[batch_ptr] - token_ptr - 1
-
-    return acc_batch_sizes[token_ptr] + batch_ptr
-
-
-def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
-    device = sequence.data.device
-
-    indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device))
-    return PackedSequence(
-        data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes,
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )

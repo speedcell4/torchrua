@@ -4,7 +4,8 @@ from torch.nn.utils.rnn import pack_sequence
 
 from tests.strategies import token_size_lists, embedding_dims, devices
 from tests.utils import assert_packed_sequence_close, assert_close, assert_grad_close
-from torchrua.indexing import roll_packed_sequence, reverse_packed_sequence
+from torchrua.indexing import roll_packed_sequence
+from torchrua.reverse import reverse_packed_sequence
 from torchrua.indexing import select_head, select_last, select_init, select_tail
 
 

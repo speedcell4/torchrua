@@ -185,7 +185,8 @@ print(z)
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import reverse_packed_sequence, roll_packed_sequence
+from torchrua import roll_packed_sequence
+from torchrua.reverse import reverse_packed_sequence
 from torchrua.padding import pad_packed_sequence
 
 x = pack_sequence([
