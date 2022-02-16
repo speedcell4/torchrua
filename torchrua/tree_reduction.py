@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.nn.utils.rnn import invert_permutation
 
-from torchrua.core import batch_sizes_to_ptr, token_sizes_to_ptr
+from torchrua.core import major_sizes_to_ptr, token_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
 __all__ = [
@@ -30,7 +30,7 @@ class TreeReduceIndices(NamedTuple):
 @torch.no_grad()
 def tree_reduce_indices(token_sizes1: Tensor):
     token_sizes2 = token_sizes1 * 2 - 1
-    _, token_ptr2, _ = batch_sizes_to_ptr(batch_sizes=token_sizes2)
+    token_ptr2, _ = major_sizes_to_ptr(sizes=token_sizes2)
 
     acc_token_sizes2 = token_sizes2.cumsum(dim=0)
     num_steps = acc_token_sizes2[-1].item()
@@ -83,7 +83,7 @@ def tree_reduce_packed_indices(batch_sizes: Tensor) -> TreeReduceIndices:
 
 @torch.no_grad()
 def tree_reduce_padded_indices(token_sizes: Tensor, batch_first: bool = False) -> TreeReduceIndices:
-    batch_ptr1, token_ptr1, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+    token_ptr1, batch_ptr1 = major_sizes_to_ptr(sizes=token_sizes)
 
     xs, ys, zs, token_ptr2, acc_token_sizes2, dst, num_steps = tree_reduce_indices(token_sizes1=token_sizes)
     src1 = (batch_ptr1, token_ptr1) if batch_first else (token_ptr1, batch_ptr1)
@@ -97,7 +97,7 @@ def tree_reduce_padded_indices(token_sizes: Tensor, batch_first: bool = False) -
 
 @torch.no_grad()
 def tree_reduce_catted_indices(token_sizes: Tensor) -> TreeReduceIndices:
-    batch_ptr1, token_ptr1, _ = batch_sizes_to_ptr(batch_sizes=token_sizes)
+    token_ptr1, batch_ptr1 = major_sizes_to_ptr(sizes=token_sizes)
     acc_token_sizes1 = accumulate_sizes(sizes=token_sizes)
 
     xs, ys, zs, token_ptr2, acc_token_sizes2, dst, num_steps = tree_reduce_indices(token_sizes1=token_sizes)
