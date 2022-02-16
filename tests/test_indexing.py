@@ -4,7 +4,6 @@ from torch.nn.utils.rnn import pack_sequence
 
 from tests.strategies import token_size_lists, embedding_dims, devices
 from tests.utils import assert_packed_sequence_close, assert_close, assert_grad_close
-from torchrua.roll import roll_packed_sequence
 from torchrua.indexing import select_head, select_last, select_init, select_tail
 
 
@@ -100,24 +99,3 @@ def test_select_tail(data, token_sizes, dim, device):
     assert_grad_close(actual.data, expected.data, inputs=inputs)
 
 
-@given(
-    data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
-)
-def test_roll_packed_sequence(data, token_sizes, dim, device):
-    offset = data.draw(st.integers(min_value=-max(token_sizes), max_value=+max(token_sizes)))
-
-    inputs = [
-        torch.randn((token_size, dim), device=device, requires_grad=True)
-        for token_size in token_sizes
-    ]
-    packed_sequence = pack_sequence(inputs, enforce_sorted=False)
-
-    actual = roll_packed_sequence(sequence=packed_sequence, shifts=offset)
-    expected = pack_sequence([
-        sequence.roll(offset, dims=[0]) for sequence in inputs], enforce_sorted=False)
-
-    assert_packed_sequence_close(actual, expected)
-    assert_grad_close(actual.data, expected.data, inputs=inputs)

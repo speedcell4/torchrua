@@ -7,6 +7,11 @@ from torchrua.catting import CattedSequence
 from torchrua.core import major_sizes_to_ptr
 from torchrua.utils import accumulate_sizes
 
+__all__ = [
+    'roll_catted_indices', 'roll_catted_sequence',
+    'roll_packed_indices', 'roll_packed_sequence',
+]
+
 
 @torch.no_grad()
 def roll_catted_indices(token_sizes: Tensor, shifts: int, device: Device = None) -> Tensor:
