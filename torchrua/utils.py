@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple
 
 import torch
 from torch import Tensor
@@ -7,9 +7,9 @@ from torch.nn.utils.rnn import invert_permutation
 from torch.types import Device
 
 __all__ = [
-    'accumulate_sizes', 'resize_sizes', 'sizes_to_sorting_indices',
-    'batch_sizes_to_mask', 'batch_sizes_to_token_sizes',
-    'token_sizes_to_mask', 'token_sizes_to_batch_sizes',
+    'accumulate_sizes',
+    'resize_sizes',
+    'sizes_to_sorting_indices',
 ]
 
 
@@ -37,65 +37,3 @@ def sizes_to_sorting_indices(sizes: Tensor, device: Device = None) -> Tuple[Tens
     unsorted_indices = invert_permutation(sorted_indices)
 
     return sorted_sizes, sorted_indices, unsorted_indices
-
-
-@torch.no_grad()
-def batch_sizes_to_mask(batch_sizes: Tensor,
-                        batch_ptr: Optional[Tensor] = None,
-                        batch_first: bool = False,
-                        dtype: torch.dtype = torch.bool) -> Tensor:
-    b = batch_sizes.max().item()
-
-    if batch_ptr is None:
-        batch_ptr = torch.arange(b, device=batch_sizes.device)
-    assert batch_ptr.size() == (b,)
-
-    if batch_first:
-        mask = batch_ptr[:, None] < batch_sizes[None, :]
-    else:
-        mask = batch_ptr[None, :] < batch_sizes[:, None]
-
-    return mask.to(dtype=dtype)
-
-
-@torch.no_grad()
-def batch_sizes_to_token_sizes(batch_sizes: Tensor,
-                               batch_ptr: Optional[Tensor] = None,
-                               dtype: torch.dtype = torch.long) -> Tensor:
-    return batch_sizes_to_mask(
-        batch_sizes=batch_sizes,
-        batch_ptr=batch_ptr,
-        batch_first=False,
-        dtype=dtype,
-    ).sum(dim=0)
-
-
-@torch.no_grad()
-def token_sizes_to_mask(token_sizes: Tensor,
-                        token_ptr: Optional[Tensor] = None,
-                        batch_first: bool = False,
-                        dtype: torch.dtype = torch.bool) -> Tensor:
-    t = token_sizes.max().item()
-
-    if token_ptr is None:
-        token_ptr = torch.arange(t, device=token_sizes.device)
-    assert token_ptr.size() == (t,)
-
-    if batch_first:
-        mask = token_ptr[None, :] < token_sizes[:, None]
-    else:
-        mask = token_ptr[:, None] < token_sizes[None, :]
-
-    return mask.to(dtype=dtype)
-
-
-@torch.no_grad()
-def token_sizes_to_batch_sizes(token_sizes: Tensor,
-                               token_ptr: Optional[Tensor] = None,
-                               dtype: torch.dtype = torch.long) -> Tensor:
-    return token_sizes_to_mask(
-        token_sizes=token_sizes,
-        token_ptr=token_ptr,
-        batch_first=False,
-        dtype=dtype,
-    ).sum(dim=1)
