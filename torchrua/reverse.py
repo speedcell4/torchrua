@@ -22,7 +22,6 @@ def reverse_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-    _, token_sizes = torch.unique(batch_ptr, sorted=True, return_counts=True)
     token_ptr = token_sizes[batch_ptr] - token_ptr - 1
 
     return acc_token_sizes[batch_ptr] + token_ptr
