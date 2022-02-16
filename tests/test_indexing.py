@@ -2,9 +2,9 @@ import torch
 from hypothesis import given, strategies as st
 
 from tests.strategies import token_size_lists, embedding_dims, devices
-from tests.utils import assert_packed_sequence_close, assert_close, assert_grad_close
+from tests.utils import assert_packed_sequence_close, assert_close, assert_grad_close, assert_equal
 from torchrua.catting import cat_sequence
-from torchrua.indexing import head_catted_sequence, last_catted_sequence
+from torchrua.indexing import head_catted_sequence, last_catted_sequence, init_catted_sequence
 from torchrua.indexing import head_packed_sequence, last_packed_sequence, init_packed_sequence, tail_packed_sequence
 from torchrua.packing import pack_sequence
 
@@ -45,6 +45,29 @@ def test_last_catted_sequence(token_sizes, dim, device):
 
     assert_close(actual, expected)
     assert_grad_close(actual, expected, inputs=sequences)
+
+
+@given(
+    data=st.data(),
+    token_sizes=token_size_lists(),
+    dim=embedding_dims(),
+    device=devices(),
+)
+def test_init_catted_sequence(data, token_sizes, dim, device):
+    n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
+
+    sequences = [
+        torch.randn((token_size + 1, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+    catted_sequence = cat_sequence(sequences)
+
+    actual = init_catted_sequence(sequence=catted_sequence, n=n)
+    expected = cat_sequence([sequence[:-n] for sequence in sequences])
+
+    assert_close(actual.data, expected.data)
+    assert_equal(actual.token_sizes, expected.token_sizes)
+    assert_grad_close(actual.data, expected.data, inputs=sequences)
 
 
 @given(
