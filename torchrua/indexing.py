@@ -63,7 +63,11 @@ def last_packed_sequence(sequence: PackedSequence, unsort: bool = True) -> Tenso
 
 
 @torch.no_grad()
-def init_packed_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
+def init_packed_indices(batch_sizes: Tensor, n: int = 1, device: Device = None) -> Tensor:
+    if device is None:
+        device = batch_sizes.device
+
+    batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
     batch_sizes = resize_sizes(sizes=batch_sizes, n=batch_sizes.size()[0] - n)
@@ -73,12 +77,11 @@ def init_packed_indices(batch_sizes: Tensor, n: int = 1) -> Tensor:
 
 
 def init_packed_sequence(sequence: PackedSequence, n: int = 1) -> PackedSequence:
-    device = sequence.data.device
+    indices = init_packed_indices(batch_sizes=sequence.batch_sizes, n=n, device=sequence.data.device)
 
-    indices = init_packed_indices(batch_sizes=sequence.batch_sizes.to(device=device), n=n)
     return PackedSequence(
         data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes[n:],
+        batch_sizes=sequence.batch_sizes[n:].detach().cpu(),
         sorted_indices=sequence.sorted_indices,
         unsorted_indices=sequence.unsorted_indices,
     )
