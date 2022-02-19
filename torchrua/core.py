@@ -2,8 +2,27 @@ from typing import Tuple, Optional
 
 import torch
 from torch import Tensor
+from torch.nn import functional as F
+from torch.nn.utils.rnn import invert_permutation
+from torch.types import Device
 
-from torchrua.utils import accumulate_sizes
+
+@torch.no_grad()
+def accumulate_sizes(sizes: Tensor) -> Tensor:
+    return F.pad(sizes.cumsum(dim=0), pad=[1, -1])
+
+
+@torch.no_grad()
+def sizes_to_sorting_indices(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+    if device is None:
+        device = sizes.device
+
+    sizes, sorted_indices = sizes.cpu().sort(dim=0, descending=True)
+    sizes = sizes.to(device=device)
+    sorted_indices = sorted_indices.to(device=device)
+    unsorted_indices = invert_permutation(sorted_indices)
+
+    return sizes, sorted_indices, unsorted_indices
 
 
 @torch.no_grad()

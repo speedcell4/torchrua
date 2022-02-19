@@ -5,8 +5,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import token_sizes_to_ptr, major_sizes_to_ptr
-from torchrua.utils import accumulate_sizes
+from torchrua.core import token_sizes_to_ptr, major_sizes_to_ptr, accumulate_sizes
 
 
 class CattedSequence(NamedTuple):

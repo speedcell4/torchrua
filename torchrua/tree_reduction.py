@@ -6,8 +6,7 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.nn.utils.rnn import invert_permutation
 
-from torchrua.core import major_sizes_to_ptr, token_sizes_to_ptr
-from torchrua.utils import accumulate_sizes
+from torchrua.core import major_sizes_to_ptr, token_sizes_to_ptr, accumulate_sizes
 
 __all__ = [
     'TreeReduceIndices',

@@ -4,8 +4,8 @@ import torch
 from torch import Tensor
 from torch.types import Device
 
+from torchrua.core import accumulate_sizes
 from torchrua.padding import pad_catted_indices
-from torchrua.utils import accumulate_sizes
 
 
 @torch.no_grad()

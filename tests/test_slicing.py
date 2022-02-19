@@ -4,8 +4,8 @@ from torch.nn.utils.rnn import pack_sequence, pad_packed_sequence
 
 from tests.strategies import token_size_lists, embedding_dims, devices, batch_sizes, TINY_BATCH_SIZE
 from tests.utils import assert_equal, assert_close
-from torchrua.joining import stack_packed_sequences
 from torchrua.chunk import chunk_packed_sequence
+from torchrua.joining import stack_packed_sequences
 
 
 @given(

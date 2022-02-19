@@ -5,9 +5,8 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua import CattedSequence
-from torchrua.core import major_sizes_to_ptr, transpose_sizes
-from torchrua.utils import accumulate_sizes
+from torchrua.catting import CattedSequence
+from torchrua.core import major_sizes_to_ptr, transpose_sizes, accumulate_sizes
 
 __all__ = [
     'head_catted_indices', 'head_catted_sequence',

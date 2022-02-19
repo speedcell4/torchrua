@@ -4,8 +4,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.catting import CattedSequence
-from torchrua.core import major_sizes_to_ptr
-from torchrua.utils import accumulate_sizes
+from torchrua.core import major_sizes_to_ptr, accumulate_sizes
 
 __all__ = [
     'reverse_catted_indices', 'reverse_catted_sequence',
