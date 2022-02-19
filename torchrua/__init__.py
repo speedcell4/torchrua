@@ -1,4 +1,3 @@
-from torchrua.adaptor import *
 from torchrua.catting import *
 from torchrua.chunk import *
 from torchrua.core import *
@@ -14,3 +13,4 @@ from torchrua.scatter import *
 from torchrua.tree_reduction import *
 from torchrua.unique import *
 from torchrua.utils import *
+from torchrua.wrapper import *
