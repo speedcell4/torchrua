@@ -4,24 +4,24 @@ from hypothesis import given, strategies as st
 from torch import nn
 
 from tests.strategies import TINY_BATCH_SIZE, TINY_TOKEN_SIZE, TINY_EMBEDDING_DIM
-from tests.strategies import embedding_dims, devices, token_size_lists, batch_size_lists
+from tests.strategies import draw_embedding_dim, draw_device, draw_token_sizes, draw_batch_sizes
 from tests.utils import assert_close, assert_grad_close
 from torchrua import cat_sequence, pack_sequence, reduce_catted_sequences
 
 
 @given(
     data=st.data(),
-    batch_sizes=batch_size_lists(max_batch_size=TINY_BATCH_SIZE),
-    in_dim=embedding_dims(max_value=TINY_EMBEDDING_DIM),
-    hidden_dim=embedding_dims(max_value=TINY_EMBEDDING_DIM),
-    device=devices(),
+    batch_sizes=draw_batch_sizes(max_batch_size=TINY_BATCH_SIZE),
+    in_dim=draw_embedding_dim(max_value=TINY_EMBEDDING_DIM),
+    hidden_dim=draw_embedding_dim(max_value=TINY_EMBEDDING_DIM),
+    device=draw_device(),
 )
 def test_reduce_catted_sequences(data, batch_sizes, in_dim, hidden_dim, device):
     sequences = [
         [
             torch.randn((token_size, in_dim), requires_grad=True, device=device)
             for token_size in data.draw(
-            token_size_lists(max_token_size=TINY_TOKEN_SIZE, max_batch_size=TINY_BATCH_SIZE))
+            draw_token_sizes(max_token_size=TINY_TOKEN_SIZE, max_batch_size=TINY_BATCH_SIZE))
         ]
         for _ in batch_sizes
     ]

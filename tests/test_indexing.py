@@ -1,7 +1,7 @@
 import torch
 from hypothesis import given, strategies as st
 
-from tests.strategies import token_size_lists, embedding_dims, devices
+from tests.strategies import draw_token_sizes, draw_embedding_dim, draw_device
 from tests.utils import assert_packed_sequence_close, assert_close, assert_grad_close, assert_equal
 from torchrua.catting import cat_sequence
 from torchrua.indexing import head_catted_sequence, last_catted_sequence, init_catted_sequence, tail_catted_sequence
@@ -10,9 +10,9 @@ from torchrua.packing import pack_sequence
 
 
 @given(
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_head_catted_sequence(token_sizes, dim, device):
     sequences = [
@@ -29,9 +29,9 @@ def test_head_catted_sequence(token_sizes, dim, device):
 
 
 @given(
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_last_catted_sequence(token_sizes, dim, device):
     sequences = [
@@ -49,9 +49,9 @@ def test_last_catted_sequence(token_sizes, dim, device):
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_init_catted_sequence(data, token_sizes, dim, device):
     n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
@@ -72,9 +72,9 @@ def test_init_catted_sequence(data, token_sizes, dim, device):
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_tail_catted_sequence(data, token_sizes, dim, device):
     n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
@@ -94,10 +94,10 @@ def test_tail_catted_sequence(data, token_sizes, dim, device):
 
 
 @given(
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
     unsort=st.booleans(),
-    device=devices(),
+    device=draw_device(),
 )
 def test_head_packed_sequence(token_sizes, dim, unsort, device):
     sequences = [
@@ -117,10 +117,10 @@ def test_head_packed_sequence(token_sizes, dim, unsort, device):
 
 
 @given(
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
     unsort=st.booleans(),
-    device=devices(),
+    device=draw_device(),
 )
 def test_last_packed_sequence(token_sizes, dim, unsort, device):
     sequences = [
@@ -141,9 +141,9 @@ def test_last_packed_sequence(token_sizes, dim, unsort, device):
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_init_packed_sequence(data, token_sizes, dim, device):
     n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))
@@ -163,9 +163,9 @@ def test_init_packed_sequence(data, token_sizes, dim, device):
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_tail_packed_sequence(data, token_sizes, dim, device):
     n = data.draw(st.integers(min_value=1, max_value=min(token_sizes)))

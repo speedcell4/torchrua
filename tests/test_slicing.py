@@ -2,19 +2,19 @@ import torch
 from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence, pad_packed_sequence
 
-from tests.strategies import token_size_lists, embedding_dims, devices, batch_sizes, TINY_BATCH_SIZE
+from tests.strategies import draw_token_sizes, draw_embedding_dim, draw_device, draw_batch_size, TINY_BATCH_SIZE
 from tests.utils import assert_equal, assert_close
 from torchrua.chunk import chunk_packed_sequence
 from torchrua.joining import stack_packed_sequences
 
 
 @given(
-    batch_size=batch_sizes(max_value=TINY_BATCH_SIZE),
-    token_sizes=token_size_lists(),
-    embedding_dim=embedding_dims(),
+    batch_size=draw_batch_size(max_value=TINY_BATCH_SIZE),
+    token_sizes=draw_token_sizes(),
+    embedding_dim=draw_embedding_dim(),
     dim=st.sampled_from([0, 1]),
     batch_first=st.booleans(),
-    device=devices(),
+    device=draw_device(),
 )
 def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batch_first, device):
     excepted_sequences = sequences = [

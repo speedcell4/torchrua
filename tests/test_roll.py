@@ -2,7 +2,7 @@ import torch
 from hypothesis import given, strategies as st
 from torch.testing import assert_close
 
-from tests.strategies import token_size_lists, embedding_dims, devices
+from tests.strategies import draw_token_sizes, draw_embedding_dim, draw_device
 from tests.utils import assert_packed_sequence_close, assert_grad_close, assert_equal
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
@@ -11,9 +11,9 @@ from torchrua.roll import roll_packed_sequence, roll_catted_sequence
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_roll_catted_sequence(data, token_sizes, dim, device):
     offset = data.draw(st.integers(min_value=-max(token_sizes), max_value=+max(token_sizes)))
@@ -34,9 +34,9 @@ def test_roll_catted_sequence(data, token_sizes, dim, device):
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_roll_packed_sequence(data, token_sizes, dim, device):
     offset = data.draw(st.integers(min_value=-max(token_sizes), max_value=+max(token_sizes)))

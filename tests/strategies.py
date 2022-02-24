@@ -17,7 +17,7 @@ if torch.cuda.is_available():
 
 
 @st.composite
-def devices(draw):
+def draw_device(draw):
     if not torch.cuda.is_available():
         device = torch.device('cpu')
     else:
@@ -27,31 +27,31 @@ def devices(draw):
 
 
 @st.composite
-def batch_sizes(draw, max_value: int = MAX_BATCH_SIZE):
+def draw_batch_size(draw, max_value: int = MAX_BATCH_SIZE):
     return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def batch_size_lists(draw, max_batch_size: int = MAX_BATCH_SIZE):
+def draw_batch_sizes(draw, max_batch_size: int = MAX_BATCH_SIZE):
     return [
-        draw(batch_sizes(max_value=max_batch_size))
-        for _ in range(draw(batch_sizes(max_value=max_batch_size)))
+        draw(draw_batch_size(max_value=max_batch_size))
+        for _ in range(draw(draw_batch_size(max_value=max_batch_size)))
     ]
 
 
 @st.composite
-def token_sizes(draw, max_value: int = MAX_TOKEN_SIZE):
+def draw_token_size(draw, max_value: int = MAX_TOKEN_SIZE):
     return draw(st.integers(min_value=1, max_value=max_value))
 
 
 @st.composite
-def token_size_lists(draw, max_token_size: int = MAX_TOKEN_SIZE, max_batch_size: int = MAX_BATCH_SIZE):
+def draw_token_sizes(draw, max_token_size: int = MAX_TOKEN_SIZE, max_batch_size: int = MAX_BATCH_SIZE):
     return [
-        draw(token_sizes(max_value=max_token_size))
-        for _ in range(draw(batch_sizes(max_value=max_batch_size)))
+        draw(draw_token_size(max_value=max_token_size))
+        for _ in range(draw(draw_batch_size(max_value=max_batch_size)))
     ]
 
 
 @st.composite
-def embedding_dims(draw, max_value: int = MAX_EMBEDDING_DIM):
+def draw_embedding_dim(draw, max_value: int = MAX_EMBEDDING_DIM):
     return draw(st.integers(min_value=1, max_value=max_value))

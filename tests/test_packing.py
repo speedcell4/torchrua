@@ -2,16 +2,16 @@ import torch
 from hypothesis import given, strategies as st
 from torch.nn.utils import rnn as tgt
 
-from tests.strategies import token_size_lists, embedding_dims, devices
+from tests.strategies import draw_token_sizes, draw_embedding_dim, draw_device
 from tests.utils import assert_packed_sequence_close, assert_grad_close
 from torchrua import packing as rua
 
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
-    device=devices(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
+    device=draw_device(),
 )
 def test_pack_sequence(data, token_sizes, dim, device):
     inputs = [
@@ -28,10 +28,10 @@ def test_pack_sequence(data, token_sizes, dim, device):
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
+    token_sizes=draw_token_sizes(),
+    dim=draw_embedding_dim(),
     batch_first=st.booleans(),
-    device=devices(),
+    device=draw_device(),
 )
 def test_pack_padded_sequence(data, token_sizes, dim, batch_first, device):
     inputs = [
