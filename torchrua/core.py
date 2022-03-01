@@ -2,7 +2,6 @@ from typing import Tuple, Optional
 
 import torch
 from torch import Tensor
-from torch.nn import functional as F
 from torch.types import Device
 
 __all__ = [
@@ -16,7 +15,9 @@ __all__ = [
 
 @torch.no_grad()
 def accumulate_sizes(sizes: Tensor) -> Tensor:
-    return F.pad(sizes.cumsum(dim=0), pad=[1, -1])
+    acc_sizes = sizes.cumsum(dim=0).roll(shifts=1, dims=0)
+    acc_sizes[0] = 0
+    return acc_sizes
 
 
 @torch.no_grad()
