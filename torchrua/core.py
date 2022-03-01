@@ -13,7 +13,7 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
 
 
 @torch.no_grad()
-def sizes_to_sorting_indices(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
     if device is None:
         device = sizes.device
 
