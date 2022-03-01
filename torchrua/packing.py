@@ -19,8 +19,8 @@ def pack_sequence(sequences: List[Tensor], device: Device = None) -> PackedSeque
     if device is None:
         device = sequences[0].device
 
-    sequence, token_sizes = cat_sequence(sequences=sequences, device=device)
-    return pack_catted_sequence(sequence=sequence, token_sizes=token_sizes, device=device)
+    data, token_sizes = cat_sequence(sequences=sequences, device=device)
+    return pack_catted_sequence(sequence=data, token_sizes=token_sizes, device=device)
 
 
 @torch.no_grad()
@@ -28,14 +28,16 @@ def pack_catted_indices(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
-    sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
+    token_sizes = token_sizes.to(device=device)
+    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
+
+    token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
         sizes=token_sizes, device=device,
     )
     token_ptr, batch_ptr, batch_sizes = token_sizes_to_ptr(
-        token_sizes=sorted_token_sizes,
+        token_sizes=token_sizes,
         batch_ptr=sorted_indices,
     )
-    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
     indices = acc_token_sizes[batch_ptr] + token_ptr
 
     return indices, batch_sizes, sorted_indices, unsorted_indices
@@ -61,6 +63,8 @@ def pack_catted_sequence(sequence: Tensor, token_sizes: Tensor, device: Device =
 def pack_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device = None):
     if device is None:
         device = token_sizes.device
+
+    token_sizes = token_sizes.to(device=device)
 
     sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
         sizes=token_sizes, device=device,
