@@ -4,9 +4,8 @@ from typing import Union, List, NamedTuple, Callable, Tuple
 import torch
 from torch import Tensor
 from torch.nn import functional as F
-from torch.nn.utils.rnn import invert_permutation
 
-from torchrua.core import major_sizes_to_ptr, token_sizes_to_ptr, accumulate_sizes
+from torchrua.core import major_sizes_to_ptr, token_sizes_to_ptr, accumulate_sizes, invert_permutation
 
 __all__ = [
     'TreeReduceIndices',

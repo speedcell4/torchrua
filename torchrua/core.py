@@ -3,7 +3,6 @@ from typing import Tuple, Optional
 import torch
 from torch import Tensor
 from torch.nn import functional as F
-from torch.nn.utils.rnn import invert_permutation
 from torch.types import Device
 
 
@@ -23,6 +22,14 @@ def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tens
     unsorted_indices = invert_permutation(sorted_indices)
 
     return sizes, sorted_indices, unsorted_indices
+
+
+@torch.no_grad()
+def invert_permutation(tensor: Tensor) -> Tensor:
+    index1 = torch.empty(tensor.size()[0], device=tensor.device, dtype=tensor.dtype)
+    index2 = torch.arange(tensor.size()[0], device=tensor.device, dtype=tensor.dtype)
+    index1[tensor] = index2
+    return index1
 
 
 @torch.no_grad()

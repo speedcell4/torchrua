@@ -2,9 +2,10 @@ from typing import List, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence, invert_permutation
+from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
+from torchrua.core import invert_permutation
 from torchrua.packing import pack_catted_sequence, pack_catted_indices
 
 __all__ = [
