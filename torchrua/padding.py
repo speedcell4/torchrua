@@ -1,4 +1,4 @@
-from typing import Tuple, List, Union, Optional
+from typing import Tuple, List
 
 import torch
 from torch import Tensor
@@ -8,37 +8,42 @@ from torch.types import Device, Number
 from torchrua.catting import cat_sequence, CattedSequence
 from torchrua.core import major_sizes_to_ptr
 
-PaddedSequence = Union[Tensor, Tuple[Tensor, Tensor]]
+__all__ = [
+    'PaddedSequence', 'pad_sequence',
+    'pad_catted_indices', 'pad_catted_sequence',
+    'pad_packed_indices', 'pad_packed_sequence',
+]
+
+PaddedSequence = Tuple[Tensor, Tensor]
 
 
-def pad_sequence(sequences: List[Tensor], batch_first: bool = False,
-                 padding_value: Number = 0, device: Device = None) -> Tuple[Tensor, Tensor]:
+def pad_sequence(sequences: List[Tensor], batch_first: bool,
+                 padding_value: Number = 0, device: Device = None) -> PaddedSequence:
     if device is None:
         device = sequences[0].device
 
     sequence = cat_sequence(sequences=sequences, device=device)
     return pad_catted_sequence(
         sequence=sequence,
-        batch_first=batch_first, padding_value=padding_value,
+        batch_first=batch_first,
+        padding_value=padding_value,
     )
 
 
 @torch.no_grad()
-def pad_packed_indices(batch_sizes: Tensor,
-                       sorted_indices: Optional[Tensor],
-                       unsorted_indices: Optional[Tensor],
-                       batch_first: bool, device: Device = None):
+def pad_packed_indices(batch_sizes: Tensor, batch_first: bool,
+                       sorted_indices: Tensor = None, unsorted_indices: Tensor = None, device: Device = None):
     if device is None:
-        if sorted_indices is not None:
-            device = sorted_indices.device
-        elif unsorted_indices is not None:
+        if unsorted_indices is not None:
             device = unsorted_indices.device
+        elif sorted_indices is not None:
+            device = sorted_indices.device
         else:
-            raise RuntimeError(f'at least one of sorted_indices, unsorted_indices, and device should be set')
+            device = batch_sizes.device
 
     batch_sizes = batch_sizes.to(device=device)
-    t = batch_sizes.size()[0]
     b = batch_sizes.max().item()
+    t, *_ = batch_sizes.size()
 
     batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
     _, token_sizes = torch.unique(batch_ptr, sorted=True, return_counts=True)
@@ -54,8 +59,8 @@ def pad_packed_indices(batch_sizes: Tensor,
         return (t, b), (token_ptr, batch_ptr), token_sizes
 
 
-def pad_packed_sequence(sequence: PackedSequence, padding_value: Number = 0,
-                        batch_first: bool = False, device: Device = None) -> Tuple[Tensor, Tensor]:
+def pad_packed_sequence(sequence: PackedSequence, batch_first: bool,
+                        padding_value: Number = 0, device: Device = None) -> PaddedSequence:
     if device is None:
         device = sequence.data.device
 
@@ -81,8 +86,8 @@ def pad_catted_indices(token_sizes: Tensor, batch_first: bool, device: Device = 
         device = token_sizes.device
 
     token_sizes = token_sizes.to(device=device)
+    b, *_ = token_sizes.size()
     t = token_sizes.max().item()
-    b = token_sizes.size()[0]
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
@@ -92,15 +97,17 @@ def pad_catted_indices(token_sizes: Tensor, batch_first: bool, device: Device = 
         return (t, b), (token_ptr, batch_ptr)
 
 
-def pad_catted_sequence(sequence: CattedSequence, padding_value: Number = 0,
-                        batch_first: bool = False, device: Device = None) -> Tuple[Tensor, Tensor]:
+def pad_catted_sequence(sequence: CattedSequence, batch_first: bool,
+                        padding_value: Number = 0, device: Device = None) -> PaddedSequence:
     if device is None:
         device = sequence.data.device
 
     token_sizes = sequence.token_sizes.to(device=device)
+
     sizes, indices = pad_catted_indices(
         token_sizes=token_sizes,
-        batch_first=batch_first, device=device,
+        batch_first=batch_first,
+        device=device,
     )
 
     data = torch.full(
