@@ -5,6 +5,14 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.types import Device
 
+__all__ = [
+    'accumulate_sizes', 'transpose_sizes',
+    'major_sizes_to_ptr',
+    'minor_sizes_to_ptr',
+    'sizes_to_sorting',
+    'invert_permutation',
+]
+
 
 @torch.no_grad()
 def accumulate_sizes(sizes: Tensor) -> Tensor:
@@ -12,24 +20,9 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
 
 
 @torch.no_grad()
-def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
-    if device is None:
-        device = sizes.device
-
-    sizes, sorted_indices = sizes.cpu().sort(dim=0, descending=True)
-    sizes = sizes.to(device=device)
-    sorted_indices = sorted_indices.to(device=device)
-    unsorted_indices = invert_permutation(sorted_indices)
-
-    return sizes, sorted_indices, unsorted_indices
-
-
-@torch.no_grad()
-def invert_permutation(tensor: Tensor) -> Tensor:
-    index1 = torch.empty(tensor.size()[0], device=tensor.device, dtype=tensor.dtype)
-    index2 = torch.arange(tensor.size()[0], device=tensor.device, dtype=tensor.dtype)
-    index1[tensor] = index2
-    return index1
+def transpose_sizes(sizes: Tensor) -> Tensor:
+    index = torch.arange(sizes.max().item(), device=sizes.device)
+    return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
 
 
 @torch.no_grad()
@@ -43,13 +36,7 @@ def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
 
 
 @torch.no_grad()
-def transpose_sizes(sizes: Tensor) -> Tensor:
-    index = torch.arange(sizes.max().item(), device=sizes.device)
-    return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
-
-
-@torch.no_grad()
-def token_sizes_to_ptr(token_sizes: Tensor,
+def minor_sizes_to_ptr(token_sizes: Tensor,
                        token_ptr: Optional[Tensor] = None,
                        batch_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
     t = token_sizes.max().item()
@@ -70,3 +57,29 @@ def token_sizes_to_ptr(token_sizes: Tensor,
     sorted_batch_sizes = tb_mask.long().sum(dim=1)
 
     return token_ptr, batch_ptr, sorted_batch_sizes
+
+
+@torch.no_grad()
+def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+    if device is None:
+        device = sizes.device
+
+    sizes, sorted_indices = sizes.cpu().sort(dim=0, descending=True)
+    sizes = sizes.to(device=device)
+    sorted_indices = sorted_indices.to(device=device)
+    unsorted_indices = invert_permutation(sorted_indices)
+
+    return sizes, sorted_indices, unsorted_indices
+
+
+@torch.no_grad()
+def invert_permutation(tensor: Tensor, device: Device = None, dtype: torch.dtype = None) -> Tensor:
+    if dtype is None:
+        dtype = tensor.dtype
+    if device is None:
+        device = tensor.device
+
+    ret = torch.empty(tensor.size()[0], dtype=dtype, device=device)
+    index = torch.arange(tensor.size()[0], dtype=dtype, device=device)
+    ret[tensor] = index
+    return ret

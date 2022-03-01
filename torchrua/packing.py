@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.catting import cat_sequence
-from torchrua.core import token_sizes_to_ptr, accumulate_sizes, sizes_to_sorting
+from torchrua.core import minor_sizes_to_ptr, accumulate_sizes, sizes_to_sorting
 
 __all__ = [
     'PackedSequence', 'pack_sequence',
@@ -34,7 +34,7 @@ def pack_catted_indices(token_sizes: Tensor, device: Device = None):
     token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
         sizes=token_sizes, device=device,
     )
-    token_ptr, batch_ptr, batch_sizes = token_sizes_to_ptr(
+    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
         token_sizes=token_sizes,
         batch_ptr=sorted_indices,
     )
@@ -69,7 +69,7 @@ def pack_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device =
     sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
         sizes=token_sizes, device=device,
     )
-    token_ptr, batch_ptr, batch_sizes = token_sizes_to_ptr(
+    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
         token_sizes=sorted_token_sizes,
         batch_ptr=sorted_indices,
     )

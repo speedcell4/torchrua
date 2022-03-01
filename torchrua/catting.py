@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import token_sizes_to_ptr, major_sizes_to_ptr, accumulate_sizes
+from torchrua.core import minor_sizes_to_ptr, major_sizes_to_ptr, accumulate_sizes
 
 
 class CattedSequence(NamedTuple):
@@ -37,7 +37,7 @@ def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Optional[Tensor], 
 
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    batch_ptr, token_ptr, token_sizes = token_sizes_to_ptr(
+    batch_ptr, token_ptr, token_sizes = minor_sizes_to_ptr(
         token_sizes=batch_sizes,
         token_ptr=unsorted_indices,
     )

@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 from torch.nn import functional as F
 
-from torchrua.core import major_sizes_to_ptr, token_sizes_to_ptr, accumulate_sizes, invert_permutation
+from torchrua.core import major_sizes_to_ptr, minor_sizes_to_ptr, accumulate_sizes, invert_permutation
 
 __all__ = [
     'TreeReduceIndices',
@@ -46,7 +46,7 @@ def tree_reduce_indices(token_sizes1: Tensor):
     xs, ys, zs = [], [], []
     for index in range(opt_sizes.size()[1] - 1, -1, -1):
         opt_size = opt_sizes[:, index]
-        token_ptr, batch_ptr, _ = token_sizes_to_ptr(
+        token_ptr, batch_ptr, _ = minor_sizes_to_ptr(
             token_sizes=torch.div(opt_size, 2, rounding_mode='trunc'),
         )
         ptr = offsets[batch_ptr] + token_ptr
@@ -65,7 +65,7 @@ def tree_reduce_indices(token_sizes1: Tensor):
 
 @torch.no_grad()
 def tree_reduce_packed_indices(batch_sizes: Tensor) -> TreeReduceIndices:
-    batch_ptr1, token_ptr1, token_sizes1 = token_sizes_to_ptr(token_sizes=batch_sizes)
+    batch_ptr1, token_ptr1, token_sizes1 = minor_sizes_to_ptr(token_sizes=batch_sizes)
     acc_batch_sizes1 = accumulate_sizes(sizes=batch_sizes)
 
     xs, ys, zs, token_ptr2, acc_token_sizes2, dst, num_steps = tree_reduce_indices(token_sizes1=token_sizes1)
