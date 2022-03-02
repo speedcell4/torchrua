@@ -4,6 +4,7 @@ from torchrua.core import *
 from torchrua.indexing import *
 from torchrua.interleave import *
 from torchrua.joining import *
+from torchrua.nested import *
 from torchrua.packing import *
 from torchrua.padding import *
 from torchrua.reduction import *

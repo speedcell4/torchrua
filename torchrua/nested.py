@@ -16,9 +16,9 @@ def cat_catted_indices(token_sizes: List[Tensor], device: Device = None) -> Tupl
     repeats, batch_sizes = cat_sequence(token_sizes, device=device)
     batch_ptr, _ = major_sizes_to_ptr(sizes=batch_sizes)
 
-    indices = torch.repeat_interleave(batch_ptr, repeats=repeats)
-    _, indices = torch.sort(indices, stable=True, descending=False)
-    _, token_sizes = torch.unique(indices, sorted=True, return_counts=True)
+    batch_ptr = torch.repeat_interleave(batch_ptr, repeats=repeats)
+    _, indices = torch.sort(batch_ptr, stable=True, descending=False)
+    _, token_sizes = torch.unique(batch_ptr, sorted=True, return_counts=True)
 
     return indices, token_sizes
 
