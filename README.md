@@ -10,8 +10,8 @@ help you rua tensors with `PackedSequence` and `CattedSequence`!
 
 ## Requirements
 
-- Python 3.7
-- PyTorch 1.6.0
+- Python 3.8
+- PyTorch 1.10.2
 
 ## Installation
 
@@ -21,7 +21,7 @@ help you rua tensors with `PackedSequence` and `CattedSequence`!
 
 ### Adaptor
 
-* `packed_fn`, `packed_method`, `Packed`
+* `packed_fn`, `rua_method`, `Packed`
 
 Converting existing function, method, and `nn.Module` to versions that support receiving `PackedSequence` as the first
 argument, respectively.
@@ -31,7 +31,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import rua_fn, packed_method, RuaModule
+from torchrua import rua_fn, rua_method, RuaModule
 from torchrua.padding import pad_packed_sequence
 
 linear = nn.Linear(7, 13)
@@ -52,9 +52,9 @@ y, _ = pad_packed_sequence(rua_fn(linear)(pack), batch_first=True)
 print(y.size())
 # torch.Size([3, 5, 13])
 
-print(packed_method(nn.Linear.forward))
+print(rua_method(nn.Linear.forward))
 # <function Linear.forward at 0x10f9524d0>
-z, _ = pad_packed_sequence(packed_method(nn.Linear.forward)(linear, pack), batch_first=True)
+z, _ = pad_packed_sequence(rua_method(nn.Linear.forward)(linear, pack), batch_first=True)
 print(z.size())
 # torch.Size([3, 5, 13])
 
