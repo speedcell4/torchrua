@@ -31,7 +31,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import packed_fn, packed_method, Packed
+from torchrua import rua_fn, packed_method, RuaModule
 from torchrua.padding import pad_packed_sequence
 
 linear = nn.Linear(7, 13)
@@ -46,9 +46,9 @@ x, _ = pad_packed_sequence(pack, batch_first=True)
 print(x.size())
 # torch.Size([3, 5, 7])
 
-print(packed_fn(linear))
+print(rua_fn(linear))
 # <function packed_fn.<locals>.wrap at 0x10f9524d0>
-y, _ = pad_packed_sequence(packed_fn(linear)(pack), batch_first=True)
+y, _ = pad_packed_sequence(rua_fn(linear)(pack), batch_first=True)
 print(y.size())
 # torch.Size([3, 5, 13])
 
@@ -58,9 +58,9 @@ z, _ = pad_packed_sequence(packed_method(nn.Linear.forward)(linear, pack), batch
 print(z.size())
 # torch.Size([3, 5, 13])
 
-print(Packed(linear))
+print(RuaModule(linear))
 # PackedLinear(in_features=7, out_features=13, bias=True)
-w, _ = pad_packed_sequence(Packed(linear)(pack), batch_first=True)
+w, _ = pad_packed_sequence(RuaModule(linear)(pack), batch_first=True)
 print(w.size())
 # torch.Size([3, 5, 13])
 ```
@@ -79,11 +79,11 @@ from torch.nn import functional as F
 from torch.nn import init
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import PackedMeta, PackedSequential
+from torchrua import RuaMeta, RuaSequential
 from torchrua.padding import pad_packed_sequence
 
 
-class MyLinear(nn.Module, metaclass=PackedMeta):
+class MyLinear(nn.Module, metaclass=RuaMeta):
     def __init__(self, input_dim: int, output_dim: int) -> None:
         super(MyLinear, self).__init__()
 
@@ -107,7 +107,7 @@ class MyLinear(nn.Module, metaclass=PackedMeta):
 
 
 linear = MyLinear(7, 13)
-sequential = PackedSequential(
+sequential = RuaSequential(
     nn.Linear(7, 13),
     nn.Linear(13, 17),
 )
@@ -142,7 +142,7 @@ print(z.size())
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import select_head, select_last, select_init, select_tail
+from torchrua import head_packed_sequence, last_packed_sequence, init_packed_sequence, tail_packed_sequence
 from torchrua.padding import pad_packed_sequence
 
 pack = pack_sequence([
@@ -157,20 +157,20 @@ print(x)
 #         [1, 2, 0, 0, 0],
 #         [1, 2, 3, 0, 0]])
 
-print(select_head(pack))
+print(head_packed_sequence(pack))
 # tensor([1, 1, 1])
 
-print(select_last(pack))
+print(last_packed_sequence(pack))
 # tensor([5, 2, 3])
 
-y = select_init(pack, drop_last_n=1)
+y = init_packed_sequence(pack, n=1)
 y, _ = pad_packed_sequence(y, batch_first=True)
 print(y)
 # tensor([[1, 2, 3, 4],
 #         [1, 0, 0, 0],
 #         [1, 2, 0, 0]])
 
-z = select_tail(pack, drop_first_n=1)
+z = tail_packed_sequence(pack, n=1)
 z, _ = pad_packed_sequence(z, batch_first=True)
 print(z)
 # tensor([[2, 3, 4, 5],
@@ -185,7 +185,8 @@ print(z)
 import torch
 from torch.nn.utils.rnn import pack_sequence
 
-from torchrua import reverse_packed_sequence, roll_packed_sequence
+from torchrua.roll import roll_packed_sequence
+from torchrua.reverse import reverse_packed_sequence
 from torchrua.padding import pad_packed_sequence
 
 x = pack_sequence([

@@ -4,7 +4,8 @@ import torch
 from einops import rearrange
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
-from torch.nn.utils.rnn import invert_permutation
+
+from torchrua.core import invert_permutation
 
 __all__ = [
     'stack_packed_sequences', 'stack_data',

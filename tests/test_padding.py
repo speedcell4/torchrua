@@ -1,50 +1,54 @@
 import torch
 from hypothesis import given, strategies as st
-from torch.nn.utils import rnn as tgt
+from torch.nn.utils.rnn import pack_sequence as torch_pack_sequence
+from torch.nn.utils.rnn import pad_sequence as torch_pad_sequence
 
-from tests.strategies import token_size_lists, embedding_dims, devices
-from tests.utils import assert_close, assert_equal, assert_grad_close
-from torchrua import padding as rua
+from tests.assertions import assert_close, assert_equal, assert_grad_close
+from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
+from torchrua import pad_sequence, pad_packed_sequence
 
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     batch_first=st.booleans(),
     device=devices(),
 )
 def test_pad_sequence(data, token_sizes, dim, batch_first, device):
-    inputs = [
+    sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
-    actual = rua.pad_sequence(inputs, batch_first=batch_first)
-    excepted = tgt.pad_sequence(inputs, batch_first=batch_first)
+    actual, _ = pad_sequence(sequences, batch_first=batch_first)
+    excepted = torch_pad_sequence(sequences, batch_first=batch_first)
 
-    assert_close(actual, excepted)
-    assert_grad_close(actual, excepted, inputs=inputs)
+    assert_close(actual=actual, expected=excepted)
+    assert_grad_close(actual=actual, expected=excepted, inputs=sequences)
 
 
 @given(
     data=st.data(),
-    token_sizes=token_size_lists(),
-    dim=embedding_dims(),
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     batch_first=st.booleans(),
     device=devices(),
 )
 def test_pad_packed_sequence(data, token_sizes, dim, batch_first, device):
-    inputs = [
+    sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
-    packed_sequence = tgt.pack_sequence(inputs, enforce_sorted=False)
-    excepted_token_sizes = torch.tensor(token_sizes, device=torch.device('cpu'))
 
-    excepted = tgt.pad_sequence(inputs, batch_first=batch_first)
-    actual, actual_token_sizes = rua.pad_packed_sequence(packed_sequence, batch_first=batch_first)
+    actual, actual_token_sizes = pad_packed_sequence(
+        torch_pack_sequence(sequences, enforce_sorted=False),
+        batch_first=batch_first,
+    )
 
-    assert_close(actual, excepted)
-    assert_grad_close(actual, excepted, inputs=inputs)
-    assert_equal(actual_token_sizes, excepted_token_sizes)
+    excepted = torch_pad_sequence(sequences, batch_first=batch_first)
+    excepted_token_sizes = torch.tensor(token_sizes, device=device)
+
+    assert_close(actual=actual, expected=excepted)
+    assert_equal(actual=actual_token_sizes, expected=excepted_token_sizes)
+    assert_grad_close(actual=actual, expected=excepted, inputs=sequences)

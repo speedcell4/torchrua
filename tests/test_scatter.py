@@ -3,24 +3,24 @@ import torch_scatter
 from hypothesis import given, strategies as st
 from torch.testing import assert_close
 
-from tests.strategies import embedding_dims, devices, token_sizes, TINY_TOKEN_SIZE
-from tests.utils import assert_grad_close
+from tests.assertions import assert_grad_close
+from tests.strategies import devices, sizes, TINY_TOKEN_SIZE, EMBEDDING_DIM, TOKEN_SIZE
 from torchrua import scatter as rua_scatter
 
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_add(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_add(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_add(tensor=inputs, index=index1)
@@ -32,17 +32,17 @@ def test_scatter_add(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_mul(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_mul(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_mul(tensor=inputs, index=index1)
@@ -54,17 +54,17 @@ def test_scatter_mul(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_mean(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_mean(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_mean(tensor=inputs, index=index1)
@@ -76,17 +76,17 @@ def test_scatter_mean(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_max(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_max(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_max(tensor=inputs, index=index1)
@@ -98,17 +98,17 @@ def test_scatter_max(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(),
-    num=token_sizes(),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_min(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_min(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_min(tensor=inputs, index=index1)
@@ -120,17 +120,17 @@ def test_scatter_min(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(max_value=TINY_TOKEN_SIZE),
-    num=token_sizes(max_value=TINY_TOKEN_SIZE),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TINY_TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_logsumexp(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_logsumexp(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_logsumexp(tensor=inputs, index=index1)
@@ -146,17 +146,17 @@ def test_scatter_logsumexp(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(max_value=TINY_TOKEN_SIZE),
-    num=token_sizes(max_value=TINY_TOKEN_SIZE),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TINY_TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_softmax(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_softmax(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_softmax(tensor=inputs, index=index1)
@@ -168,17 +168,17 @@ def test_scatter_softmax(data, token_size, num, dim, device):
 
 @given(
     data=st.data(),
-    token_size=token_sizes(max_value=TINY_TOKEN_SIZE),
-    num=token_sizes(max_value=TINY_TOKEN_SIZE),
-    dim=embedding_dims(),
+    token_size=sizes(TOKEN_SIZE),
+    vocab_size=sizes(TINY_TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
     device=devices(),
 )
-def test_scatter_log_softmax(data, token_size, num, dim, device):
-    if num > token_size:
-        num, token_size = token_size, num
+def test_scatter_log_softmax(data, token_size, vocab_size, dim, device):
+    if vocab_size > token_size:
+        vocab_size, token_size = token_size, vocab_size
 
     inputs = torch.randn((token_size, dim), device=device, requires_grad=True)
-    index1 = torch.randint(0, num, (token_size,), device=device)
+    index1 = torch.randint(0, vocab_size, (token_size,), device=device)
     index2 = index1[:, None].expand_as(inputs)
 
     actual = rua_scatter.scatter_log_softmax(tensor=inputs, index=index1)

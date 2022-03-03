@@ -4,35 +4,43 @@ import torch
 from torch import Tensor
 from torch.types import Device
 
-from torchrua.utils import accumulate_sizes
-
-__all__ = [
-    'scatter_index_to_ptr',
-    'scatter_add',
-    'scatter_mul',
-    'scatter_mean',
-    'scatter_max',
-    'scatter_min',
-    'scatter_logsumexp',
-    'scatter_softmax',
-    'scatter_log_softmax',
-]
+from torchrua.core import accumulate_sizes
+from torchrua.padding import pad_catted_indices
 
 
 @torch.no_grad()
-def scatter_index_to_ptr(index: Tensor,
-                         dtype: torch.dtype = torch.long,
-                         device: Device = None) -> Tuple[Tensor, Tensor]:
+def scatter_counts(index: Tensor, src: Tensor = None) -> Tensor:
+    counts = torch.zeros(index.max().item() + 1, dtype=index.dtype, device=index.device)
+    return counts.scatter_add_(dim=0, index=index, src=src or torch.ones_like(index))
+
+
+@torch.no_grad()
+def scatter_index_to_ptr(index: Tensor, device: Device = None) -> Tuple[Tensor, Tensor]:
+    index = index.to(device=device)
+    sorted_indices = torch.argsort(index, dim=0, descending=False)
+
+    return sorted_indices, accumulate_sizes(sizes=scatter_counts(index=index))
+
+
+@torch.no_grad()
+def scatter_catted_indices(index: Tensor, token_sizes: Tensor, device: Device = None):
     if device is None:
         device = index.device
 
-    index = index.to(dtype=dtype, device=device)
-    sorted_indices = torch.argsort(index, dim=0, descending=False)
+    (b, t), (batch_ptr, token_ptr) = pad_catted_indices(
+        token_sizes=token_sizes,
+        batch_first=True, device=device,
+    )
+    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
+    indices = acc_token_sizes[batch_ptr] + index
+    _, indices = torch.unique(indices, dim=0, return_inverse=True)
+    indices, offsets = scatter_index_to_ptr(index=indices, device=device)
 
-    token_sizes = torch.zeros(index.max().item() + 1, dtype=dtype, device=device)
-    token_sizes = token_sizes.scatter_add_(dim=0, index=index, src=torch.ones_like(index))
+    token_sizes = torch.zeros((b, t), dtype=torch.long, device=device)
+    token_sizes[batch_ptr, index] = 1
+    token_sizes = token_sizes.sum(dim=1)
 
-    return sorted_indices, accumulate_sizes(sizes=token_sizes)
+    return indices, offsets, token_sizes
 
 
 def scatter_add(tensor: Tensor, index: Tensor) -> Tensor:

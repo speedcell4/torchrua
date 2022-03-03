@@ -2,17 +2,17 @@ import torch
 from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence, pad_packed_sequence
 
-from tests.strategies import token_size_lists, embedding_dims, devices, batch_sizes, TINY_BATCH_SIZE
-from tests.utils import assert_equal, assert_close
+from tests.assertions import assert_equal, assert_close
+from tests.strategies import sizes, devices, TINY_BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, BATCH_SIZE
+from torchrua.chunk import chunk_packed_sequence
 from torchrua.joining import stack_packed_sequences
-from torchrua.slicing import chunk_packed_sequence
 
 
 @given(
-    batch_size=batch_sizes(max_value=TINY_BATCH_SIZE),
-    token_sizes=token_size_lists(),
-    embedding_dim=embedding_dims(),
-    dim=st.sampled_from([0, 1]),
+    batch_size=sizes(TINY_BATCH_SIZE),
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    embedding_dim=sizes(EMBEDDING_DIM),
+    dim=sizes(1),
     batch_first=st.booleans(),
     device=devices(),
 )
