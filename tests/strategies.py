@@ -1,23 +1,22 @@
 import torch
-
 from hypothesis import strategies as st
 
 TINY_BATCH_SIZE = 5
-TINY_TOKEN_SIZE = 5
-TINY_EMBEDDING_DIM = 25
-
-MAX_BATCH_SIZE = 25
-MAX_TOKEN_SIZE = 100
-MAX_EMBEDDING_DIM = 25
+TINY_TOKEN_SIZE = 10
+TINY_EMBEDDING_DIM = 12
 
 if torch.cuda.is_available():
-    MAX_BATCH_SIZE *= 4
-    MAX_TOKEN_SIZE *= 4
-    MAX_EMBEDDING_DIM *= 4
+    BATCH_SIZE = 50
+    TOKEN_SIZE = 80
+    EMBEDDING_DIM = 100
+else:
+    BATCH_SIZE = 30
+    TOKEN_SIZE = 50
+    EMBEDDING_DIM = 60
 
 
 @st.composite
-def draw_device(draw):
+def devices(draw):
     if not torch.cuda.is_available():
         device = torch.device('cpu')
     else:
@@ -27,31 +26,13 @@ def draw_device(draw):
 
 
 @st.composite
-def draw_batch_size(draw, max_value: int = MAX_BATCH_SIZE):
-    return draw(st.integers(min_value=1, max_value=max_value))
+def sizes(draw, *size: int, min_size: int = 1):
+    max_size, *size = size
 
-
-@st.composite
-def draw_batch_sizes(draw, max_batch_size: int = MAX_BATCH_SIZE):
-    return [
-        draw(draw_batch_size(max_value=max_batch_size))
-        for _ in range(draw(draw_batch_size(max_value=max_batch_size)))
-    ]
-
-
-@st.composite
-def draw_token_size(draw, max_value: int = MAX_TOKEN_SIZE):
-    return draw(st.integers(min_value=1, max_value=max_value))
-
-
-@st.composite
-def draw_token_sizes(draw, max_token_size: int = MAX_TOKEN_SIZE, max_batch_size: int = MAX_BATCH_SIZE):
-    return [
-        draw(draw_token_size(max_value=max_token_size))
-        for _ in range(draw(draw_batch_size(max_value=max_batch_size)))
-    ]
-
-
-@st.composite
-def draw_embedding_dim(draw, max_value: int = MAX_EMBEDDING_DIM):
-    return draw(st.integers(min_value=1, max_value=max_value))
+    if len(size) == 0:
+        return draw(st.integers(min_value=min_size, max_value=max_size))
+    else:
+        return [
+            draw(sizes(*size, min_size=min_size))
+            for _ in range(draw(st.integers(min_value=min_size, max_value=max_size)))
+        ]

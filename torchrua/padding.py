@@ -24,9 +24,8 @@ def pad_sequence(sequences: List[Tensor], batch_first: bool,
 
     sequence = cat_sequence(sequences=sequences, device=device)
     return pad_catted_sequence(
-        sequence=sequence,
-        batch_first=batch_first,
-        padding_value=padding_value,
+        sequence=sequence, batch_first=batch_first,
+        padding_value=padding_value, device=device,
     )
 
 

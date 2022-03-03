@@ -1,5 +1,7 @@
 from torchrua.catting import *
 from torchrua.chunk import *
+from torchrua.compose import *
+from torchrua.concat import *
 from torchrua.core import *
 from torchrua.indexing import *
 from torchrua.interleave import *
@@ -10,6 +12,5 @@ from torchrua.reduction import *
 from torchrua.reverse import *
 from torchrua.roll import *
 from torchrua.scatter import *
-from torchrua.tree_reduction import *
 from torchrua.unique import *
 from torchrua.wrapper import *
