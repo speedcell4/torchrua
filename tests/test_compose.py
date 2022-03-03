@@ -4,13 +4,13 @@ from hypothesis import given
 from torch import nn
 
 from tests.assertions import assert_close, assert_grad_close
-from tests.strategies import devices, TINY_TOKEN_SIZE, BATCH_SIZE
+from tests.strategies import devices, TINY_TOKEN_SIZE, TINY_BATCH_SIZE
 from tests.strategies import sizes, EMBEDDING_DIM
 from torchrua import cat_sequence, pack_sequence, compose_catted_sequences
 
 
 @given(
-    token_sizes_batch=sizes(BATCH_SIZE, BATCH_SIZE, TINY_TOKEN_SIZE),
+    token_sizes_batch=sizes(TINY_BATCH_SIZE, TINY_BATCH_SIZE, TINY_TOKEN_SIZE),
     input_size=sizes(EMBEDDING_DIM),
     hidden_size=sizes(EMBEDDING_DIM),
     device=devices(),

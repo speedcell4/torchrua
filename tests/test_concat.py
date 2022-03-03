@@ -6,13 +6,13 @@ from hypothesis import given
 from torch.types import Device
 
 from tests.assertions import assert_catted_sequence_close, assert_grad_close
-from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, TINY_BATCH_SIZE
 from torchrua import cat_sequence, concat_catted_sequences
 
 
 @given(
     device=devices(),
-    token_sizes_batch=sizes(BATCH_SIZE, BATCH_SIZE, TOKEN_SIZE),
+    token_sizes_batch=sizes(TINY_BATCH_SIZE, BATCH_SIZE, TOKEN_SIZE),
     embedding_dim=sizes(EMBEDDING_DIM),
 )
 def test_concat_catted_sequences(token_sizes_batch: List[List[int]], embedding_dim: int, device: Device):
