@@ -2,17 +2,17 @@ import torch
 from hypothesis import given
 from torch.testing import assert_close
 
-from tests.strategies import draw_token_sizes, draw_embedding_dim, draw_device
-from tests.utils import assert_packed_sequence_close, assert_grad_close, assert_equal
+from tests.assertions import assert_packed_sequence_close, assert_grad_close, assert_equal
+from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
 from torchrua.reverse import reverse_catted_sequence, reverse_packed_sequence
 
 
 @given(
-    token_sizes=draw_token_sizes(),
-    dim=draw_embedding_dim(),
-    device=draw_device(),
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
+    device=devices(),
 )
 def test_reverse_catted_sequence(token_sizes, dim, device):
     sequence = [
@@ -30,9 +30,9 @@ def test_reverse_catted_sequence(token_sizes, dim, device):
 
 
 @given(
-    token_sizes=draw_token_sizes(),
-    dim=draw_embedding_dim(),
-    device=draw_device(),
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
+    device=devices(),
 )
 def test_reverse_packed_sequence(token_sizes, dim, device):
     sequence = [

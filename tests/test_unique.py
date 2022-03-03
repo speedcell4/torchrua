@@ -1,40 +1,32 @@
 import torch
 from hypothesis import given
 
-from tests.strategies import draw_token_sizes, draw_device, draw_embedding_dim
-from tests.utils import assert_equal
+from tests.assertions import assert_equal
+from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
 from torchrua.unique import unique_catted_sequence, unique_packed_sequence
 
 
 @given(
-    vocab_size=draw_embedding_dim(),
-    token_sizes=draw_token_sizes(),
-    device=draw_device(),
+    sequences=sizes(BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM),
+    device=devices(),
 )
-def test_unique_catted_sequence(vocab_size, token_sizes, device):
-    sequence = cat_sequence([
-        torch.randint(vocab_size, (token_size,), dtype=torch.long, device=device)
-        for token_size in token_sizes
-    ])
+def test_unique_catted_sequence(sequences, device):
+    catted_sequence = cat_sequence([torch.tensor(sequence, device=device) for sequence in sequences], device=device)
 
-    unique, inverse, counts = unique_catted_sequence(sequence=sequence, device=device)
+    unique, inverse, counts = unique_catted_sequence(sequence=catted_sequence, device=device)
 
-    assert_equal(sequence.data, unique[inverse])
+    assert_equal(catted_sequence.data, unique[inverse])
 
 
 @given(
-    vocab_size=draw_embedding_dim(),
-    token_sizes=draw_token_sizes(),
-    device=draw_device(),
+    sequences=sizes(BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM),
+    device=devices(),
 )
-def test_unique_packed_sequence(vocab_size, token_sizes, device):
-    sequence = pack_sequence([
-        torch.randint(vocab_size, (token_size,), dtype=torch.long, device=device)
-        for token_size in token_sizes
-    ])
+def test_unique_packed_sequence(sequences, device):
+    packed_sequence = pack_sequence([torch.tensor(sequence, device=device) for sequence in sequences], device=device)
 
-    unique, inverse, counts = unique_packed_sequence(sequence=sequence, device=device)
+    unique, inverse, counts = unique_packed_sequence(sequence=packed_sequence, device=device)
 
-    assert_equal(sequence.data, unique[inverse])
+    assert_equal(packed_sequence.data, unique[inverse])

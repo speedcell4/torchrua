@@ -9,7 +9,7 @@ from torchrua.core import major_sizes_to_ptr
 
 
 @torch.no_grad()
-def cat_catted_indices(token_sizes: List[Tensor], device: Device = None) -> Tuple[Tensor, Tensor]:
+def concat_catted_indices(token_sizes: List[Tensor], device: Device = None) -> Tuple[Tensor, Tensor]:
     if device is None:
         device = token_sizes[0].device
 
@@ -23,10 +23,10 @@ def cat_catted_indices(token_sizes: List[Tensor], device: Device = None) -> Tupl
     return indices, token_sizes
 
 
-def cat_catted_sequences(sequences: List[CattedSequence]) -> CattedSequence:
+def concat_catted_sequences(sequences: List[CattedSequence]) -> CattedSequence:
     data, token_sizes = zip(*sequences)
 
-    indices, token_sizes = cat_catted_indices(token_sizes, device=data[0].device)
+    indices, token_sizes = concat_catted_indices(token_sizes, device=data[0].device)
     return CattedSequence(
         data=torch.cat(data, dim=0)[indices],
         token_sizes=token_sizes,

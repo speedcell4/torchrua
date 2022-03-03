@@ -2,26 +2,26 @@ from itertools import zip_longest
 from typing import List
 
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given
 from torch.types import Device
 
-from tests.strategies import draw_device, draw_token_sizes, MAX_BATCH_SIZE, draw_embedding_dim
-from tests.utils import assert_catted_sequence_close, assert_grad_close
-from torchrua import cat_sequence, cat_catted_sequences
+from tests.assertions import assert_catted_sequence_close, assert_grad_close
+from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from torchrua import cat_sequence, concat_catted_sequences
 
 
 @given(
-    device=draw_device(),
-    token_sizes_batch=st.lists(draw_token_sizes(), min_size=1, max_size=MAX_BATCH_SIZE),
-    embedding_dim=draw_embedding_dim(),
+    device=devices(),
+    token_sizes_batch=sizes(BATCH_SIZE, BATCH_SIZE, TOKEN_SIZE),
+    embedding_dim=sizes(EMBEDDING_DIM),
 )
-def test_cat_catted_sequences(token_sizes_batch: List[List[int]], embedding_dim: int, device: Device):
+def test_concat_catted_sequences(token_sizes_batch: List[List[int]], embedding_dim: int, device: Device):
     sequences_batch = [
         [torch.randn((token_size, embedding_dim), device=device, requires_grad=True) for token_size in token_sizes]
         for token_sizes in token_sizes_batch
     ]
 
-    actual = cat_catted_sequences([
+    actual = concat_catted_sequences([
         cat_sequence(sequences, device=device)
         for sequences in sequences_batch
     ])
