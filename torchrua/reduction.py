@@ -129,3 +129,24 @@ def reduce_sequence(fn: Callable[[Tensor, Tensor], Tensor]):
         return data[tgt]
 
     return _reduce_sequence
+
+
+@torch.no_grad()
+def get_reduction_ptr(token_sizes: Tensor, device: Device = None) -> Tensor:
+    if device is None:
+        device = token_sizes.device
+
+    num_bits = torch.iinfo(token_sizes.dtype).bits
+    token_sizes = token_sizes.to(device=device) << 1
+
+    sizes = 1 << torch.arange(num_bits - 1, device=device)[:, None]
+    sizes = torch.clamp_min(token_sizes - sizes, 0).min(sizes)
+    sizes = torch.flipud(sizes)
+
+    return sizes[sizes.any(dim=-1)]
+
+
+if __name__ == '__main__':
+    ret = get_reduction_ptr(torch.tensor([5, 2, 3]))
+    print(f'ret.size() => {ret.size()}')
+    print(f'ret => {ret}')
