@@ -163,12 +163,25 @@ def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
     src = (accumulate_sizes(sizes.view(-1)) + sizes1.view(-1))[batch_ptr] + token_ptr
     token_ptr = F.pad(sizes2.cumsum(dim=0), [0, 0, 1, -1]).view(-1)[batch_ptr] + token_ptr
 
-    return src, tgt, batch_ptr % n, token_ptr
+    return src, tgt, batch_ptr % n, token_ptr, sizes.sum(dim=1)
+
+
+@torch.no_grad()
+def reduce_catted_indices2(tokens_sizes: Tensor, device: Device = None):
+    if device is None:
+        device = tokens_sizes.device
+
+    src1, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(tokens_sizes, device=device)
+    src2 = accumulate_sizes(tokens_sizes)[batch_ptr] + token_ptr
+    num_steps = sizes.sum().detach().item()
+
+    return num_steps, sizes, src1, src2, tgt
 
 
 if __name__ == '__main__':
-    a, b, c, d = token_sizes_to_reduction_ptr(torch.tensor([5, 2, 3]))
+    a, b, c, d, s = reduce_catted_indices2(torch.tensor([5, 2, 3]))
     print(f'a => {a}')
     print(f'b => {b}')
     print(f'c => {c}')
     print(f'd => {d}')
+    print(f's => {s}')
