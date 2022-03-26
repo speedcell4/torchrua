@@ -169,6 +169,14 @@ def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
     return src, tgt, batch_ptr % n, token_ptr, sizes.sum(dim=1)
 
 
+class ReductionIndices2(NamedTuple):
+    batch_size: int
+    cache_size: int
+    sizes: Tensor
+    src: Union[Tensor, Tuple[Tensor, Tensor, Tensor]]
+    tgt: Tensor
+
+
 @torch.no_grad()
 def reduce_catted_indices2(token_sizes: Tensor, device: Device = None):
     if device is None:
@@ -176,10 +184,13 @@ def reduce_catted_indices2(token_sizes: Tensor, device: Device = None):
 
     src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
     index = accumulate_sizes(token_sizes)[batch_ptr] + token_ptr
-    step_size = sizes.sum().detach().item()
+    cache_size = sizes.sum().detach().item()
     batch_size, = token_sizes.size()
 
-    return batch_size, step_size, sizes[:-1], src[invert_permutation(index)], tgt
+    return ReductionIndices2(
+        batch_size=batch_size, cache_size=cache_size,
+        sizes=sizes[:-1], src=src[invert_permutation(index)], tgt=tgt,
+    )
 
 
 @torch.no_grad()
@@ -199,10 +210,13 @@ def reduce_packed_indices2(batch_sizes: Tensor, unsorted_indices: Tensor = None,
     if unsorted_indices is not None:
         batch_ptr = unsorted_indices[batch_ptr]
     index = accumulate_sizes(batch_sizes)[token_ptr] + batch_ptr
-    step_size = sizes.sum().detach().item()
+    cache_size = sizes.sum().detach().item()
     batch_size = batch_sizes[0].item()
 
-    return batch_size, step_size, sizes[:-1], src[invert_permutation(index)], tgt
+    return ReductionIndices2(
+        batch_size=batch_size, cache_size=cache_size,
+        sizes=sizes[:-1], src=src[invert_permutation(index)], tgt=tgt,
+    )
 
 
 @torch.no_grad()
@@ -211,80 +225,88 @@ def reduce_padded_indices2(token_sizes: Tensor, batch_first: bool, device: Devic
         device = token_sizes.device
 
     src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
-    step_size = sizes.sum().detach().item()
+    cache_size = sizes.sum().detach().item()
     batch_size, = token_sizes.size()
 
     if batch_first:
-        return batch_size, step_size, sizes[:-1], src, (batch_ptr, token_ptr), tgt
+        return ReductionIndices2(
+            batch_size=batch_size, cache_size=cache_size,
+            sizes=sizes[:-1], src=(src, batch_ptr, token_ptr), tgt=tgt,
+        )
     else:
-        return batch_size, step_size, sizes[:-1], src, (token_ptr, batch_ptr), tgt
+        return ReductionIndices2(
+            batch_size=batch_size, cache_size=cache_size,
+            sizes=sizes[:-1], src=(src, token_ptr, batch_ptr), tgt=tgt,
+        )
 
 
-def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
-    data, token_sizes = sequence
+def reduce_sequence2(data: Tensor, indices: ReductionIndices2, op: Callable[[Tensor, Tensor], Tensor]) -> Tensor:
+    batch_size, cache_size, sizes, src, tgt = indices
 
-    batch_size, num_steps, sizes, src, tgt = reduce_catted_indices2(token_sizes=token_sizes, device=data.device)
-
-    tensor = torch.empty(
-        (num_steps, *data.size()[1:]),
-        device=data.device, dtype=data.dtype, requires_grad=False,
-    )
-    tensor[src] = data
-
-    x1, y1 = 0, 0
-    x2, y2 = 0, 0
-    for size in sizes.detach().tolist():
-        x1, y1 = y1, y1 + (size >> 1)
-        x2, y2 = y2, y2 + (size >> 0)
-        tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
-
-    return tensor[-batch_size:]
-
-
-def reduce_packed_sequence2(sequence: PackedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
-    data, batch_sizes, sorted_indices, unsorted_indices = sequence
-
-    batch_size, num_steps, sizes, src, tgt = reduce_packed_indices2(
-        batch_sizes=batch_sizes, unsorted_indices=unsorted_indices, device=data.device,
-    )
-    tensor = torch.empty(
-        (num_steps, *data.size()[1:]),
-        device=data.device, dtype=data.dtype, requires_grad=False,
-    )
-    tensor[src] = data
+    if torch.is_tensor(src):
+        cache = torch.empty(
+            (cache_size, *data.size()[1:]),
+            device=data.device, dtype=data.dtype, requires_grad=False,
+        )
+        cache[src] = data
+    else:
+        src, ptr1, ptr2 = src
+        cache = torch.empty(
+            (cache_size, *data.size()[2:]),
+            device=data.device, dtype=data.dtype, requires_grad=False,
+        )
+        cache[src] = data[ptr1, ptr2]
 
     x1, y1 = 0, 0
     x2, y2 = 0, 0
     for size in sizes.detach().tolist():
         x1, y1 = y1, y1 + (size >> 1)
         x2, y2 = y2, y2 + (size >> 0)
-        tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
+        cache[tgt[x1:y1]] = op(cache[x2 + 0:y2:2], cache[x2 + 1:y2:2])
 
-    return tensor[-batch_size:]
+    return cache[-batch_size:]
 
 
-def reduce_padded_sequence2(sequence: PaddedSequence, batch_first: bool,
-                            op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
-    data, token_sizes = sequence
+def reduce_catted_sequence2(op: Callable[[Tensor, Tensor], Tensor]):
+    def wrap(sequence: CattedSequence, indices: ReductionIndices2 = None) -> Tensor:
+        data, token_sizes = sequence
 
-    batch_size, num_steps, sizes, src1, src2, tgt = reduce_padded_indices2(
-        token_sizes=token_sizes, batch_first=batch_first, device=data.device,
-    )
+        if indices is None:
+            indices = reduce_catted_indices2(token_sizes=token_sizes, device=data.device)
 
-    tensor = torch.empty(
-        (num_steps, *data.size()[2:]),
-        device=data.device, dtype=data.dtype, requires_grad=False,
-    )
-    tensor[src1] = data[src2]
+        return reduce_sequence2(data=data, indices=indices, op=op)
 
-    x1, y1 = 0, 0
-    x2, y2 = 0, 0
-    for size in sizes.detach().tolist():
-        x1, y1 = y1, y1 + (size >> 1)
-        x2, y2 = y2, y2 + (size >> 0)
-        tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
+    return wrap
 
-    return tensor[-batch_size:]
+
+def reduce_packed_sequence2(op: Callable[[Tensor, Tensor], Tensor]):
+    def wrap(sequence: PackedSequence, indices: ReductionIndices2 = None) -> Tensor:
+        data, batch_sizes, sorted_indices, unsorted_indices = sequence
+
+        if indices is None:
+            indices = reduce_packed_indices2(
+                batch_sizes=batch_sizes,
+                unsorted_indices=unsorted_indices, device=data.device,
+            )
+
+        return reduce_sequence2(data=data, indices=indices, op=op)
+
+    return wrap
+
+
+def reduce_padded_sequence2(op: Callable[[Tensor, Tensor], Tensor]):
+    def wrap(sequence: PaddedSequence, batch_first: bool = True, indices: ReductionIndices2 = None) -> Tensor:
+        data, token_sizes = sequence
+
+        if indices is None:
+            indices = reduce_padded_indices2(
+                token_sizes=token_sizes,
+                batch_first=batch_first, device=data.device,
+            )
+
+        return reduce_sequence2(data=data, indices=indices, op=op)
+
+    return wrap
 
 
 if __name__ == '__main__':
@@ -292,23 +314,27 @@ if __name__ == '__main__':
         torch.arange(5, dtype=torch.float32),
         torch.arange(2, dtype=torch.float32),
         torch.arange(3, dtype=torch.float32),
+        torch.arange(4, dtype=torch.float32),
     ])
-    print(reduce_catted_sequence2(s))
+    print(reduce_catted_sequence2(torch.add)(s))
     s = pack_sequence([
         torch.arange(5, dtype=torch.float32),
         torch.arange(2, dtype=torch.float32),
         torch.arange(3, dtype=torch.float32),
+        torch.arange(4, dtype=torch.float32),
     ])
-    print(reduce_packed_sequence2(s))
+    print(reduce_packed_sequence2(torch.add)(s))
     s = pad_sequence([
         torch.arange(5, dtype=torch.float32),
         torch.arange(2, dtype=torch.float32),
         torch.arange(3, dtype=torch.float32),
+        torch.arange(4, dtype=torch.float32),
     ], batch_first=True)
-    print(reduce_padded_sequence2(s, batch_first=True))
+    print(reduce_padded_sequence2(torch.add)(s, batch_first=True))
     s = pad_sequence([
         torch.arange(5, dtype=torch.float32),
         torch.arange(2, dtype=torch.float32),
         torch.arange(3, dtype=torch.float32),
+        torch.arange(4, dtype=torch.float32),
     ], batch_first=False)
-    print(reduce_padded_sequence2(s, batch_first=False))
+    print(reduce_padded_sequence2(torch.add)(s, batch_first=False))
