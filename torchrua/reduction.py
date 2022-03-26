@@ -4,10 +4,12 @@ from typing import Union, List, NamedTuple, Callable, Tuple
 import torch
 from torch import Tensor
 from torch.nn import functional as F
+from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.catting import cat_packed_indices, CattedSequence, cat_sequence
-from torchrua.core import major_sizes_to_ptr, accumulate_sizes, invert_permutation
+from torchrua import pack_sequence
+from torchrua.catting import cat_packed_indices, CattedSequence
+from torchrua.core import major_sizes_to_ptr, accumulate_sizes, invert_permutation, transpose_sizes
 
 __all__ = [
     'ReductionIndices',
@@ -178,6 +180,25 @@ def reduce_catted_indices2(token_sizes: Tensor, device: Device = None):
     return num_steps, sizes[:-1], src1, src2, tgt
 
 
+@torch.no_grad()
+def reduce_packed_indices2(batch_sizes: Tensor, unsorted_indices: Tensor = None, device: Device = None):
+    if device is None:
+        if unsorted_indices is not None:
+            device = unsorted_indices.device
+        else:
+            device = batch_sizes.device
+
+    token_sizes = transpose_sizes(batch_sizes)
+    if unsorted_indices is not None:
+        token_sizes = token_sizes[unsorted_indices]
+
+    src1, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
+    src2 = accumulate_sizes(batch_sizes)[token_ptr] + batch_ptr
+    num_steps = sizes.sum().detach().item()
+
+    return num_steps, sizes[:-1], src1, src2, tgt
+
+
 def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
     data, token_sizes = sequence
 
@@ -200,10 +221,33 @@ def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tens
     return tensor[-n:]
 
 
+def reduce_packed_sequence2(sequence: PackedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
+    data, batch_sizes, sorted_indices, unsorted_indices = sequence
+
+    n = batch_sizes[0].item()
+    num_steps, sizes, src1, src2, tgt = reduce_packed_indices2(
+        batch_sizes=batch_sizes, unsorted_indices=unsorted_indices, device=data.device,
+    )
+    tensor = torch.empty(
+        (num_steps, *data.size()[1:]),
+        device=data.device, dtype=data.dtype, requires_grad=False,
+    )
+    tensor[src1] = data[src2]
+
+    x1, y1 = 0, 0
+    x2, y2 = 0, 0
+    for size in sizes.detach().tolist():
+        x1, y1 = y1, y1 + (size >> 1)
+        x2, y2 = y2, y2 + (size >> 0)
+        tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
+
+    return tensor[-n:]
+
+
 if __name__ == '__main__':
-    s = cat_sequence([
+    s = pack_sequence([
         torch.arange(5, dtype=torch.float32),
         torch.arange(2, dtype=torch.float32),
         torch.arange(3, dtype=torch.float32),
     ])
-    print(reduce_catted_sequence2(s))
+    print(reduce_packed_sequence2(s))
