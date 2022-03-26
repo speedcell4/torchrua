@@ -14,6 +14,9 @@ else:
     TOKEN_SIZE = 50
     EMBEDDING_DIM = 60
 
+if torch.cuda.is_available():
+    torch.empty((1,), device=torch.device('cuda:0'))
+
 
 @st.composite
 def devices(draw):
@@ -21,7 +24,6 @@ def devices(draw):
         device = torch.device('cpu')
     else:
         device = torch.device('cuda:0')
-    _ = torch.empty((1,), device=device)
     return device
 
 

@@ -151,6 +151,9 @@ def token_sizes_to_reduction_sizes(token_sizes: Tensor, device: Device = None):
 
 @torch.no_grad()
 def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
+    if device is None:
+        device = token_sizes.device
+
     token_sizes, sizes = token_sizes_to_reduction_sizes(token_sizes, device=device)
 
     n, *_ = token_sizes.size()
@@ -201,7 +204,8 @@ def reduce_packed_indices2(batch_sizes: Tensor, unsorted_indices: Tensor = None,
         else:
             device = batch_sizes.device
 
-    token_sizes = transpose_sizes(batch_sizes)
+    batch_sizes = batch_sizes.to(device=device)
+    token_sizes = transpose_sizes(sizes=batch_sizes)
     if unsorted_indices is not None:
         token_sizes = token_sizes[unsorted_indices]
 
