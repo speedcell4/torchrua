@@ -7,9 +7,10 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua import pack_sequence
 from torchrua.catting import cat_packed_indices, CattedSequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes, invert_permutation, transpose_sizes
+from torchrua.packing import pack_sequence
+from torchrua.padding import PaddedSequence
 
 __all__ = [
     'ReductionIndices',
@@ -193,10 +194,24 @@ def reduce_packed_indices2(batch_sizes: Tensor, unsorted_indices: Tensor = None,
         token_sizes = token_sizes[unsorted_indices]
 
     src1, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
+
+    if unsorted_indices is not None:
+        batch_ptr = unsorted_indices[batch_ptr]
     src2 = accumulate_sizes(batch_sizes)[token_ptr] + batch_ptr
     num_steps = sizes.sum().detach().item()
 
     return num_steps, sizes[:-1], src1, src2, tgt
+
+
+@torch.no_grad()
+def reduce_padded_indices2(token_sizes: Tensor, device: Device = None):
+    if device is None:
+        device = token_sizes.device
+
+    src1, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
+    num_steps = sizes.sum().detach().item()
+
+    return num_steps, sizes[:-1], src1, (batch_ptr, token_ptr), tgt
 
 
 def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
@@ -230,6 +245,28 @@ def reduce_packed_sequence2(sequence: PackedSequence, op: Callable[[Tensor, Tens
     )
     tensor = torch.empty(
         (num_steps, *data.size()[1:]),
+        device=data.device, dtype=data.dtype, requires_grad=False,
+    )
+    tensor[src1] = data[src2]
+
+    x1, y1 = 0, 0
+    x2, y2 = 0, 0
+    for size in sizes.detach().tolist():
+        x1, y1 = y1, y1 + (size >> 1)
+        x2, y2 = y2, y2 + (size >> 0)
+        tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
+
+    return tensor[-n:]
+
+
+def reduce_padded_sequence2(sequence: PaddedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
+    data, token_sizes = sequence
+
+    n, = token_sizes.size()
+    num_steps, sizes, src1, src2, tgt = reduce_padded_indices2(token_sizes=token_sizes, device=data.device)
+
+    tensor = torch.empty(
+        (num_steps, *data.size()[2:]),
         device=data.device, dtype=data.dtype, requires_grad=False,
     )
     tensor[src1] = data[src2]
