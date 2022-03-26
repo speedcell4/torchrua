@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.types import Device
 
-from torchrua.catting import cat_packed_indices
+from torchrua.catting import cat_packed_indices, CattedSequence, cat_sequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes, invert_permutation
 
 __all__ = [
@@ -167,21 +167,43 @@ def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
 
 
 @torch.no_grad()
-def reduce_catted_indices2(tokens_sizes: Tensor, device: Device = None):
+def reduce_catted_indices2(token_sizes: Tensor, device: Device = None):
     if device is None:
-        device = tokens_sizes.device
+        device = token_sizes.device
 
-    src1, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(tokens_sizes, device=device)
-    src2 = accumulate_sizes(tokens_sizes)[batch_ptr] + token_ptr
+    src1, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
+    src2 = accumulate_sizes(token_sizes)[batch_ptr] + token_ptr
     num_steps = sizes.sum().detach().item()
 
-    return num_steps, sizes, src1, src2, tgt
+    return num_steps, sizes[:-1], src1, src2, tgt
+
+
+def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
+    data, token_sizes = sequence
+
+    n, = token_sizes.size()
+    num_steps, sizes, src1, src2, tgt = reduce_catted_indices2(token_sizes=token_sizes, device=data.device)
+
+    tensor = torch.empty(
+        (num_steps, *data.size()[1:]),
+        device=data.device, dtype=data.dtype, requires_grad=False,
+    )
+    tensor[src1] = data[src2]
+
+    x1, y1 = 0, 0
+    x2, y2 = 0, 0
+    for size in sizes.detach().tolist():
+        x1, y1 = y1, y1 + (size >> 1)
+        x2, y2 = y2, y2 + (size >> 0)
+        tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
+
+    return tensor[-n:]
 
 
 if __name__ == '__main__':
-    a, b, c, d, s = reduce_catted_indices2(torch.tensor([5, 2, 3]))
-    print(f'a => {a}')
-    print(f'b => {b}')
-    print(f'c => {c}')
-    print(f'd => {d}')
-    print(f's => {s}')
+    s = cat_sequence([
+        torch.arange(5, dtype=torch.float32),
+        torch.arange(2, dtype=torch.float32),
+        torch.arange(3, dtype=torch.float32),
+    ])
+    print(reduce_catted_sequence2(s))
