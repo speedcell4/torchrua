@@ -10,7 +10,7 @@ from torch.types import Device
 from torchrua.catting import cat_packed_indices, CattedSequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes, invert_permutation, transpose_sizes
 from torchrua.packing import pack_sequence
-from torchrua.padding import PaddedSequence
+from torchrua.padding import PaddedSequence, pad_sequence
 
 __all__ = [
     'ReductionIndices',
@@ -204,14 +204,17 @@ def reduce_packed_indices2(batch_sizes: Tensor, unsorted_indices: Tensor = None,
 
 
 @torch.no_grad()
-def reduce_padded_indices2(token_sizes: Tensor, device: Device = None):
+def reduce_padded_indices2(token_sizes: Tensor, batch_first: bool, device: Device = None):
     if device is None:
         device = token_sizes.device
 
     src1, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
     num_steps = sizes.sum().detach().item()
 
-    return num_steps, sizes[:-1], src1, (batch_ptr, token_ptr), tgt
+    if batch_first:
+        return num_steps, sizes[:-1], src1, (batch_ptr, token_ptr), tgt
+    else:
+        return num_steps, sizes[:-1], src1, (token_ptr, batch_ptr), tgt
 
 
 def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
@@ -259,11 +262,14 @@ def reduce_packed_sequence2(sequence: PackedSequence, op: Callable[[Tensor, Tens
     return tensor[-n:]
 
 
-def reduce_padded_sequence2(sequence: PaddedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
+def reduce_padded_sequence2(sequence: PaddedSequence, batch_first: bool,
+                            op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
     data, token_sizes = sequence
 
     n, = token_sizes.size()
-    num_steps, sizes, src1, src2, tgt = reduce_padded_indices2(token_sizes=token_sizes, device=data.device)
+    num_steps, sizes, src1, src2, tgt = reduce_padded_indices2(
+        token_sizes=token_sizes, batch_first=batch_first, device=data.device,
+    )
 
     tensor = torch.empty(
         (num_steps, *data.size()[2:]),
@@ -282,9 +288,9 @@ def reduce_padded_sequence2(sequence: PaddedSequence, op: Callable[[Tensor, Tens
 
 
 if __name__ == '__main__':
-    s = pack_sequence([
+    s = pad_sequence([
         torch.arange(5, dtype=torch.float32),
         torch.arange(2, dtype=torch.float32),
         torch.arange(3, dtype=torch.float32),
-    ])
-    print(reduce_packed_sequence2(s))
+    ], batch_first=True)
+    print(reduce_padded_sequence2(s, batch_first=True))
