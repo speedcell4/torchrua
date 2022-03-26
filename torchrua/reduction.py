@@ -132,7 +132,7 @@ def reduce_sequence(fn: Callable[[Tensor, Tensor], Tensor]):
 
 
 @torch.no_grad()
-def get_reduction_ptr(token_sizes: Tensor, device: Device = None) -> Tensor:
+def token_sizes_to_reduction_sizes(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
@@ -143,10 +143,32 @@ def get_reduction_ptr(token_sizes: Tensor, device: Device = None) -> Tensor:
     sizes = torch.clamp_min(token_sizes - sizes, 0).min(sizes)
     sizes = torch.flipud(sizes)
 
-    return sizes[sizes.any(dim=-1)]
+    return token_sizes, sizes[sizes.any(dim=-1)]
+
+
+@torch.no_grad()
+def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
+    token_sizes, sizes = token_sizes_to_reduction_sizes(token_sizes, device=device)
+
+    n, *_ = token_sizes.size()
+
+    sizes0 = sizes >> 1
+    sizes1 = F.pad(sizes0, [0, 0, 1, -1])
+    sizes2 = sizes - sizes1
+
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes0.view(-1))
+    tgt = sizes.view(-1).cumsum(dim=0)[batch_ptr + n - 1] + token_ptr
+
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes2.view(-1))
+    src = (accumulate_sizes(sizes.view(-1)) + sizes1.view(-1))[batch_ptr] + token_ptr
+    token_ptr = F.pad(sizes2.cumsum(dim=0), [0, 0, 1, -1]).view(-1)[batch_ptr] + token_ptr
+
+    return src, tgt, batch_ptr % n, token_ptr
 
 
 if __name__ == '__main__':
-    ret = get_reduction_ptr(torch.tensor([5, 2, 3]))
-    print(f'ret.size() => {ret.size()}')
-    print(f'ret => {ret}')
+    a, b, c, d = token_sizes_to_reduction_ptr(torch.tensor([5, 2, 3]))
+    print(f'a => {a}')
+    print(f'b => {b}')
+    print(f'c => {c}')
+    print(f'd => {d}')
