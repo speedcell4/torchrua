@@ -7,10 +7,10 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.catting import cat_packed_indices, CattedSequence
+from torchrua.catting import cat_packed_indices, CattedSequence, cat_sequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes, invert_permutation, transpose_sizes
 from torchrua.packing import pack_sequence
-from torchrua.padding import PaddedSequence
+from torchrua.padding import PaddedSequence, pad_sequence
 
 __all__ = [
     'ReductionIndices',
@@ -176,9 +176,10 @@ def reduce_catted_indices2(token_sizes: Tensor, device: Device = None):
 
     src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
     index = accumulate_sizes(token_sizes)[batch_ptr] + token_ptr
-    num_steps = sizes.sum().detach().item()
+    step_size = sizes.sum().detach().item()
+    batch_size, = token_sizes.size()
 
-    return num_steps, sizes[:-1], src[invert_permutation(index)], tgt
+    return batch_size, step_size, sizes[:-1], src[invert_permutation(index)], tgt
 
 
 @torch.no_grad()
@@ -198,9 +199,10 @@ def reduce_packed_indices2(batch_sizes: Tensor, unsorted_indices: Tensor = None,
     if unsorted_indices is not None:
         batch_ptr = unsorted_indices[batch_ptr]
     index = accumulate_sizes(batch_sizes)[token_ptr] + batch_ptr
-    num_steps = sizes.sum().detach().item()
+    step_size = sizes.sum().detach().item()
+    batch_size = batch_sizes[0].item()
 
-    return num_steps, sizes[:-1], src[invert_permutation(index)], tgt
+    return batch_size, step_size, sizes[:-1], src[invert_permutation(index)], tgt
 
 
 @torch.no_grad()
@@ -209,19 +211,19 @@ def reduce_padded_indices2(token_sizes: Tensor, batch_first: bool, device: Devic
         device = token_sizes.device
 
     src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
-    num_steps = sizes.sum().detach().item()
+    step_size = sizes.sum().detach().item()
+    batch_size, = token_sizes.size()
 
     if batch_first:
-        return num_steps, sizes[:-1], src, (batch_ptr, token_ptr), tgt
+        return batch_size, step_size, sizes[:-1], src, (batch_ptr, token_ptr), tgt
     else:
-        return num_steps, sizes[:-1], src, (token_ptr, batch_ptr), tgt
+        return batch_size, step_size, sizes[:-1], src, (token_ptr, batch_ptr), tgt
 
 
 def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
     data, token_sizes = sequence
 
-    n, = token_sizes.size()
-    num_steps, sizes, src, tgt = reduce_catted_indices2(token_sizes=token_sizes, device=data.device)
+    batch_size, num_steps, sizes, src, tgt = reduce_catted_indices2(token_sizes=token_sizes, device=data.device)
 
     tensor = torch.empty(
         (num_steps, *data.size()[1:]),
@@ -236,14 +238,13 @@ def reduce_catted_sequence2(sequence: CattedSequence, op: Callable[[Tensor, Tens
         x2, y2 = y2, y2 + (size >> 0)
         tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
 
-    return tensor[-n:]
+    return tensor[-batch_size:]
 
 
 def reduce_packed_sequence2(sequence: PackedSequence, op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
     data, batch_sizes, sorted_indices, unsorted_indices = sequence
 
-    n = batch_sizes[0].item()
-    num_steps, sizes, src, tgt = reduce_packed_indices2(
+    batch_size, num_steps, sizes, src, tgt = reduce_packed_indices2(
         batch_sizes=batch_sizes, unsorted_indices=unsorted_indices, device=data.device,
     )
     tensor = torch.empty(
@@ -259,15 +260,14 @@ def reduce_packed_sequence2(sequence: PackedSequence, op: Callable[[Tensor, Tens
         x2, y2 = y2, y2 + (size >> 0)
         tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
 
-    return tensor[-n:]
+    return tensor[-batch_size:]
 
 
 def reduce_padded_sequence2(sequence: PaddedSequence, batch_first: bool,
                             op: Callable[[Tensor, Tensor], Tensor] = torch.add) -> Tensor:
     data, token_sizes = sequence
 
-    n, = token_sizes.size()
-    num_steps, sizes, src1, src2, tgt = reduce_padded_indices2(
+    batch_size, num_steps, sizes, src1, src2, tgt = reduce_padded_indices2(
         token_sizes=token_sizes, batch_first=batch_first, device=data.device,
     )
 
@@ -284,13 +284,31 @@ def reduce_padded_sequence2(sequence: PaddedSequence, batch_first: bool,
         x2, y2 = y2, y2 + (size >> 0)
         tensor[tgt[x1:y1]] = op(tensor[x2 + 0:y2:2], tensor[x2 + 1:y2:2])
 
-    return tensor[-n:]
+    return tensor[-batch_size:]
 
 
 if __name__ == '__main__':
+    s = cat_sequence([
+        torch.arange(5, dtype=torch.float32),
+        torch.arange(2, dtype=torch.float32),
+        torch.arange(3, dtype=torch.float32),
+    ])
+    print(reduce_catted_sequence2(s))
     s = pack_sequence([
         torch.arange(5, dtype=torch.float32),
         torch.arange(2, dtype=torch.float32),
         torch.arange(3, dtype=torch.float32),
     ])
     print(reduce_packed_sequence2(s))
+    s = pad_sequence([
+        torch.arange(5, dtype=torch.float32),
+        torch.arange(2, dtype=torch.float32),
+        torch.arange(3, dtype=torch.float32),
+    ], batch_first=True)
+    print(reduce_padded_sequence2(s, batch_first=True))
+    s = pad_sequence([
+        torch.arange(5, dtype=torch.float32),
+        torch.arange(2, dtype=torch.float32),
+        torch.arange(3, dtype=torch.float32),
+    ], batch_first=False)
+    print(reduce_padded_sequence2(s, batch_first=False))
