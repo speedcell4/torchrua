@@ -6,7 +6,7 @@ from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_D
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
 from torchrua.padding import pad_sequence
-from torchrua.reduction import reduce_catted_sequence2, reduce_packed_sequence2, reduce_padded_sequence2
+from torchrua.reduction import reduce_catted_sequence, reduce_packed_sequence, reduce_padded_sequence
 
 
 @given(
@@ -21,7 +21,7 @@ def test_reduce_catted_sequence(token_sizes, dim, device):
     ]
 
     catted_sequence = cat_sequence(sequences, device=device)
-    actual = reduce_catted_sequence2(torch.add)(catted_sequence)
+    actual = reduce_catted_sequence(torch.add)(catted_sequence)
 
     excepted, _ = pad_sequence(sequences, batch_first=True, device=device)
     excepted = excepted.sum(dim=1)
@@ -42,7 +42,7 @@ def test_reduce_packed_sequence(token_sizes, dim, device):
     ]
 
     packed_sequence = pack_sequence(sequences, device=device)
-    actual = reduce_packed_sequence2(torch.add)(packed_sequence)
+    actual = reduce_packed_sequence(torch.add)(packed_sequence)
 
     excepted, _ = pad_sequence(sequences, batch_first=True, device=device)
     excepted = excepted.sum(dim=1)
@@ -64,7 +64,7 @@ def test_reduce_padded_sequence(token_sizes, dim, batch_first, device):
     ]
 
     padded_sequence = pad_sequence(sequences, batch_first=batch_first, device=device)
-    actual = reduce_padded_sequence2(torch.add)(padded_sequence, batch_first=batch_first)
+    actual = reduce_padded_sequence(torch.add)(padded_sequence, batch_first=batch_first)
 
     excepted, _ = pad_sequence(sequences, batch_first=True, device=device)
     excepted = excepted.sum(dim=1)
