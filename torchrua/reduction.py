@@ -50,24 +50,23 @@ def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
     token_sizes = token_sizes.to(device=device)
     sizes = token_sizes_to_reduction_sizes(token_sizes, device=device)
 
-    batch_size, *_ = token_sizes.size()
+    n, *_ = token_sizes.size()
     cache_size = sizes.sum().detach().item()
 
     sizes0 = sizes >> 1
     sizes1 = F.pad(sizes0, [0, 0, 1, -1])
     sizes2 = sizes - sizes1
 
-    acc_sizes1 = sizes.view(-1).cumsum(dim=0)
-    acc_sizes2 = F.pad(acc_sizes1, [1, -1])
+    acc_sizes = accumulate_sizes(sizes=sizes.view(-1))
 
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes0.view(-1))
-    tgt = acc_sizes1[batch_ptr + batch_size - 1] + token_ptr
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=sizes0.view(-1))
+    tgt = acc_sizes[batch_ptr + n] + token_ptr
 
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes2.view(-1))
-    src = (acc_sizes2 + sizes1.view(-1))[batch_ptr] + token_ptr
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=sizes2.view(-1))
+    src = (acc_sizes + sizes1.view(-1))[batch_ptr] + token_ptr
     token_ptr = F.pad(sizes2.cumsum(dim=0), [0, 0, 1, -1]).view(-1)[batch_ptr] + token_ptr
 
-    return batch_size, cache_size, src, tgt, batch_ptr % batch_size, token_ptr, sizes.sum(dim=1)
+    return n, cache_size, src, tgt, batch_ptr % n, token_ptr, sizes.sum(dim=1)
 
 
 @torch.no_grad()
