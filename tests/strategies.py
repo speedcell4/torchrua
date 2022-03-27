@@ -20,21 +20,19 @@ if torch.cuda.is_available():
 
 @st.composite
 def devices(draw):
-    if not torch.cuda.is_available():
-        device = torch.device('cpu')
-    else:
+    if torch.cuda.is_available():
         device = torch.device('cuda:0')
+    else:
+        device = torch.device('cpu')
     return device
 
 
 @st.composite
 def sizes(draw, *size: int, min_size: int = 1):
     max_size, *size = size
+    n = draw(st.integers(min_value=min_size, max_value=max_size))
 
     if len(size) == 0:
-        return draw(st.integers(min_value=min_size, max_value=max_size))
+        return n
     else:
-        return [
-            draw(sizes(*size, min_size=min_size))
-            for _ in range(draw(st.integers(min_value=min_size, max_value=max_size)))
-        ]
+        return [draw(sizes(*size, min_size=min_size)) for _ in range(n)]
