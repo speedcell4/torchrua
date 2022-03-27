@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.catting import CattedSequence
-from torchrua.core import major_sizes_to_ptr, accumulate_sizes, invert_permutation, transpose_sizes
+from torchrua.core import major_sizes_to_ptr, accumulate_sizes, transpose_sizes
 from torchrua.padding import PaddedSequence
 
 __all__ = [
@@ -75,14 +75,15 @@ def reduce_catted_indices(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
-    batch_size, cache_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(
+    batch_size, cache_size, inv_src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(
         token_sizes=token_sizes, device=device,
     )
-    index = accumulate_sizes(token_sizes)[batch_ptr] + token_ptr
+    src = torch.empty_like(inv_src)
+    src[accumulate_sizes(token_sizes)[batch_ptr] + token_ptr] = inv_src
 
     return ReductionIndices(
         batch_size=batch_size, cache_size=cache_size,
-        sizes=sizes[:-1], src=src[invert_permutation(index)], tgt=tgt,
+        sizes=sizes[:-1], src=src, tgt=tgt,
     )
 
 
@@ -99,17 +100,19 @@ def reduce_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, 
     if unsorted_indices is not None:
         token_sizes = token_sizes[unsorted_indices]
 
-    batch_size, cache_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(
+    batch_size, cache_size, inv_src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(
         token_sizes=token_sizes, device=device,
     )
 
     if unsorted_indices is not None:
         batch_ptr = unsorted_indices[batch_ptr]
-    index = accumulate_sizes(batch_sizes)[token_ptr] + batch_ptr
+
+    src = torch.empty_like(inv_src)
+    src[accumulate_sizes(batch_sizes)[token_ptr] + batch_ptr] = inv_src
 
     return ReductionIndices(
         batch_size=batch_size, cache_size=cache_size,
-        sizes=sizes[:-1], src=src[invert_permutation(index)], tgt=tgt,
+        sizes=sizes[:-1], src=src, tgt=tgt,
     )
 
 
@@ -166,7 +169,10 @@ def reduce_catted_sequence(op: Callable[[Tensor, Tensor], Tensor]):
         data, token_sizes = sequence
 
         if indices is None:
-            indices = reduce_catted_indices(token_sizes=token_sizes, device=data.device)
+            indices = reduce_catted_indices(
+                token_sizes=token_sizes,
+                device=data.device,
+            )
 
         return reduce_sequence(data=data, indices=indices, op=op)
 
