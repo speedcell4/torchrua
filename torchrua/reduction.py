@@ -47,9 +47,11 @@ def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
-    batch_size, *_ = token_sizes.size()
     token_sizes = token_sizes.to(device=device)
     sizes = token_sizes_to_reduction_sizes(token_sizes, device=device)
+
+    batch_size, *_ = token_sizes.size()
+    cache_size = sizes.sum().detach().item()
 
     sizes0 = sizes >> 1
     sizes1 = F.pad(sizes0, [0, 0, 1, -1])
@@ -65,7 +67,7 @@ def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
     src = (acc_sizes2 + sizes1.view(-1))[batch_ptr] + token_ptr
     token_ptr = F.pad(sizes2.cumsum(dim=0), [0, 0, 1, -1]).view(-1)[batch_ptr] + token_ptr
 
-    return batch_size, src, tgt, batch_ptr % batch_size, token_ptr, sizes.sum(dim=1)
+    return batch_size, cache_size, src, tgt, batch_ptr % batch_size, token_ptr, sizes.sum(dim=1)
 
 
 @torch.no_grad()
@@ -73,9 +75,10 @@ def reduce_catted_indices(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
-    batch_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
+    batch_size, cache_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(
+        token_sizes=token_sizes, device=device,
+    )
     index = accumulate_sizes(token_sizes)[batch_ptr] + token_ptr
-    cache_size = sizes.sum().detach().item()
 
     return ReductionIndices(
         batch_size=batch_size, cache_size=cache_size,
@@ -96,12 +99,13 @@ def reduce_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, 
     if unsorted_indices is not None:
         token_sizes = token_sizes[unsorted_indices]
 
-    batch_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
+    batch_size, cache_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(
+        token_sizes=token_sizes, device=device,
+    )
 
     if unsorted_indices is not None:
         batch_ptr = unsorted_indices[batch_ptr]
     index = accumulate_sizes(batch_sizes)[token_ptr] + batch_ptr
-    cache_size = sizes.sum().detach().item()
 
     return ReductionIndices(
         batch_size=batch_size, cache_size=cache_size,
@@ -114,8 +118,9 @@ def reduce_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device
     if device is None:
         device = token_sizes.device
 
-    batch_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(token_sizes, device=device)
-    cache_size = sizes.sum().detach().item()
+    batch_size, cache_size, src, tgt, batch_ptr, token_ptr, sizes = token_sizes_to_reduction_ptr(
+        token_sizes=token_sizes, device=device,
+    )
 
     if batch_first:
         return ReductionIndices(
