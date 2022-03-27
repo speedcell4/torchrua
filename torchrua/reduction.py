@@ -32,14 +32,14 @@ def token_sizes_to_reduction_sizes(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
+    token_sizes = token_sizes.to(device=device)
     num_bits = torch.iinfo(token_sizes.dtype).bits
-    token_sizes = token_sizes.to(device=device) << 1
 
     sizes = 1 << torch.arange(num_bits - 1, device=device)[:, None]
-    sizes = torch.clamp_min(token_sizes - sizes, 0).min(sizes)
+    sizes = torch.clamp_min((token_sizes << 1) - sizes, 0).min(sizes)
     sizes = torch.flipud(sizes)
 
-    return token_sizes, sizes[sizes.any(dim=-1)]
+    return sizes[sizes.any(dim=-1)]
 
 
 @torch.no_grad()
@@ -47,7 +47,8 @@ def token_sizes_to_reduction_ptr(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
-    token_sizes, sizes = token_sizes_to_reduction_sizes(token_sizes, device=device)
+    token_sizes = token_sizes.to(device=device)
+    sizes = token_sizes_to_reduction_sizes(token_sizes, device=device)
 
     n, *_ = token_sizes.size()
 
