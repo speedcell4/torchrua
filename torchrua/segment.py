@@ -1,4 +1,5 @@
 import torch
+from einops import rearrange
 from torch import Tensor
 from torch.types import Device
 
@@ -23,13 +24,16 @@ def segment_catted_indices(sizes: CattedSequence, token_size, device: Device = N
     return out.view(-1), batch_ptr * (t + 1) + token_ptr
 
 
-def segment_catted_sequence(tensor: Tensor, reduce: str, sizes: CattedSequence) -> CattedSequence:
-    token_sizes, indices = segment_catted_indices(sizes=sizes, token_size=tensor.size()[1], device=tensor.device)
+def segment_catted_sequence(sizes: CattedSequence, tensor: Tensor, reduce: str, batch_first: bool) -> CattedSequence:
+    if batch_first:
+        tensor = rearrange(tensor, 'b t ... -> (b t) ...')
+        _, token_size, *_ = tensor.size()
+    else:
+        tensor = rearrange(tensor, 't b ... -> (b t) ...')
+        token_size, _, *_ = tensor.size()
 
-    data = torch.segment_reduce(
-        tensor.view((-1, *tensor.size()[2:])),
-        reduce=reduce, lengths=token_sizes, unsafe=True,
-    )
+    token_sizes, indices = segment_catted_indices(sizes=sizes, token_size=token_size, device=tensor.device)
+    data = torch.segment_reduce(tensor, reduce=reduce, lengths=token_sizes, unsafe=True)
 
     return CattedSequence(
         data=data[indices],
