@@ -19,17 +19,21 @@ __all__ = [
 
 @singledispatch
 def segment_sequence(sizes: Sequence, tensor: Tensor, reduce: str, batch_first: bool) -> Sequence:
-    raise KeyError(f'type {type(sizes)} is not supported')
+    raise TypeError(f'type {type(sizes)} is not supported')
 
 
 @torch.no_grad()
-def segment_catted_indices(sizes: CattedSequence, token_size, device: Device = None):
+def segment_catted_indices(sizes: CattedSequence, token_size: int, device: Device = None):
     if device is None:
         device = sizes.data.device
 
-    sizes, token_sizes = sizes.to(device=device)
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
+    sizes, token_sizes = sizes
+
+    sizes = sizes.to(device=device)
+    token_sizes = token_sizes.to(device=device)
+
     t, b = major_sizes_to_info(sizes=token_sizes)
+    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
     out = torch.zeros((b, t + 1), dtype=sizes.dtype, device=device)
     out[batch_ptr, token_ptr] = sizes
@@ -57,7 +61,7 @@ def segment_catted_sequence(sizes: CattedSequence, tensor: Tensor, reduce: str, 
 
 
 @torch.no_grad()
-def segment_packed_indices(sizes: PackedSequence, token_size, device: Device = None):
+def segment_packed_indices(sizes: PackedSequence, token_size: int, device: Device = None):
     if device is None:
         device = sizes.data.device
 
@@ -67,14 +71,15 @@ def segment_packed_indices(sizes: PackedSequence, token_size, device: Device = N
     batch_sizes = batch_sizes.to(device=device)
     sorted_indices = sorted_indices.to(device=device)
 
-    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
     b, t = major_sizes_to_info(sizes=batch_sizes)
+    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
+    batch_ptr = sorted_indices[batch_ptr]
 
     out = torch.zeros((b, t + 1), dtype=sizes.dtype, device=device)
-    out[sorted_indices[batch_ptr], token_ptr] = sizes
+    out[batch_ptr, token_ptr] = sizes
     out[:, -1] = token_size - out.sum(dim=-1)
 
-    return out.view(-1), sorted_indices[batch_ptr] * (t + 1) + token_ptr
+    return out.view(-1), batch_ptr * (t + 1) + token_ptr
 
 
 @segment_sequence.register
