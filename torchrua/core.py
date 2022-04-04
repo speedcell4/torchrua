@@ -22,8 +22,14 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
 
 @torch.no_grad()
 def transpose_sizes(sizes: Tensor) -> Tensor:
-    index = torch.arange(sizes.max().item(), device=sizes.device)
+    n, _ = major_sizes_to_info(sizes=sizes)
+    index = torch.arange(n, device=sizes.device)
     return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
+
+
+@torch.no_grad()
+def major_sizes_to_info(sizes: Tensor) -> Tuple[int, int]:
+    return sizes.max().item(), sizes.size()[0]
 
 
 @torch.no_grad()
@@ -40,8 +46,7 @@ def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
 def minor_sizes_to_ptr(token_sizes: Tensor,
                        token_ptr: Optional[Tensor] = None,
                        batch_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
-    t = token_sizes.max().item()
-    b = token_sizes.size()[0]
+    t, b = major_sizes_to_info(sizes=token_sizes)
 
     if token_ptr is None:
         token_ptr = torch.arange(t, device=token_sizes.device)
