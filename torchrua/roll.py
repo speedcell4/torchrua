@@ -1,3 +1,5 @@
+from functools import singledispatch
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
@@ -5,11 +7,18 @@ from torch.types import Device
 
 from torchrua.catting import CattedSequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes
+from torchrua.wrapper import Sequence
 
 __all__ = [
+    'roll_sequence',
     'roll_catted_indices', 'roll_catted_sequence',
     'roll_packed_indices', 'roll_packed_sequence',
 ]
+
+
+@singledispatch
+def roll_sequence(sequence: Sequence, shifts: int) -> Sequence:
+    raise KeyError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()
@@ -27,6 +36,7 @@ def roll_catted_indices(token_sizes: Tensor, shifts: int, device: Device = None)
     return token_ptr + acc_token_sizes[batch_ptr]
 
 
+@roll_sequence.register
 def roll_catted_sequence(sequence: CattedSequence, shifts: int) -> CattedSequence:
     indices = roll_catted_indices(sequence.token_sizes, shifts=shifts, device=sequence.data.device)
 
@@ -52,6 +62,7 @@ def roll_packed_indices(batch_sizes: Tensor, shifts: int, device: Device = None)
     return acc_batch_sizes[token_ptr] + batch_ptr
 
 
+@roll_sequence.register
 def roll_packed_sequence(sequence: PackedSequence, shifts: int) -> PackedSequence:
     indices = roll_packed_indices(sequence.batch_sizes, shifts=shifts, device=sequence.data.device)
 

@@ -8,7 +8,7 @@ from torch.types import Device
 from tests.assertions import assert_grad_close
 from tests.strategies import sizes, devices, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua.catting import cat_sequence
-from torchrua.interleave import repeat_interleave_catted_sequence, repeat_interleave_packed_sequence
+from torchrua.interleave import repeat_interleave_sequence
 from torchrua.packing import pack_sequence
 from torchrua.padding import pad_packed_sequence, pad_catted_sequence
 
@@ -34,8 +34,8 @@ def test_repeat_interleave(token_sizes: List[int], dim: int, device: Device) -> 
     packed_sequence = pack_sequence(sequence, device=device)
     packed_repeats = pack_sequence(repeats, device=device).data
 
-    catted_sequence = repeat_interleave_catted_sequence(sequence=catted_sequence, repeats=catted_repeats)
-    packed_sequence = repeat_interleave_packed_sequence(sequence=packed_sequence, repeats=packed_repeats)
+    catted_sequence = repeat_interleave_sequence(catted_sequence, repeats=catted_repeats)
+    packed_sequence = repeat_interleave_sequence(packed_sequence, repeats=packed_repeats)
 
     catted_data, catted_token_sizes = pad_catted_sequence(catted_sequence, batch_first=True, device=device)
     packed_data, packed_token_sizes = pad_packed_sequence(packed_sequence, batch_first=True, device=device)

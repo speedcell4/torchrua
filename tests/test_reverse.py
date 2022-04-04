@@ -6,7 +6,7 @@ from tests.assertions import assert_packed_sequence_close, assert_grad_close, as
 from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
-from torchrua.reverse import reverse_catted_sequence, reverse_packed_sequence
+from torchrua.reverse import reverse_sequence
 
 
 @given(
@@ -22,7 +22,7 @@ def test_reverse_catted_sequence(token_sizes, dim, device):
     catted_sequence = cat_sequence(sequence)
 
     expected = cat_sequence([sequence.flip(dims=[0]) for sequence in sequence])
-    actual = reverse_catted_sequence(sequence=catted_sequence)
+    actual = reverse_sequence(catted_sequence)
 
     assert_close(actual.data, expected.data)
     assert_equal(actual.token_sizes, expected.token_sizes)
@@ -42,7 +42,7 @@ def test_reverse_packed_sequence(token_sizes, dim, device):
     packed_sequence = pack_sequence(sequence)
 
     expected = pack_sequence([sequence.flip(dims=[0]) for sequence in sequence])
-    actual = reverse_packed_sequence(sequence=packed_sequence)
+    actual = reverse_sequence(packed_sequence)
 
     assert_packed_sequence_close(actual, expected)
     assert_grad_close(actual.data, expected.data, inputs=sequence)

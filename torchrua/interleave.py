@@ -1,14 +1,23 @@
+from functools import singledispatch
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.catting import CattedSequence, cat_packed_indices
 from torchrua.packing import pack_catted_indices
+from torchrua.wrapper import Sequence
 
 __all__ = [
+    'repeat_interleave_sequence',
     'repeat_interleave_catted_indices', 'repeat_interleave_catted_sequence',
     'repeat_interleave_packed_indices', 'repeat_interleave_packed_sequence',
 ]
+
+
+@singledispatch
+def repeat_interleave_sequence(sequence: Sequence, repeats: Tensor) -> Sequence:
+    raise KeyError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()
@@ -21,6 +30,7 @@ def repeat_interleave_catted_indices(repeats: Tensor, token_sizes: Tensor):
     return index, token_sizes
 
 
+@repeat_interleave_sequence.register
 def repeat_interleave_catted_sequence(sequence: CattedSequence, repeats: Tensor) -> CattedSequence:
     indices, token_sizes = repeat_interleave_catted_indices(
         repeats=repeats,
@@ -43,6 +53,7 @@ def repeat_interleave_packed_indices(repeats: Tensor, batch_sizes: Tensor, unsor
     return index1[index2[index3]], batch_sizes, sorted_indices, unsorted_indices
 
 
+@repeat_interleave_sequence.register
 def repeat_interleave_packed_sequence(sequence: PackedSequence, repeats: Tensor) -> PackedSequence:
     indices, batch_sizes, sorted_indices, unsorted_indices = repeat_interleave_packed_indices(
         repeats=repeats,

@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import torch
 from torch import Tensor
@@ -11,7 +11,6 @@ __all__ = [
     'CattedSequence', 'cat_sequence',
     'cat_packed_indices', 'cat_packed_sequence',
     'cat_padded_indices', 'cat_padded_sequence',
-    'trunc_catted_indices', 'trunc_catted_sequence',
 ]
 
 
@@ -52,8 +51,8 @@ def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: De
         token_sizes=batch_sizes,
         token_ptr=unsorted_indices,
     )
-
     indices = acc_batch_sizes[token_ptr] + batch_ptr
+
     return indices, token_sizes
 
 
@@ -79,14 +78,12 @@ def cat_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device = 
         device = token_sizes.device
 
     token_sizes = token_sizes.to(device=device)
-
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
     if batch_first:
-        indices = (batch_ptr, token_ptr)
+        return (batch_ptr, token_ptr), token_sizes
     else:
-        indices = (token_ptr, batch_ptr)
-    return indices, token_sizes
+        return (token_ptr, batch_ptr), token_sizes
 
 
 def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor,
@@ -102,32 +99,5 @@ def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor,
 
     return CattedSequence(
         data=sequence[indices],
-        token_sizes=token_sizes,
-    )
-
-
-@torch.no_grad()
-def trunc_catted_indices(token_sizes: Tensor, trunc: Tuple[int, int], device: Device = None):
-    if device is None:
-        device = token_sizes.device
-
-    token_sizes = token_sizes.to(device=device)
-    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
-
-    token_sizes = token_sizes - trunc[0] - trunc[1]
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-
-    indices = token_ptr + trunc[0] + acc_token_sizes[batch_ptr]
-
-    return indices, token_sizes
-
-
-def trunc_catted_sequence(sequence: CattedSequence, trunc: Tuple[int, int]) -> CattedSequence:
-    indices, token_sizes = trunc_catted_indices(
-        token_sizes=sequence.token_sizes, trunc=trunc,
-        device=sequence.data.device,
-    )
-    return CattedSequence(
-        data=sequence.data[indices],
         token_sizes=token_sizes,
     )
