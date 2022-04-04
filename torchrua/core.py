@@ -6,6 +6,7 @@ from torch.types import Device
 
 __all__ = [
     'accumulate_sizes', 'transpose_sizes',
+    'major_sizes_to_info',
     'major_sizes_to_ptr',
     'minor_sizes_to_ptr',
     'sizes_to_sorting',
