@@ -10,6 +10,7 @@ from torchrua.catting import CattedSequence
 from torchrua.padding import PaddedSequence
 
 __all__ = [
+    'Sequence',
     'rua_fn', 'rua_method',
     'RuaModule', 'RuaMeta', 'RuaSequential',
 ]

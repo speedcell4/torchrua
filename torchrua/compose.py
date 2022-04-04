@@ -24,8 +24,7 @@ def compose_catted_indices(sub_sizes: Tensor, token_sizes: Tensor, device: Devic
         device=device,
     )
     unsorted_indices, _, _, _ = pack_catted_sequence(
-        sequence=unsorted_indices,
-        token_sizes=token_sizes,
+        sequence=CattedSequence(data=unsorted_indices, token_sizes=token_sizes),
         device=device,
     )
     sorted_indices = invert_permutation(unsorted_indices)

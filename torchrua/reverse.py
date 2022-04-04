@@ -1,3 +1,5 @@
+from functools import singledispatch
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
@@ -5,11 +7,18 @@ from torch.types import Device
 
 from torchrua.catting import CattedSequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes
+from torchrua.wrapper import Sequence
 
 __all__ = [
+    'reverse_sequence',
     'reverse_catted_indices', 'reverse_catted_sequence',
     'reverse_packed_indices', 'reverse_packed_sequence',
 ]
+
+
+@singledispatch
+def reverse_sequence(sequence: Sequence) -> Sequence:
+    raise KeyError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()
@@ -26,6 +35,7 @@ def reverse_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor
     return acc_token_sizes[batch_ptr] + token_ptr
 
 
+@reverse_sequence.register
 def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
     indices = reverse_catted_indices(sequence.token_sizes, device=sequence.data.device)
 
@@ -50,6 +60,7 @@ def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor
     return acc_batch_sizes[token_ptr] + batch_ptr
 
 
+@reverse_sequence.register
 def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
     indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes, device=sequence.data.device)
 
