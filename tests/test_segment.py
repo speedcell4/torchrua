@@ -1,8 +1,8 @@
 import torch
-from hypothesis import given
+from hypothesis import given, strategies as st
 from torch.testing import assert_close
 
-from tests.assertions import assert_equal
+from tests.assertions import assert_equal, assert_grad_close
 from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua import cat_sequence, pack_sequence, cat_packed_sequence, segment_sequence
 
@@ -11,22 +11,31 @@ from torchrua import cat_sequence, pack_sequence, cat_packed_sequence, segment_s
     device=devices(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
+    reduce=st.sampled_from(['mean', 'sum', 'max', 'min']),
+    batch_first=st.booleans(),
 )
-def test_segment_sequence(device, token_sizes, dim):
+def test_segment_sequence(device, token_sizes, dim, reduce, batch_first):
     chunk_sizes = [
         torch.unique(torch.randint(token_size, (token_size,), device=device), return_counts=True)[1]
         for token_size in token_sizes
     ]
 
-    tensor = torch.randn((len(token_sizes), max(token_sizes), dim), device=device, requires_grad=True)
+    if batch_first:
+        tensor = torch.randn((len(token_sizes), max(token_sizes), dim), device=device, requires_grad=True)
+    else:
+        tensor = torch.randn((max(token_sizes), len(token_sizes), dim), device=device, requires_grad=True)
 
-    catted_sizes = cat_sequence(sequences=chunk_sizes, device=device)
-    packed_sizes = pack_sequence(sequences=chunk_sizes, device=device)
+    actual = segment_sequence(
+        cat_sequence(sequences=chunk_sizes, device=device),
+        tensor=tensor, reduce=reduce, batch_first=batch_first,
+    )
 
-    actual = segment_sequence(catted_sizes, tensor=tensor, reduce='max', batch_first=True)
-
-    expected = segment_sequence(packed_sizes, tensor=tensor, reduce='max', batch_first=True)
+    expected = segment_sequence(
+        pack_sequence(sequences=chunk_sizes, device=device),
+        tensor=tensor, reduce=reduce, batch_first=batch_first,
+    )
     expected = cat_packed_sequence(expected, device=device)
 
     assert_close(actual=actual.data, expected=expected.data)
     assert_equal(actual=actual.token_sizes, expected=expected.token_sizes)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=tensor)
