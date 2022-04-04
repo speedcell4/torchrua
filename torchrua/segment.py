@@ -1,4 +1,3 @@
-from ctypes import Union
 from functools import singledispatch
 
 import torch
@@ -7,12 +6,19 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua import CattedSequence, major_sizes_to_ptr
+from torchrua.catting import CattedSequence
+from torchrua.core import major_sizes_to_ptr
+from torchrua.wrapper import Sequence
+
+__all__ = [
+    'segment_sequence',
+    'segment_catted_indices', 'segment_catted_sequence',
+    'segment_packed_indices', 'segment_packed_sequence',
+]
 
 
 @singledispatch
-def segment_sequence(sizes: Union[CattedSequence, PackedSequence],
-                     tensor: Tensor, reduce: str, batch_first: bool) -> Union[CattedSequence, PackedSequence]:
+def segment_sequence(sizes: Sequence, tensor: Tensor, reduce: str, batch_first: bool) -> Sequence:
     raise KeyError(f'type {type(sizes)} is not supported')
 
 
@@ -29,7 +35,7 @@ def segment_catted_indices(sizes: CattedSequence, token_size, device: Device = N
 
     out = torch.zeros((b, t + 1), dtype=sizes.dtype, device=device)
     out[batch_ptr, token_ptr] = sizes
-    out[:, -1] = token_size - out.size(dim=-1)
+    out[:, -1] = token_size - out.sum(dim=-1)
 
     return out.view(-1), batch_ptr * (t + 1) + token_ptr
 
@@ -37,11 +43,11 @@ def segment_catted_indices(sizes: CattedSequence, token_size, device: Device = N
 @segment_sequence.register
 def segment_catted_sequence(sizes: CattedSequence, tensor: Tensor, reduce: str, batch_first: bool) -> CattedSequence:
     if batch_first:
-        tensor = rearrange(tensor, 'b t ... -> (b t) ...')
         _, token_size, *_ = tensor.size()
+        tensor = rearrange(tensor, 'b t ... -> (b t) ...')
     else:
-        tensor = rearrange(tensor, 't b ... -> (b t) ...')
         token_size, _, *_ = tensor.size()
+        tensor = rearrange(tensor, 't b ... -> (b t) ...')
 
     token_sizes, indices = segment_catted_indices(sizes=sizes, token_size=token_size, device=tensor.device)
     data = torch.segment_reduce(tensor, reduce=reduce, lengths=token_sizes, unsafe=True)
@@ -57,33 +63,32 @@ def segment_packed_indices(sizes: PackedSequence, token_size, device: Device = N
     if device is None:
         device = sizes.data.device
 
-    sizes, batch_sizes, _, unsorted_indices = sizes
+    sizes, batch_sizes, sorted_indices, _ = sizes
 
     sizes = sizes.to(device=device)
     batch_sizes = batch_sizes.to(device=device)
-    unsorted_indices = unsorted_indices.to(device=device)
+    sorted_indices = sorted_indices.to(device=device)
 
     batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
-    batch_ptr = unsorted_indices[batch_ptr]
 
     b = batch_sizes.max().item()
     t, *_ = batch_sizes.size()
 
     out = torch.zeros((b, t + 1), dtype=sizes.dtype, device=device)
-    out[batch_ptr, token_ptr] = sizes
-    out[:, -1] = token_size - out.size(dim=-1)
+    out[sorted_indices[batch_ptr], token_ptr] = sizes
+    out[:, -1] = token_size - out.sum(dim=-1)
 
-    return out.view(-1), batch_ptr * (t + 1) + token_ptr
+    return out.view(-1), sorted_indices[batch_ptr] * (t + 1) + token_ptr
 
 
 @segment_sequence.register
 def segment_packed_sequence(sizes: PackedSequence, tensor: Tensor, reduce: str, batch_first: bool) -> PackedSequence:
     if batch_first:
-        tensor = rearrange(tensor, 'b t ... -> (b t) ...')
         _, token_size, *_ = tensor.size()
+        tensor = rearrange(tensor, 'b t ... -> (b t) ...')
     else:
-        tensor = rearrange(tensor, 't b ... -> (b t) ...')
         token_size, _, *_ = tensor.size()
+        tensor = rearrange(tensor, 't b ... -> (b t) ...')
 
     token_sizes, indices = segment_packed_indices(sizes=sizes, token_size=token_size, device=tensor.device)
     data = torch.segment_reduce(tensor, reduce=reduce, lengths=token_sizes, unsafe=True)
