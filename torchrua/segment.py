@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.catting import CattedSequence
-from torchrua.core import major_sizes_to_ptr, major_sizes_to_info
+from torchrua.core import major_sizes_to_ptr, major_sizes_to_info, accumulate_sizes
 from torchrua.wrapper import Sequence
 
 __all__ = [
@@ -36,11 +36,16 @@ def segment_catted_indices(sizes: CattedSequence, token_size: int, device: Devic
     t, b = major_sizes_to_info(sizes=token_sizes)
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
-    out = torch.zeros((b, t + 1), dtype=sizes.dtype, device=device)
+    out = torch.zeros((b, t + 1), dtype=torch.long, device=device)
     out[batch_ptr, token_ptr] = sizes
     out[:, -1] = token_size - out.sum(dim=-1)
 
-    return out.view(-1), batch_ptr * (t + 1) + token_ptr
+    mask = torch.zeros((b, t + 1), dtype=torch.bool, device=device)
+    mask[batch_ptr, token_ptr] = True
+    mask[:, -1] = True
+
+    acc_token_sizes = accumulate_sizes(sizes=token_sizes + 1)
+    return torch.masked_select(out, mask), acc_token_sizes[batch_ptr] + token_ptr
 
 
 @segment_indices.register
@@ -58,11 +63,16 @@ def segment_packed_indices(sizes: PackedSequence, token_size: int, device: Devic
     batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
     batch_ptr = sorted_indices[batch_ptr]
 
-    out = torch.zeros((b, t + 1), dtype=sizes.dtype, device=device)
+    out = torch.zeros((b, t + 1), dtype=torch.long, device=device)
     out[batch_ptr, token_ptr] = sizes
     out[:, -1] = token_size - out.sum(dim=-1)
 
-    return out.view(-1), batch_ptr * (t + 1) + token_ptr
+    mask = torch.zeros((b, t + 1), dtype=torch.bool, device=device)
+    mask[batch_ptr, token_ptr] = True
+    mask[:, -1] = True
+
+    acc_token_sizes = accumulate_sizes(sizes=mask.long().sum(dim=-1))
+    return torch.masked_select(out, mask), acc_token_sizes[batch_ptr] + token_ptr
 
 
 def segment_sequence(sizes: Sequence, tensor: Tensor, reduce: str, batch_first: bool) -> Sequence:
