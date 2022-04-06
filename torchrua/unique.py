@@ -1,3 +1,4 @@
+from functools import singledispatch
 from typing import Tuple
 
 import torch
@@ -7,13 +8,21 @@ from torch.types import Device
 
 from torchrua.catting import CattedSequence
 from torchrua.core import major_sizes_to_ptr
+from torchrua.wrapper import Sequence
 
 __all__ = [
+    'unique_sequence',
     'unique_catted_sequence',
     'unique_packed_sequence',
 ]
 
 
+@singledispatch
+def unique_sequence(sequence: Sequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+    raise TypeError(f'type {type(sequence)} is not supported')
+
+
+@unique_sequence.register
 def unique_catted_sequence(sequence: CattedSequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
     if device is None:
         device = sequence.data.device
@@ -33,6 +42,7 @@ def unique_catted_sequence(sequence: CattedSequence, device: Device = None) -> T
     return unique1[unique2 % n], inverse_ptr, counts
 
 
+@unique_sequence.register
 def unique_packed_sequence(sequence: PackedSequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
     if device is None:
         device = sequence.data.device
