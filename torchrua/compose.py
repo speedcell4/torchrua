@@ -15,16 +15,16 @@ __all__ = [
 
 
 @torch.no_grad()
-def compose_catted_indices(sub_sizes: Tensor, token_sizes: Tensor, device: Device = None):
+def compose_catted_indices(token_sizes: Tensor, sizes: Tensor, device: Device = None):
     if device is None:
-        device = sub_sizes.device
+        device = token_sizes.device
 
     indices, batch_sizes, _, unsorted_indices = pack_catted_indices(
-        token_sizes=sub_sizes,
+        token_sizes=token_sizes,
         device=device,
     )
     unsorted_indices, _, _, _ = pack_catted_sequence(
-        sequence=CattedSequence(data=unsorted_indices, token_sizes=token_sizes),
+        sequence=CattedSequence(data=unsorted_indices, token_sizes=sizes),
         device=device,
     )
     sorted_indices = invert_permutation(unsorted_indices)
@@ -36,14 +36,12 @@ def compose_catted_sequences(sequences: List[CattedSequence], device: Device = N
     if device is None:
         device = sequences[0].data.device
 
-    data, sub_sizes = zip(*sequences)
+    data, token_sizes = zip(*sequences)
     data = torch.cat(data, dim=0).to(device=device)
-    sub_sizes, token_sizes = cat_sequence(sub_sizes, device=device)
+    token_sizes, sizes = cat_sequence(token_sizes, device=device)
 
     indices, batch_sizes, sorted_indices, unsorted_indices = compose_catted_indices(
-        token_sizes=token_sizes,
-        sub_sizes=sub_sizes,
-        device=device,
+        sizes=sizes, token_sizes=token_sizes, device=device,
     )
 
     return PackedSequence(
