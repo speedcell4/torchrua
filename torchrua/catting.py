@@ -18,10 +18,10 @@ class CattedSequence(NamedTuple):
     data: Tensor
     token_sizes: Tensor
 
-    def to(self, dtype: torch.dtype = None, device: Device = None) -> 'CattedSequence':
+    def to(self, device: Device = None, dtype: torch.dtype = None, *args, **kwargs) -> 'CattedSequence':
         return CattedSequence(
-            data=self.data.to(dtype=dtype, device=device),
-            token_sizes=self.token_sizes.to(dtype=dtype, device=device),
+            data=self.data.to(device=device, dtype=dtype, *args, **kwargs),
+            token_sizes=self.token_sizes.to(device=device, dtype=dtype, *args, **kwargs),
         )
 
 
