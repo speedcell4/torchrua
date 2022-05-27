@@ -3,19 +3,17 @@ from typing import List
 
 import torch
 from hypothesis import given
-from torch.types import Device
 
-from tests.assertions import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
-from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, TINY_BATCH_SIZE
+from tests.assertion import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
+from tests.strategy import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, TINY_BATCH_SIZE
 from torchrua import cat_sequence, concat_catted_sequences, concat_packed_sequences, pack_sequence
 
 
 @given(
-    device=devices(),
     token_sizes_batch=sizes(TINY_BATCH_SIZE, BATCH_SIZE, TOKEN_SIZE),
     embedding_dim=sizes(EMBEDDING_DIM),
 )
-def test_concat_catted_sequences(token_sizes_batch: List[List[int]], embedding_dim: int, device: Device):
+def test_concat_catted_sequences(token_sizes_batch, embedding_dim):
     sequences_batch = [
         [torch.randn((token_size, embedding_dim), device=device, requires_grad=True) for token_size in token_sizes]
         for token_sizes in token_sizes_batch
@@ -37,11 +35,10 @@ def test_concat_catted_sequences(token_sizes_batch: List[List[int]], embedding_d
 
 
 @given(
-    device=devices(),
     token_sizes_batch=sizes(TINY_BATCH_SIZE, BATCH_SIZE, TOKEN_SIZE),
     embedding_dim=sizes(EMBEDDING_DIM),
 )
-def test_concat_packed_sequences(token_sizes_batch: List[List[int]], embedding_dim: int, device: Device):
+def test_concat_packed_sequences(token_sizes_batch: List[List[int]], embedding_dim: int):
     sequences_batch = [
         [torch.randn((token_size, embedding_dim), device=device, requires_grad=True) for token_size in token_sizes]
         for token_sizes in token_sizes_batch

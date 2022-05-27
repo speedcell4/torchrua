@@ -3,10 +3,9 @@ from typing import List
 import torch
 from hypothesis import given
 from torch.testing import assert_close
-from torch.types import Device
 
-from tests.assertions import assert_grad_close
-from tests.strategies import sizes, devices, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.assertion import assert_grad_close
+from tests.strategy import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua.catting import cat_sequence
 from torchrua.interleave import repeat_interleave_sequence
 from torchrua.packing import pack_sequence
@@ -16,9 +15,8 @@ from torchrua.padding import pad_packed_sequence, pad_catted_sequence
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
-    device=devices(),
 )
-def test_repeat_interleave(token_sizes: List[int], dim: int, device: Device) -> None:
+def test_repeat_interleave(token_sizes: List[int], dim: int) -> None:
     sequence = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes

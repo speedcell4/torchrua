@@ -2,8 +2,8 @@ import torch
 from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence, pad_packed_sequence
 
-from tests.assertions import assert_equal, assert_close
-from tests.strategies import sizes, devices, TINY_BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, BATCH_SIZE
+from tests.assertion import assert_close
+from tests.strategy import sizes, device, TINY_BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, BATCH_SIZE
 from torchrua.chunk import chunk_packed_sequence
 from torchrua.joining import stack_packed_sequences
 
@@ -14,9 +14,8 @@ from torchrua.joining import stack_packed_sequences
     embedding_dim=sizes(EMBEDDING_DIM),
     dim=sizes(1),
     batch_first=st.booleans(),
-    device=devices(),
 )
-def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batch_first, device):
+def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batch_first):
     excepted_sequences = sequences = [
         pack_sequence([
             torch.randn((token_size, embedding_dim), device=device, requires_grad=True)
@@ -34,4 +33,4 @@ def test_chunk_packed_sequence(batch_size, token_sizes, embedding_dim, dim, batc
         excepted, excepted_token_sizes = pad_packed_sequence(excepted_sequence, batch_first=batch_first)
 
         assert_close(actual, excepted)
-        assert_equal(actual_token_sizes, excepted_token_sizes)
+        assert_close(actual_token_sizes, excepted_token_sizes)
