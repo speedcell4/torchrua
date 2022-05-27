@@ -4,7 +4,7 @@ from hypothesis import given
 from torch import nn
 
 from tests.assertions import assert_close, assert_grad_close
-from tests.strategies import devices, TINY_TOKEN_SIZE, TINY_BATCH_SIZE
+from tests.strategies import device, TINY_TOKEN_SIZE, TINY_BATCH_SIZE
 from tests.strategies import sizes, EMBEDDING_DIM
 from torchrua import cat_sequence, pack_sequence, compose_catted_sequences
 
@@ -13,9 +13,8 @@ from torchrua import cat_sequence, pack_sequence, compose_catted_sequences
     token_sizes_batch=sizes(TINY_BATCH_SIZE, TINY_BATCH_SIZE, TINY_TOKEN_SIZE),
     input_size=sizes(EMBEDDING_DIM),
     hidden_size=sizes(EMBEDDING_DIM),
-    device=devices(),
 )
-def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size, device):
+def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size):
     sequences = [
         [
             torch.randn((token_size, input_size), requires_grad=True, device=device)

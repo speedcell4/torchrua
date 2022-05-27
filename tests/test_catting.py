@@ -4,16 +4,15 @@ from torch.nn.utils.rnn import pack_sequence as torch_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as torch_pad_sequence
 
 from tests.assertions import assert_grad_close, assert_catted_sequence_close
-from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.strategies import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua import cat_sequence, cat_padded_sequence, cat_packed_sequence
 
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
-    device=devices(),
 )
-def test_cat_packed_sequence(token_sizes, dim, device):
+def test_cat_packed_sequence(token_sizes, dim):
     sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -30,9 +29,8 @@ def test_cat_packed_sequence(token_sizes, dim, device):
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
     batch_first=st.booleans(),
-    device=devices(),
 )
-def test_cat_padded_sequence(token_sizes, dim, batch_first, device):
+def test_cat_padded_sequence(token_sizes, dim, batch_first):
     sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes

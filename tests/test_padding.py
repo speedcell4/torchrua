@@ -3,8 +3,8 @@ from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence as torch_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as torch_pad_sequence
 
-from tests.assertions import assert_close, assert_close, assert_grad_close
-from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
+from tests.assertions import assert_close, assert_grad_close
+from tests.strategies import device, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua import pad_sequence, pad_packed_sequence
 
 
@@ -13,9 +13,8 @@ from torchrua import pad_sequence, pad_packed_sequence
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
     batch_first=st.booleans(),
-    device=devices(),
 )
-def test_pad_sequence(data, token_sizes, dim, batch_first, device):
+def test_pad_sequence(data, token_sizes, dim, batch_first):
     sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -33,9 +32,8 @@ def test_pad_sequence(data, token_sizes, dim, batch_first, device):
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
     batch_first=st.booleans(),
-    device=devices(),
 )
-def test_pad_packed_sequence(data, token_sizes, dim, batch_first, device):
+def test_pad_packed_sequence(data, token_sizes, dim, batch_first):
     sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes

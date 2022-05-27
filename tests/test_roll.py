@@ -1,9 +1,8 @@
 import torch
 from hypothesis import given, strategies as st
-from torch.testing import assert_close
 
 from tests.assertions import assert_packed_sequence_close, assert_grad_close, assert_close
-from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
+from tests.strategies import device, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
 from torchrua.roll import roll_sequence
@@ -13,9 +12,8 @@ from torchrua.roll import roll_sequence
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
-    device=devices(),
 )
-def test_roll_catted_sequence(data, token_sizes, dim, device):
+def test_roll_catted_sequence(data, token_sizes, dim):
     shifts = data.draw(st.integers(min_value=-max(token_sizes), max_value=+max(token_sizes)))
 
     sequence = [
@@ -36,9 +34,8 @@ def test_roll_catted_sequence(data, token_sizes, dim, device):
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
-    device=devices(),
 )
-def test_roll_packed_sequence(data, token_sizes, dim, device):
+def test_roll_packed_sequence(data, token_sizes, dim):
     shifts = data.draw(st.integers(min_value=-max(token_sizes), max_value=+max(token_sizes)))
 
     sequence = [
