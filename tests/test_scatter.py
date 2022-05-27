@@ -3,8 +3,8 @@
 # from hypothesis import given, strategies as st
 # from torch.testing import assert_close
 #
-# from tests.assertions import assert_grad_close
-# from tests.strategies import devices, sizes, TINY_TOKEN_SIZE, EMBEDDING_DIM, TOKEN_SIZE
+# from tests.assertion import assert_grad_close
+# from tests.strategy import devices, sizes, TINY_TOKEN_SIZE, EMBEDDING_DIM, TOKEN_SIZE
 # from torchrua import scatter as rua_scatter
 #
 #

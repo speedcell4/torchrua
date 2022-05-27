@@ -2,8 +2,8 @@ import torch
 from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence, pad_packed_sequence
 
-from tests.assertions import assert_close
-from tests.strategies import sizes, device, TINY_BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, BATCH_SIZE
+from tests.assertion import assert_close
+from tests.strategy import sizes, device, TINY_BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, BATCH_SIZE
 from torchrua.chunk import chunk_packed_sequence
 from torchrua.joining import stack_packed_sequences
 

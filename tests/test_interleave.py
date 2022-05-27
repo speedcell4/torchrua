@@ -4,8 +4,8 @@ import torch
 from hypothesis import given
 from torch.testing import assert_close
 
-from tests.assertions import assert_grad_close
-from tests.strategies import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.assertion import assert_grad_close
+from tests.strategy import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua.catting import cat_sequence
 from torchrua.interleave import repeat_interleave_sequence
 from torchrua.packing import pack_sequence

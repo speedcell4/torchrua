@@ -3,8 +3,8 @@ from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence as torch_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as torch_pad_sequence
 
-from tests.assertions import assert_packed_sequence_close, assert_grad_close
-from tests.strategies import device, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
+from tests.assertion import assert_packed_sequence_close, assert_grad_close
+from tests.strategy import device, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua import pack_sequence, pack_padded_sequence
 
 
