@@ -1,7 +1,7 @@
 import torch
 from hypothesis import given
 
-from tests.assertions import assert_equal
+from tests.assertions import assert_close
 from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
@@ -17,7 +17,7 @@ def test_unique_catted_sequence(sequences, device):
 
     unique, inverse, counts = unique_sequence(catted_sequence, device=device)
 
-    assert_equal(catted_sequence.data, unique[inverse])
+    assert_close(catted_sequence.data, unique[inverse])
 
 
 @given(
@@ -29,4 +29,4 @@ def test_unique_packed_sequence(sequences, device):
 
     unique, inverse, counts = unique_sequence(packed_sequence, device=device)
 
-    assert_equal(packed_sequence.data, unique[inverse])
+    assert_close(packed_sequence.data, unique[inverse])
