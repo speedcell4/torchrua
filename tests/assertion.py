@@ -16,8 +16,8 @@ __all__ = [
 def assert_grad_close(actual: Tensor, expected: Tensor, inputs, **kwargs) -> None:
     grad = torch.rand_like(actual)
 
-    actual_grads = torch.autograd.grad(actual, inputs, grad, create_graph=False, allow_unused=False)
-    expected_grads = torch.autograd.grad(expected, inputs, grad, create_graph=False, allow_unused=False)
+    actual_grads = torch.autograd.grad(actual, inputs, grad, retain_graph=True, allow_unused=False)
+    expected_grads = torch.autograd.grad(expected, inputs, grad, retain_graph=True, allow_unused=False)
 
     for actual_grad, expected_grad in zip(actual_grads, expected_grads):
         assert_close(actual=actual_grad, expected=expected_grad, **kwargs)

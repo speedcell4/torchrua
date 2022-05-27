@@ -4,8 +4,8 @@ from typing import List
 import torch
 from hypothesis import given
 
-from tests.assertions import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
-from tests.strategies import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, TINY_BATCH_SIZE
+from tests.assertion import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
+from tests.strategy import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, TINY_BATCH_SIZE
 from torchrua import cat_sequence, concat_catted_sequences, concat_packed_sequences, pack_sequence
 
 

@@ -3,9 +3,9 @@ from einops import rearrange
 from hypothesis import given
 from torch import nn
 
-from tests.assertions import assert_close, assert_grad_close
-from tests.strategies import device, TINY_TOKEN_SIZE, TINY_BATCH_SIZE
-from tests.strategies import sizes, EMBEDDING_DIM
+from tests.assertion import assert_close, assert_grad_close
+from tests.strategy import device, TINY_TOKEN_SIZE, TINY_BATCH_SIZE
+from tests.strategy import sizes, EMBEDDING_DIM
 from torchrua import cat_sequence, pack_sequence, compose_catted_sequences
 
 
