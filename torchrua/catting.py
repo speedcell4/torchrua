@@ -18,31 +18,27 @@ class CattedSequence(NamedTuple):
     data: Tensor
     token_sizes: Tensor
 
-    def to(self, device: Device = None, dtype: torch.dtype = None, *args, **kwargs) -> 'CattedSequence':
+    def to(self, dtype: torch.dtype = None, device: Device = None, *args, **kwargs) -> 'CattedSequence':
         return CattedSequence(
             data=self.data.to(device=device, dtype=dtype, *args, **kwargs),
             token_sizes=self.token_sizes.to(device=device, dtype=dtype, *args, **kwargs),
         )
 
 
-def cat_sequence(sequences: List[Tensor], device: Device = None) -> CattedSequence:
+def cat_sequence(sequences: List[Tensor], dtype: torch.dtype = None, device: Device = None) -> CattedSequence:
     if device is None:
         device = sequences[0].device
 
-    token_sizes = torch.tensor([sequence.size()[0] for sequence in sequences], dtype=torch.long, device=device)
     return CattedSequence(
-        data=torch.cat(sequences, dim=0).to(device=device),
-        token_sizes=token_sizes,
+        data=torch.cat(sequences, dim=0).to(dtype=dtype, device=device),
+        token_sizes=torch.tensor([seq.size()[0] for seq in sequences], dtype=torch.long, device=device),
     )
 
 
 @torch.no_grad()
 def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: Device = None):
     if device is None:
-        if unsorted_indices is None:
-            device = batch_sizes.device
-        else:
-            device = unsorted_indices.device
+        device = (unsorted_indices or batch_sizes).device
 
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
