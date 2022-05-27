@@ -2,7 +2,7 @@ import torch
 from hypothesis import given
 from torch.testing import assert_close
 
-from tests.assertions import assert_packed_sequence_close, assert_grad_close, assert_equal
+from tests.assertions import assert_packed_sequence_close, assert_grad_close, assert_close
 from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
@@ -25,7 +25,7 @@ def test_reverse_catted_sequence(token_sizes, dim, device):
     actual = reverse_sequence(catted_sequence)
 
     assert_close(actual.data, expected.data)
-    assert_equal(actual.token_sizes, expected.token_sizes)
+    assert_close(actual.token_sizes, expected.token_sizes)
     assert_grad_close(actual.data, expected.data, inputs=sequence)
 
 

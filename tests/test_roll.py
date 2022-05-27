@@ -2,7 +2,7 @@ import torch
 from hypothesis import given, strategies as st
 from torch.testing import assert_close
 
-from tests.assertions import assert_packed_sequence_close, assert_grad_close, assert_equal
+from tests.assertions import assert_packed_sequence_close, assert_grad_close, assert_close
 from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
@@ -28,7 +28,7 @@ def test_roll_catted_sequence(data, token_sizes, dim, device):
     expected = cat_sequence([sequence.roll(shifts, dims=[0]) for sequence in sequence])
 
     assert_close(actual.data, expected.data)
-    assert_equal(actual.token_sizes, expected.token_sizes)
+    assert_close(actual.token_sizes, expected.token_sizes)
     assert_grad_close(actual.data, expected.data, inputs=sequence)
 
 

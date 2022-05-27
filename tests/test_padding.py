@@ -3,7 +3,7 @@ from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence as torch_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as torch_pad_sequence
 
-from tests.assertions import assert_close, assert_equal, assert_grad_close
+from tests.assertions import assert_close, assert_close, assert_grad_close
 from tests.strategies import devices, sizes, EMBEDDING_DIM, BATCH_SIZE, TOKEN_SIZE
 from torchrua import pad_sequence, pad_packed_sequence
 
@@ -50,5 +50,5 @@ def test_pad_packed_sequence(data, token_sizes, dim, batch_first, device):
     excepted_token_sizes = torch.tensor(token_sizes, device=device)
 
     assert_close(actual=actual, expected=excepted)
-    assert_equal(actual=actual_token_sizes, expected=excepted_token_sizes)
+    assert_close(actual=actual_token_sizes, expected=excepted_token_sizes)
     assert_grad_close(actual=actual, expected=excepted, inputs=sequences)

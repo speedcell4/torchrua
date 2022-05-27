@@ -2,7 +2,7 @@ import torch
 from hypothesis import given, strategies as st
 from torch.testing import assert_close
 
-from tests.assertions import assert_equal, assert_grad_close
+from tests.assertions import assert_close, assert_grad_close
 from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua import cat_sequence, pack_sequence, cat_packed_sequence, segment_sequence
 
@@ -37,5 +37,5 @@ def test_segment_sequence(device, token_sizes, dim, reduce, batch_first):
     expected = cat_packed_sequence(expected, device=device)
 
     assert_close(actual=actual.data, expected=expected.data)
-    assert_equal(actual=actual.token_sizes, expected=expected.token_sizes)
+    assert_close(actual=actual.token_sizes, expected=expected.token_sizes)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=tensor)
