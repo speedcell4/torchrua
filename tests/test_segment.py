@@ -1,20 +1,18 @@
 import torch
 from hypothesis import given, strategies as st
-from torch.testing import assert_close
 
 from tests.assertions import assert_close, assert_grad_close
-from tests.strategies import devices, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.strategies import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
 from torchrua import cat_sequence, pack_sequence, cat_packed_sequence, segment_sequence
 
 
 @given(
-    device=devices(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
     reduce=st.sampled_from(['mean', 'sum', 'max', 'min']),
     batch_first=st.booleans(),
 )
-def test_segment_sequence(device, token_sizes, dim, reduce, batch_first):
+def test_segment_sequence(token_sizes, dim, reduce, batch_first):
     chunk_sizes = [
         torch.unique(torch.randint(token_size, (token_size,), device=device), return_counts=True)[1]
         for token_size in token_sizes

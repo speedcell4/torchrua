@@ -2,7 +2,7 @@ import torch
 from hypothesis import given, strategies as st
 
 from tests.assertions import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
-from tests.strategies import sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, devices
+from tests.strategies import sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, device
 from torchrua import cat_sequence, pack_sequence, trunc_sequence
 
 
@@ -10,9 +10,8 @@ from torchrua import cat_sequence, pack_sequence, trunc_sequence
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
-    device=devices(),
 )
-def test_trunc_catted_sequence(data, token_sizes, dim, device):
+def test_trunc_catted_sequence(data, token_sizes, dim):
     sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -33,9 +32,8 @@ def test_trunc_catted_sequence(data, token_sizes, dim, device):
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
-    device=devices(),
 )
-def test_trunc_packed_sequence(data, token_sizes, dim, device):
+def test_trunc_packed_sequence(data, token_sizes, dim):
     sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes

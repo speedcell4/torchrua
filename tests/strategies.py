@@ -15,16 +15,11 @@ else:
     EMBEDDING_DIM = 60
 
 if torch.cuda.is_available():
-    torch.empty((1,), device=torch.device('cuda:0'))
+    device = torch.device('cuda:0')
+else:
+    device = torch.device('cpu')
 
-
-@st.composite
-def devices(draw):
-    if torch.cuda.is_available():
-        device = torch.device('cuda:0')
-    else:
-        device = torch.device('cpu')
-    return device
+torch.empty((1,), device=device)
 
 
 @st.composite
