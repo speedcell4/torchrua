@@ -33,7 +33,12 @@ def pad_sequence(sequences: List[Tensor], batch_first: bool,
 def pad_packed_indices(batch_sizes: Tensor, batch_first: bool,
                        sorted_indices: Tensor = None, unsorted_indices: Tensor = None, device: Device = None):
     if device is None:
-        device = (unsorted_indices or sorted_indices or batch_sizes).device
+        if unsorted_indices is not None:
+            device = unsorted_indices.device
+        elif sorted_indices is not None:
+            device = sorted_indices.device
+        else:
+            device = batch_sizes.device
 
     batch_sizes = batch_sizes.to(device=device)
     b, t = major_sizes_to_info(sizes=batch_sizes)
