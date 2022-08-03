@@ -23,7 +23,7 @@ def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size):
         for token_sizes in token_sizes_batch
     ]
     inputs = [token for sequence in sequences for token in sequence]
-    catted_sequences = [cat_sequence(sequence, device=device) for sequence in sequences]
+    catted_sequences = [cat_sequence(sequence, device=torch.device('cpu')) for sequence in sequences]
     packed_sequences = [pack_sequence(sequence, device=device) for sequence in sequences]
 
     rnn = nn.LSTM(

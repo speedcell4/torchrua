@@ -40,7 +40,7 @@ def compose_catted_sequences(sequences: List[CattedSequence], device: Device = N
     )
 
     return PackedSequence(
-        data=torch.cat(data, dim=0)[indices],
+        data=torch.cat(data, dim=0).to(device=device)[indices],
         batch_sizes=batch_sizes.detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices.data,
