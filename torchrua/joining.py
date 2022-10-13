@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import torch
 from torch import Tensor
@@ -8,6 +8,17 @@ from torch.types import Device
 from torchrua.catting import cat_sequence, CattedSequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes
 from torchrua.packing import pack_catted_indices
+
+
+def cat_sequences(sequences) -> Union[CattedSequence, PackedSequence]:
+    sequence, *_ = sequences
+
+    if isinstance(sequence, CattedSequence):
+        return cat_catted_sequences(sequences)
+    if isinstance(sequence, PackedSequence):
+        return cat_packed_sequences(sequences)
+
+    raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()

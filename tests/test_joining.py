@@ -6,7 +6,7 @@ from hypothesis import given
 
 from tests.assertion import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
 from tests.strategy import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM, TINY_BATCH_SIZE
-from torchrua import cat_sequence, cat_catted_sequences, cat_packed_sequences, pack_sequence
+from torchrua import cat_sequence, pack_sequence, cat_sequences
 
 
 @given(
@@ -19,7 +19,7 @@ def test_concat_catted_sequences(token_sizes_batch, embedding_dim):
         for token_sizes in token_sizes_batch
     ]
 
-    actual = cat_catted_sequences([
+    actual = cat_sequences([
         cat_sequence(sequences, device=device)
         for sequences in sequences_batch
     ])
@@ -44,7 +44,7 @@ def test_concat_packed_sequences(token_sizes_batch: List[List[int]], embedding_d
         for token_sizes in token_sizes_batch
     ]
 
-    actual = cat_packed_sequences([
+    actual = cat_sequences([
         pack_sequence(sequences, device=device)
         for sequences in sequences_batch
     ])
