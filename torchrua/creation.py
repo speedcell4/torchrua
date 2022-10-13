@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device, Number
 
 from torchrua.catting import CattedSequence
-from torchrua.core import major_sizes_to_info, major_sizes_to_ptr
+from torchrua.core import major_sizes_to_size, major_sizes_to_ptr
 
 Sequence = Union[CattedSequence, PackedSequence]
 
@@ -19,13 +19,13 @@ def size(sequence, batch_first: bool = True) -> Tuple[int, ...]:
 
 @size.register
 def packed_size(sequence: PackedSequence, batch_first: bool = True) -> Tuple[int, ...]:
-    b, t = major_sizes_to_info(sizes=sequence.batch_sizes)
+    b, t = major_sizes_to_size(sizes=sequence.batch_sizes)
     return *((b, t) if batch_first else (t, b)), *sequence.data.size()[1:]
 
 
 @size.register
 def catted_size(sequence: CattedSequence, batch_first: bool = True) -> Tuple[int, ...]:
-    t, b = major_sizes_to_info(sizes=sequence.token_sizes)
+    t, b = major_sizes_to_size(sizes=sequence.token_sizes)
     return *((b, t) if batch_first else (t, b)), *sequence.data.size()[1:]
 
 
