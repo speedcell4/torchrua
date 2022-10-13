@@ -9,14 +9,9 @@ from torchrua.catting import cat_sequence, CattedSequence
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes
 from torchrua.packing import pack_catted_indices
 
-__all__ = [
-    'concat_packed_indices', 'concat_catted_sequences',
-    'concat_catted_indices', 'concat_packed_sequences',
-]
-
 
 @torch.no_grad()
-def concat_catted_indices(token_sizes: List[Tensor], device: Device = None):
+def cat_catted_indices(token_sizes: List[Tensor], device: Device = None):
     if device is None:
         device = token_sizes[0].device
 
@@ -30,10 +25,10 @@ def concat_catted_indices(token_sizes: List[Tensor], device: Device = None):
     return indices, token_sizes
 
 
-def concat_catted_sequences(sequences: List[CattedSequence]) -> CattedSequence:
+def cat_catted_sequences(sequences: List[CattedSequence]) -> CattedSequence:
     data, token_sizes = zip(*sequences)
 
-    indices, token_sizes = concat_catted_indices(
+    indices, token_sizes = cat_catted_indices(
         token_sizes=token_sizes,
         device=data[0].device,
     )
@@ -45,7 +40,7 @@ def concat_catted_sequences(sequences: List[CattedSequence]) -> CattedSequence:
 
 
 @torch.no_grad()
-def concat_packed_indices(batch_sizes: List[Tensor], sorted_indices: List[Tensor], device: Device = None):
+def cat_packed_indices(batch_sizes: List[Tensor], sorted_indices: List[Tensor], device: Device = None):
     if device is None:
         device = sorted_indices[0].device
 
@@ -67,10 +62,10 @@ def concat_packed_indices(batch_sizes: List[Tensor], sorted_indices: List[Tensor
     return indices0[indices1], batch_sizes, sorted_indices, unsorted_indices
 
 
-def concat_packed_sequences(sequences: List[PackedSequence]) -> PackedSequence:
+def cat_packed_sequences(sequences: List[PackedSequence]) -> PackedSequence:
     data, batch_sizes, sorted_indices, _ = zip(*sequences)
 
-    indices, batch_sizes, sorted_indices, unsorted_indices = concat_packed_indices(
+    indices, batch_sizes, sorted_indices, unsorted_indices = cat_packed_indices(
         batch_sizes=batch_sizes,
         sorted_indices=sorted_indices,
         device=data[0].device,
