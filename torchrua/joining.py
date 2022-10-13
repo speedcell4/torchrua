@@ -88,3 +88,14 @@ def cat_packed_sequences(sequences: List[PackedSequence]) -> PackedSequence:
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
+
+
+def stack_catted_sequences(sequences: List[CattedSequence]) -> CattedSequence:
+    return CattedSequence(
+        data=torch.cat([sequence.data for sequence in sequences], dim=0),
+        token_sizes=torch.cat([sequence.token_sizes for sequence in sequences], dim=0),
+    )
+
+
+def stack_packed_sequences(sequences: List[PackedSequence]) -> PackedSequence:
+    raise NotImplementedError
