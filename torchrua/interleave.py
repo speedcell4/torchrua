@@ -17,7 +17,7 @@ __all__ = [
 
 @singledispatch
 def repeat_interleave_sequence(sequence: Sequence, repeats: Tensor) -> Sequence:
-    raise KeyError(f'type {type(sequence)} is not supported')
+    raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()

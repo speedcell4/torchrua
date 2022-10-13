@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device, Number
 
 from torchrua.catting import cat_sequence, CattedSequence
-from torchrua.core import major_sizes_to_ptr, major_sizes_to_info
+from torchrua.core import major_sizes_to_ptr, major_sizes_to_size
 
 __all__ = [
     'PaddedSequence', 'pad_sequence',
@@ -41,7 +41,7 @@ def pad_packed_indices(batch_sizes: Tensor, batch_first: bool,
             device = batch_sizes.device
 
     batch_sizes = batch_sizes.to(device=device)
-    b, t = major_sizes_to_info(sizes=batch_sizes)
+    b, t = major_sizes_to_size(sizes=batch_sizes)
 
     batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
     _, token_sizes = torch.unique(batch_ptr, sorted=True, return_counts=True)
@@ -84,7 +84,7 @@ def pad_catted_indices(token_sizes: Tensor, batch_first: bool, device: Device = 
         device = token_sizes.device
 
     token_sizes = token_sizes.to(device=device)
-    t, b = major_sizes_to_info(sizes=token_sizes)
+    t, b = major_sizes_to_size(sizes=token_sizes)
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 

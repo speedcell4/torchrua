@@ -18,7 +18,7 @@ __all__ = [
 
 @singledispatch
 def roll_sequence(sequence: Sequence, shifts: int) -> Sequence:
-    raise KeyError(f'type {type(sequence)} is not supported')
+    raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()

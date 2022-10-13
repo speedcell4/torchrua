@@ -28,12 +28,12 @@ __all__ = [
 
 @singledispatch
 def init_sequence(sequence: Sequence, n: int) -> Sequence:
-    raise KeyError(f'type {type(sequence)} is not supported')
+    raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @singledispatch
 def tail_sequence(sequence: Sequence, n: int) -> Sequence:
-    raise KeyError(f'type {type(sequence)} is not supported')
+    raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()
