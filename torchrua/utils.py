@@ -12,28 +12,30 @@ __all__ = [
     'sequence_ptr', 'catted_sequence_ptr', 'packed_sequence_ptr',
 ]
 
+Sequence = Union[CattedSequence, PackedSequence]
+
 
 @singledispatch
-def sequence_shape(sequence: Union[CattedSequence, PackedSequence]) -> Tuple[int, int, int]:
+def sequence_shape(sequence: Sequence, batch_first: bool = True) -> Tuple[int, int, int]:
     raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @sequence_shape.register
-def catted_sequence_shape(sequence: CattedSequence) -> Tuple[int, int, int]:
+def catted_sequence_shape(sequence: CattedSequence, batch_first: bool = True) -> Tuple[int, int, int]:
     t, b = major_sizes_to_size(sizes=sequence.token_sizes)
     n, *_ = sequence.data.size()
-    return n, b, t
+    return (n, b, t) if batch_first else (n, t, b)
 
 
 @sequence_shape.register
-def packed_sequence_shape(sequence: PackedSequence) -> Tuple[int, int, int]:
+def packed_sequence_shape(sequence: PackedSequence, batch_first: bool = True) -> Tuple[int, int, int]:
     b, t = major_sizes_to_size(sizes=sequence.batch_sizes)
     n, *_ = sequence.data.size()
-    return n, b, t
+    return (n, b, t) if batch_first else (n, t, b)
 
 
 @singledispatch
-def sequence_ptr(sequence: Union[CattedSequence, PackedSequence], device: Device = None) -> Tuple[Tensor, Tensor]:
+def sequence_ptr(sequence: Sequence, device: Device = None) -> Tuple[Tensor, Tensor]:
     raise TypeError(f'type {type(sequence)} is not supported')
 
 
