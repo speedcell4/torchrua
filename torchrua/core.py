@@ -6,7 +6,7 @@ from torch.types import Device
 
 __all__ = [
     'accumulate_sizes', 'transpose_sizes',
-    'major_sizes_to_info',
+    'major_sizes_to_size',
     'major_sizes_to_ptr',
     'minor_sizes_to_ptr',
     'sizes_to_sorting',
@@ -23,13 +23,13 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
 
 @torch.no_grad()
 def transpose_sizes(sizes: Tensor) -> Tensor:
-    n, _ = major_sizes_to_info(sizes=sizes)
+    n, _ = major_sizes_to_size(sizes=sizes)
     index = torch.arange(n, device=sizes.device)
     return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
 
 
 @torch.no_grad()
-def major_sizes_to_info(sizes: Tensor) -> Tuple[int, int]:
+def major_sizes_to_size(sizes: Tensor) -> Tuple[int, int]:
     return sizes.max().item(), sizes.size()[0]
 
 
@@ -47,7 +47,7 @@ def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
 def minor_sizes_to_ptr(token_sizes: Tensor,
                        token_ptr: Optional[Tensor] = None,
                        batch_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
-    t, b = major_sizes_to_info(sizes=token_sizes)
+    t, b = major_sizes_to_size(sizes=token_sizes)
 
     if token_ptr is None:
         token_ptr = torch.arange(t, device=token_sizes.device)
