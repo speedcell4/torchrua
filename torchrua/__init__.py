@@ -14,4 +14,5 @@ from torchrua.scatter import *
 from torchrua.segment import *
 from torchrua.trunc import *
 from torchrua.unique import *
+from torchrua.utils import *
 from torchrua.wrapper import *
