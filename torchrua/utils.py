@@ -35,23 +35,26 @@ def packed_sequence_shape(sequence: PackedSequence, batch_first: bool = True) ->
 
 
 @singledispatch
-def sequence_ptr(sequence: Sequence, device: Device = None) -> Tuple[Tensor, Tensor]:
+def sequence_ptr(sequence: Sequence, batch_first: bool = True,
+                 device: Device = None) -> Tuple[Tensor, Tensor]:
     raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @sequence_ptr.register
-def catted_sequence_ptr(sequence: CattedSequence, device: Device = None) -> Tuple[Tensor, Tensor]:
+def catted_sequence_ptr(sequence: CattedSequence, batch_first: bool = True,
+                        device: Device = None) -> Tuple[Tensor, Tensor]:
     if device is None:
         device = sequence.data.device
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=sequence.token_sizes.to(device=device))
-    return batch_ptr, token_ptr
+    return (batch_ptr, token_ptr) if batch_first else (token_ptr, batch_ptr)
 
 
 @sequence_ptr.register
-def packed_sequence_ptr(sequence: PackedSequence, device: Device = None) -> Tuple[Tensor, Tensor]:
+def packed_sequence_ptr(sequence: PackedSequence, batch_first: bool = True,
+                        device: Device = None) -> Tuple[Tensor, Tensor]:
     if device is None:
         device = sequence.data.device
 
     batch_ptr, token_ptr = major_sizes_to_ptr(sizes=sequence.batch_sizes.to(device=device))
-    return batch_ptr, token_ptr
+    return (batch_ptr, token_ptr) if batch_first else (token_ptr, batch_ptr)
