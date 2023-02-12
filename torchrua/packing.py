@@ -35,8 +35,8 @@ def pack_catted_indices(token_sizes: Tensor, device: Device = None):
         sizes=token_sizes, device=device,
     )
     token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
-        token_sizes=token_sizes,
-        batch_ptr=sorted_indices,
+        sizes=token_sizes,
+        major_ptr=sorted_indices,
     )
     indices = acc_token_sizes[batch_ptr] + token_ptr
 
@@ -70,8 +70,8 @@ def pack_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device =
         sizes=token_sizes, device=device,
     )
     token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
-        token_sizes=sorted_token_sizes,
-        batch_ptr=sorted_indices,
+        sizes=sorted_token_sizes,
+        major_ptr=sorted_indices,
     )
 
     if batch_first:
