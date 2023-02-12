@@ -44,26 +44,26 @@ def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
 
 
 @torch.no_grad()
-def minor_sizes_to_ptr(token_sizes: Tensor,
-                       token_ptr: Optional[Tensor] = None,
-                       batch_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
-    t, b = major_sizes_to_size(sizes=token_sizes)
+def minor_sizes_to_ptr(sizes: Tensor,
+                       minor_ptr: Optional[Tensor] = None,
+                       major_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
+    t, b = major_sizes_to_size(sizes=sizes)
 
-    if token_ptr is None:
-        token_ptr = torch.arange(t, device=token_sizes.device)
-    assert token_ptr.size() == (t,)
+    if minor_ptr is None:
+        minor_ptr = torch.arange(t, device=sizes.device)
+    if major_ptr is None:
+        major_ptr = torch.arange(b, device=sizes.device)
 
-    if batch_ptr is None:
-        batch_ptr = torch.arange(b, device=token_sizes.device)
-    assert batch_ptr.size() == (b,)
+    assert minor_ptr.size() == (t,), f'{minor_ptr.size()} != ({t},)'
+    assert major_ptr.size() == (b,), f'{major_ptr.size()} != ({b},)'
 
-    tb_mask = token_ptr[:, None] < token_sizes[None, :]
+    mask = minor_ptr[:, None] < sizes[None, :]
 
-    token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
-    batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
-    sorted_batch_sizes = tb_mask.long().sum(dim=1)
+    minor_ptr = torch.masked_select(minor_ptr[:, None], mask=mask)
+    major_ptr = torch.masked_select(major_ptr[None, :], mask=mask)
+    major_sizes = mask.long().sum(dim=1)
 
-    return token_ptr, batch_ptr, sorted_batch_sizes
+    return minor_ptr, major_ptr, major_sizes
 
 
 @torch.no_grad()
