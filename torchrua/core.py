@@ -98,7 +98,7 @@ def invert_permutation(tensor: Tensor, device: Device = None, dtype: torch.dtype
     if device is None:
         device = tensor.device
 
-    ret = torch.empty(tensor.size()[0], dtype=dtype, device=device)
     index = torch.arange(tensor.size()[0], dtype=dtype, device=device)
-    ret[tensor] = index
-    return ret
+    permutation = torch.empty_like(index)
+    permutation[tensor] = index
+    return permutation
