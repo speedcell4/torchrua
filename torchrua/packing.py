@@ -5,8 +5,8 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.catting import cat_sequence, CattedSequence
-from torchrua.core import minor_sizes_to_ptr, accumulate_sizes, sizes_to_sorting
+from torchrua.catting import cat_sequence
+from torchrua.core import minor_sizes_to_ptr, accumulate_sizes, sizes_to_sorting, CattedSequence
 
 __all__ = [
     'PackedSequence', 'pack_sequence',

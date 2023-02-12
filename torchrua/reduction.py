@@ -6,8 +6,7 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.catting import CattedSequence
-from torchrua.core import major_sizes_to_ptr, accumulate_sizes, transpose_sizes
+from torchrua.core import major_sizes_to_ptr, accumulate_sizes, transpose_sizes, CattedSequence
 from torchrua.padding import PaddedSequence
 
 __all__ = [
