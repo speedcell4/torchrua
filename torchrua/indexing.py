@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.catting import CattedSequence
+from torchrua.core import CattedSequence
 from torchrua.core import major_sizes_to_ptr, transpose_sizes, accumulate_sizes
 from torchrua.wrapper import Sequence
 

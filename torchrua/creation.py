@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device, Number
 
-from torchrua.catting import CattedSequence
+from torchrua.core import CattedSequence
 from torchrua.utils import sequence_shape
 
 __all__ = [

@@ -1,28 +1,18 @@
-from typing import List, NamedTuple
+from typing import List
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import minor_sizes_to_ptr, major_sizes_to_ptr, accumulate_sizes
+from torchrua.core import CattedSequence
+from torchrua.core import minor_sizes_to_ptr, major_sizes_to_ptr, accumulate_sizes, CattedSequence
 
 __all__ = [
-    'CattedSequence', 'cat_sequence',
+    'cat_sequence',
     'cat_packed_indices', 'cat_packed_sequence',
     'cat_padded_indices', 'cat_padded_sequence',
 ]
-
-
-class CattedSequence(NamedTuple):
-    data: Tensor
-    token_sizes: Tensor
-
-    def to(self, dtype: torch.dtype = None, device: Device = None, *args, **kwargs) -> 'CattedSequence':
-        return CattedSequence(
-            data=self.data.to(device=device, dtype=dtype, *args, **kwargs),
-            token_sizes=self.token_sizes.to(device=device, dtype=dtype, *args, **kwargs),
-        )
 
 
 def cat_sequence(sequences: List[Tensor], dtype: torch.dtype = None, device: Device = None) -> CattedSequence:

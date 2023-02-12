@@ -1,10 +1,11 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, NamedTuple
 
 import torch
 from torch import Tensor
 from torch.types import Device
 
 __all__ = [
+    'CattedSequence',
     'accumulate_sizes', 'transpose_sizes',
     'major_sizes_to_size',
     'major_sizes_to_ptr',
@@ -12,6 +13,17 @@ __all__ = [
     'sizes_to_sorting',
     'invert_permutation',
 ]
+
+
+class CattedSequence(NamedTuple):
+    data: Tensor
+    token_sizes: Tensor
+
+    def to(self, dtype: torch.dtype = None, device: Device = None, *args, **kwargs) -> 'CattedSequence':
+        return CattedSequence(
+            data=self.data.to(device=device, dtype=dtype, *args, **kwargs),
+            token_sizes=self.token_sizes.to(device=device, dtype=dtype, *args, **kwargs),
+        )
 
 
 @torch.no_grad()
