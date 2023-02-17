@@ -1,4 +1,5 @@
 from functools import singledispatch
+from typing import Union
 
 import torch
 from torch import Tensor
@@ -7,7 +8,6 @@ from torch.nn.utils.rnn import PackedSequence
 from torchrua.catting import cat_packed_indices
 from torchrua.core import CattedSequence
 from torchrua.packing import pack_catted_indices
-from torchrua.wrapper import Sequence
 
 __all__ = [
     'repeat_interleave_sequence',
@@ -17,7 +17,7 @@ __all__ = [
 
 
 @singledispatch
-def repeat_interleave_sequence(sequence: Sequence, repeats: Tensor) -> Sequence:
+def repeat_interleave_sequence(sequence: Union[CattedSequence, PackedSequence], repeats: Tensor):
     raise TypeError(f'type {type(sequence)} is not supported')
 
 
@@ -37,6 +37,7 @@ def repeat_interleave_catted_sequence(sequence: CattedSequence, repeats: Tensor)
         repeats=repeats,
         token_sizes=sequence.token_sizes,
     )
+
     return CattedSequence(
         data=sequence.data[indices],
         token_sizes=token_sizes,
@@ -61,6 +62,7 @@ def repeat_interleave_packed_sequence(sequence: PackedSequence, repeats: Tensor)
         batch_sizes=sequence.batch_sizes,
         unsorted_indices=sequence.unsorted_indices,
     )
+
     return PackedSequence(
         data=sequence.data[indices],
         batch_sizes=batch_sizes.detach().cpu(),

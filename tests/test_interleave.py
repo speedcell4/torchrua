@@ -17,7 +17,7 @@ from torchrua.padding import pad_packed_sequence, pad_catted_sequence
     dim=sizes(EMBEDDING_DIM),
 )
 def test_repeat_interleave(token_sizes: List[int], dim: int) -> None:
-    sequence = [
+    inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
@@ -26,10 +26,10 @@ def test_repeat_interleave(token_sizes: List[int], dim: int) -> None:
         for token_size in token_sizes
     ]
 
-    catted_sequence = cat_sequence(sequence, device=device)
+    catted_sequence = cat_sequence(inputs, device=device)
     catted_repeats = cat_sequence(repeats, device=device).data
 
-    packed_sequence = pack_sequence(sequence, device=device)
+    packed_sequence = pack_sequence(inputs, device=device)
     packed_repeats = pack_sequence(repeats, device=device).data
 
     catted_sequence = repeat_interleave_sequence(catted_sequence, repeats=catted_repeats)
@@ -40,4 +40,4 @@ def test_repeat_interleave(token_sizes: List[int], dim: int) -> None:
 
     assert_close(catted_data, packed_data)
     assert_close(catted_token_sizes, packed_token_sizes)
-    assert_grad_close(catted_data, packed_data, inputs=sequence)
+    assert_grad_close(catted_data, packed_data, inputs=inputs)
