@@ -1,13 +1,11 @@
 from functools import singledispatch
-from typing import Tuple
+from typing import Union
 
 import torch
-from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.core import major_sizes_to_ptr, CattedSequence
-from torchrua.wrapper import Sequence
 
 __all__ = [
     'unique_sequence',
@@ -17,12 +15,12 @@ __all__ = [
 
 
 @singledispatch
-def unique_sequence(sequence: Sequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+def unique_sequence(sequence: Union[CattedSequence, PackedSequence], device: Device = None):
     raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @unique_sequence.register
-def unique_catted_sequence(sequence: CattedSequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+def unique_catted_sequence(sequence: CattedSequence, device: Device = None):
     if device is None:
         device = sequence.data.device
 
@@ -42,7 +40,7 @@ def unique_catted_sequence(sequence: CattedSequence, device: Device = None) -> T
 
 
 @unique_sequence.register
-def unique_packed_sequence(sequence: PackedSequence, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+def unique_packed_sequence(sequence: PackedSequence, device: Device = None):
     if device is None:
         device = sequence.data.device
 
