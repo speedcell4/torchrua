@@ -32,13 +32,9 @@ def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: De
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    batch_ptr, token_ptr, token_sizes = minor_sizes_to_ptr(
-        sizes=batch_sizes,
-        minor_ptr=unsorted_indices,
-    )
-    indices = acc_batch_sizes[token_ptr] + batch_ptr
+    batch_ptr, token_ptr, token_sizes = minor_sizes_to_ptr(sizes=batch_sizes, minor_ptr=unsorted_indices)
 
-    return indices, token_sizes
+    return batch_ptr + acc_batch_sizes[token_ptr], token_sizes
 
 
 def cat_packed_sequence(sequence: PackedSequence, device: Device = None) -> CattedSequence:
