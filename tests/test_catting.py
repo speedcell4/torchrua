@@ -13,16 +13,16 @@ from torchrua import cat_sequence, cat_padded_sequence, cat_packed_sequence
     dim=sizes(EMBEDDING_DIM),
 )
 def test_cat_packed_sequence(token_sizes, dim):
-    sequences = [
+    inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
-    actual = cat_sequence(sequences, device=device)
-    expected = cat_packed_sequence(torch_pack_sequence(sequences, enforce_sorted=False), device=device)
+    actual = cat_sequence(inputs, device=device)
+    expected = cat_packed_sequence(torch_pack_sequence(inputs, enforce_sorted=False), device=device)
 
     assert_catted_sequence_close(actual=actual, expected=expected)
-    assert_grad_close(actual=actual.data, expected=expected.data, inputs=sequences)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
 
 
 @given(
@@ -31,18 +31,18 @@ def test_cat_packed_sequence(token_sizes, dim):
     batch_first=st.booleans(),
 )
 def test_cat_padded_sequence(token_sizes, dim, batch_first):
-    sequences = [
+    inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
-    actual = cat_sequence(sequences, device=device)
+    actual = cat_sequence(inputs, device=device)
     expected = cat_padded_sequence(
-        sequence=torch_pad_sequence(sequences, batch_first=batch_first),
+        sequence=torch_pad_sequence(inputs, batch_first=batch_first),
         token_sizes=torch.tensor(token_sizes, device=device),
         batch_first=batch_first,
         device=device,
     )
 
     assert_catted_sequence_close(actual=actual, expected=expected)
-    assert_grad_close(actual=actual.data, expected=expected.data, inputs=sequences)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
