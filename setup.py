@@ -20,12 +20,10 @@ setup(
         'dev': [
             'pytest',
             'hypothesis',
-            'torch_scatter',
         ],
         'benchmark': [
             'aku',
             'tqdm',
-            'torch_scatter',
         ]
     }
 )
