@@ -1,7 +1,6 @@
 from typing import Type
 
 import torch
-from einops import rearrange
 from torch import nn
 
 from benchmark.generators import draw_devices, draw_batch_size_lists, draw_embedding_dims
@@ -43,13 +42,13 @@ def compose_catted_sequences(device: Type[draw_devices],
 
     with timer.rua_forward:
         _, (actual, _) = rnn(reduction_pack)
-        actual = rearrange(actual, 'd n x -> n (d x)')
+        actual = actual.transpose(-3, -2).flatten(start_dim=-2)
 
     with timer.naive_forward:
         excepted = []
         for pack in packed_sequences:
             _, (t, _) = rnn(pack)
-            excepted.append(rearrange(t, 'd n x -> n (d x)'))
+            excepted.append(t.transpose(-3, -2).flatten(start_dim=-2))
         excepted = pack_sequence(excepted).data
 
     with timer.rua_backward:
