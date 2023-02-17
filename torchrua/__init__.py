@@ -7,10 +7,10 @@ from torchrua.interleave import *
 from torchrua.joining import *
 from torchrua.packing import *
 from torchrua.padding import *
+from torchrua.reduce import *
 from torchrua.reduction import *
 from torchrua.reverse import *
 from torchrua.roll import *
-from torchrua.scatter import *
 from torchrua.segment import *
 from torchrua.trunc import *
 from torchrua.unique import *
