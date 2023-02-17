@@ -18,6 +18,7 @@ if torch.cuda.is_available():
     device = torch.device('cuda:0')
 else:
     device = torch.device('cpu')
+print(f'device => {device}')
 
 torch.empty((1,), device=device)
 
@@ -29,5 +30,5 @@ def sizes(draw, *size: int, min_size: int = 1):
 
     if len(size) == 0:
         return n
-    else:
-        return draw(st.lists(sizes(*size), min_size=n, max_size=n))
+
+    return draw(st.lists(sizes(*size), min_size=n, max_size=n))
