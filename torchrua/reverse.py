@@ -55,7 +55,7 @@ def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor
     batch_ptr, token_ptr, token_sizes = major_sizes_to_indices(sizes=batch_sizes)
     token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
 
-    return acc_batch_sizes[token_ptr] + batch_ptr
+    return batch_ptr + acc_batch_sizes[token_ptr]
 
 
 @reverse_sequence.register

@@ -57,7 +57,7 @@ def roll_packed_indices(batch_sizes: Tensor, shifts: int, device: Device = None)
     token_sizes = token_sizes[batch_ptr]
     token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
 
-    return acc_batch_sizes[token_ptr] + batch_ptr
+    return batch_ptr + acc_batch_sizes[token_ptr]
 
 
 @roll_sequence.register

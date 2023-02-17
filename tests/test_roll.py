@@ -15,7 +15,7 @@ def test_roll_catted_sequence(data, token_sizes, dim):
     shifts = data.draw(st.integers(min_value=-max(token_sizes), max_value=+max(token_sizes)))
 
     inputs = [
-        torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
+        torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
     sequence = cat_sequence(inputs)
