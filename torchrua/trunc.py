@@ -1,5 +1,5 @@
 from functools import singledispatch
-from typing import Tuple
+from typing import Tuple, Union
 
 import torch
 from torch import Tensor
@@ -7,17 +7,16 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.core import accumulate_sizes, major_sizes_to_ptr, CattedSequence
-from torchrua.wrapper import Sequence
 
 __all__ = [
+    'trunc_sequence',
     'trunc_catted_indices', 'trunc_catted_sequence',
     'trunc_packed_indices', 'trunc_packed_sequence',
-    'trunc_sequence',
 ]
 
 
 @singledispatch
-def trunc_sequence(sequence: Sequence, trunc: Tuple[int, int]) -> Sequence:
+def trunc_sequence(sequence: Union[CattedSequence, PackedSequence], trunc: Tuple[int, int]):
     raise TypeError(f'type {type(sequence)} is not supported.')
 
 
@@ -32,9 +31,7 @@ def trunc_catted_indices(token_sizes: Tensor, trunc: Tuple[int, int], device: De
     token_sizes = token_sizes - trunc[0] - trunc[1]
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
-    indices = token_ptr + trunc[0] + acc_token_sizes[batch_ptr]
-
-    return indices, token_sizes
+    return acc_token_sizes[batch_ptr] + token_ptr + trunc[0], token_sizes
 
 
 @trunc_sequence.register
@@ -43,6 +40,7 @@ def trunc_catted_sequence(sequence: CattedSequence, trunc: Tuple[int, int]) -> C
         token_sizes=sequence.token_sizes, trunc=trunc,
         device=sequence.data.device,
     )
+
     return CattedSequence(
         data=sequence.data[indices],
         token_sizes=token_sizes,
@@ -60,9 +58,7 @@ def trunc_packed_indices(batch_sizes: Tensor, trunc: Tuple[int, int], device: De
     batch_sizes = batch_sizes[trunc[0] + trunc[1]:]
     batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
 
-    indices = acc_batch_sizes[token_ptr + trunc[0]] + batch_ptr
-
-    return indices, batch_sizes
+    return batch_ptr + acc_batch_sizes[token_ptr + trunc[0]], batch_sizes
 
 
 @trunc_sequence.register
