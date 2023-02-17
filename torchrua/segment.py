@@ -1,24 +1,23 @@
 from functools import singledispatch
+from typing import Union
 
 import torch
-from einops import rearrange
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.core import major_sizes_to_ptr, major_sizes_to_size, accumulate_sizes, CattedSequence
-from torchrua.wrapper import Sequence
 
 __all__ = [
-    'segment_indices',
     'segment_sequence',
+    'segment_indices',
     'segment_catted_indices',
     'segment_packed_indices',
 ]
 
 
 @singledispatch
-def segment_indices(sizes: Sequence, token_size: int, device: Device = None):
+def segment_indices(sizes: Union[CattedSequence, PackedSequence], token_size: int, device: Device = None):
     raise TypeError(f'type {type(sizes)} is not supported')
 
 
@@ -74,13 +73,13 @@ def segment_packed_indices(sizes: PackedSequence, token_size: int, device: Devic
     return torch.masked_select(out, mask), acc_token_sizes[batch_ptr] + token_ptr
 
 
-def segment_sequence(sizes: Sequence, tensor: Tensor, reduce: str, batch_first: bool) -> Sequence:
+def segment_sequence(sizes: Union[CattedSequence, PackedSequence], tensor: Tensor, reduce: str, batch_first: bool):
     if batch_first:
         _, token_size, *_ = tensor.size()
-        tensor = rearrange(tensor, 'b t ... -> (b t) ...')
+        tensor = tensor.flatten(start_dim=0, end_dim=2)
     else:
         token_size, _, *_ = tensor.size()
-        tensor = rearrange(tensor, 't b ... -> (b t) ...')
+        tensor = tensor.transpose(0, 1).flatten(start_dim=0, end_dim=2)
 
     token_sizes, indices = segment_indices(sizes, token_size=token_size, device=tensor.device)
     data = torch.segment_reduce(tensor, reduce=reduce, lengths=token_sizes, unsafe=True)
