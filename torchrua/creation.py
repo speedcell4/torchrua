@@ -5,17 +5,15 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device, Number
 
-from torchrua.catting import CattedSequence
+from torchrua.core import CattedSequence
 from torchrua.utils import sequence_shape
 
 __all__ = [
     'empty_like', 'zeros_like', 'ones_like', 'full_like',
 ]
 
-Sequence = Union[CattedSequence, PackedSequence]
 
-
-def empty_like(sequence: Sequence, batch_first: bool = True,
+def empty_like(sequence: Union[CattedSequence, PackedSequence], batch_first: bool = True,
                dtype: torch.dtype = None, device: Device = None) -> Tensor:
     _, *sizes1 = sequence_shape(sequence, batch_first=batch_first)
     _, *sizes2 = sequence.data.size()
@@ -27,7 +25,7 @@ def empty_like(sequence: Sequence, batch_first: bool = True,
     )
 
 
-def zeros_like(sequence: Sequence, batch_first: bool = True,
+def zeros_like(sequence: Union[CattedSequence, PackedSequence], batch_first: bool = True,
                dtype: torch.dtype = None, device: Device = None) -> Tensor:
     _, *sizes1 = sequence_shape(sequence, batch_first=batch_first)
     _, *sizes2 = sequence.data.size()
@@ -39,7 +37,7 @@ def zeros_like(sequence: Sequence, batch_first: bool = True,
     )
 
 
-def ones_like(sequence: Sequence, batch_first: bool = True,
+def ones_like(sequence: Union[CattedSequence, PackedSequence], batch_first: bool = True,
               dtype: torch.dtype = None, device: Device = None) -> Tensor:
     _, *sizes1 = sequence_shape(sequence, batch_first=batch_first)
     _, *sizes2 = sequence.data.size()
@@ -51,7 +49,7 @@ def ones_like(sequence: Sequence, batch_first: bool = True,
     )
 
 
-def full_like(sequence: Sequence, fill_value: Number, batch_first: bool = True,
+def full_like(sequence: Union[CattedSequence, PackedSequence], fill_value: Number, batch_first: bool = True,
               dtype: torch.dtype = None, device: Device = None) -> Tensor:
     _, *sizes1 = sequence_shape(sequence, batch_first=batch_first)
     _, *sizes2 = sequence.data.size()

@@ -4,7 +4,8 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.catting import CattedSequence, cat_packed_indices
+from torchrua.catting import cat_packed_indices
+from torchrua.core import CattedSequence
 from torchrua.packing import pack_catted_indices
 from torchrua.wrapper import Sequence
 

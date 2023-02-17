@@ -3,7 +3,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.testing import assert_close
 
-from torchrua.catting import CattedSequence
+from torchrua.core import CattedSequence
 
 __all__ = [
     'assert_close',
