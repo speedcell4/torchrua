@@ -128,13 +128,11 @@ def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tens
 
 
 @torch.no_grad()
-def invert_permutation(tensor: Tensor, device: Device = None, dtype: torch.dtype = None) -> Tensor:
-    if dtype is None:
-        dtype = tensor.dtype
+def invert_permutation(tensor: Tensor, device: Device = None) -> Tensor:
     if device is None:
         device = tensor.device
 
-    index = torch.arange(tensor.size()[0], dtype=dtype, device=device)
+    index = torch.arange(tensor.size()[0], dtype=torch.long, device=device)
     permutation = torch.empty_like(index)
     permutation[tensor] = index
     return permutation
