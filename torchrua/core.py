@@ -26,6 +26,42 @@ class CattedSequence(NamedTuple):
         )
 
 
+def major_sizes_to_indices(sizes: Tensor, device: Device = None):
+    if device is None:
+        device = sizes.device
+
+    sizes = sizes.to(device=device)
+    a, b = major_sizes_to_size(sizes=sizes)
+
+    major_ptr = torch.arange(a, dtype=torch.long, device=device)
+    minor_ptr = torch.arange(b, dtype=torch.long, device=device)
+
+    mask = major_ptr[None, :] < sizes[:, None]
+    major_ptr = torch.masked_select(major_ptr[None, :], mask=mask)
+    minor_ptr = torch.masked_select(minor_ptr[:, None], mask=mask)
+    sizes = mask.long().sum(dim=0)
+
+    return major_ptr, minor_ptr, sizes
+
+
+def minor_sizes_to_indices(sizes: Tensor, device: Device = None):
+    if device is None:
+        device = sizes.device
+
+    sizes = sizes.to(device=device)
+    a, b = major_sizes_to_size(sizes=sizes)
+
+    major_ptr = torch.arange(a, dtype=torch.long, device=device)
+    minor_ptr = torch.arange(b, dtype=torch.long, device=device)
+
+    mask = major_ptr[:, None] < sizes[None, :]
+    major_ptr = torch.masked_select(major_ptr[:, None], mask=mask)
+    minor_ptr = torch.masked_select(minor_ptr[None, :], mask=mask)
+    sizes = mask.long().sum(dim=1)
+
+    return major_ptr, minor_ptr, sizes
+
+
 @torch.no_grad()
 def accumulate_sizes(sizes: Tensor) -> Tensor:
     acc_sizes = sizes.cumsum(dim=0).roll(shifts=1, dims=0)
