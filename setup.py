@@ -4,7 +4,7 @@ name = 'torchrua'
 
 setup(
     name=name,
-    version='0.4.0',
+    version='0.5.0.a',
     packages=[package for package in find_packages() if package.startswith(name)],
     url='https://github.com/speedcell4/torchrua',
     license='MIT',
@@ -20,12 +20,10 @@ setup(
         'dev': [
             'pytest',
             'hypothesis',
-            'torch_scatter',
         ],
         'benchmark': [
             'aku',
             'tqdm',
-            'torch_scatter',
         ]
     }
 )

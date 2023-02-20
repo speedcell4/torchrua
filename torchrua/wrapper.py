@@ -3,23 +3,31 @@ from typing import Any
 from typing import Union, Tuple, Dict
 
 import torch
-from torch import nn
+from torch import nn, Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.catting import CattedSequence
-from torchrua.padding import PaddedSequence
+from torchrua.core import CattedSequence
 
 __all__ = [
     'rua_fn', 'rua_method',
     'RuaModule', 'RuaMeta', 'RuaSequential',
 ]
 
-Sequence = Union[CattedSequence, PaddedSequence, PackedSequence]
+Sequence = Union[Tensor, Tuple[Tensor, Any], CattedSequence, PackedSequence]
 
 
 def rua_fn(fn):
     @functools.wraps(fn)
     def wrap(sequence: Sequence, *args, **kwargs) -> Sequence:
+        if torch.is_tensor(sequence):
+            return fn(sequence, *args, **kwargs)
+
+        if isinstance(sequence, CattedSequence):
+            return CattedSequence(
+                data=fn(sequence.data, *args, **kwargs),
+                token_sizes=sequence.token_sizes,
+            )
+
         if isinstance(sequence, PackedSequence):
             return PackedSequence(
                 data=fn(sequence.data, *args, **kwargs),
@@ -27,14 +35,7 @@ def rua_fn(fn):
                 sorted_indices=sequence.sorted_indices,
                 unsorted_indices=sequence.unsorted_indices,
             )
-        if isinstance(sequence, CattedSequence):
-            return CattedSequence(
-                data=fn(sequence.data, *args, **kwargs),
-                token_sizes=sequence.token_sizes,
-            )
 
-        if torch.is_tensor(sequence):
-            return fn(sequence, *args, **kwargs)
         return fn(sequence[0], *args, **kwargs), *sequence[1:]
 
     return wrap
@@ -42,23 +43,25 @@ def rua_fn(fn):
 
 def rua_method(method):
     @functools.wraps(method)
-    def wrap(self, sequence: Sequence, *args, **kwargs) -> Sequence:
+    def wrap(self_or_cls, sequence: Sequence, *args, **kwargs) -> Sequence:
+        if torch.is_tensor(sequence):
+            return method(self_or_cls, sequence, *args, **kwargs)
+
+        if isinstance(sequence, CattedSequence):
+            return CattedSequence(
+                data=method(self_or_cls, sequence.data, *args, **kwargs),
+                token_sizes=sequence.token_sizes,
+            )
+
         if isinstance(sequence, PackedSequence):
             return PackedSequence(
-                data=method(self, sequence.data, *args, **kwargs),
+                data=method(self_or_cls, sequence.data, *args, **kwargs),
                 batch_sizes=sequence.batch_sizes,
                 sorted_indices=sequence.sorted_indices,
                 unsorted_indices=sequence.unsorted_indices,
             )
-        if isinstance(sequence, CattedSequence):
-            return CattedSequence(
-                data=method(self, sequence.data, *args, **kwargs),
-                token_sizes=sequence.token_sizes,
-            )
 
-        if torch.is_tensor(sequence):
-            return method(self, sequence, *args, **kwargs)
-        return method(self, sequence[0], *args, **kwargs), *sequence[1:]
+        return method(self_or_cls, sequence[0], *args, **kwargs), *sequence[1:]
 
     return wrap
 

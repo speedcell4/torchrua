@@ -1,16 +1,65 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, NamedTuple
 
 import torch
 from torch import Tensor
 from torch.types import Device
 
 __all__ = [
+    'CattedSequence',
     'accumulate_sizes', 'transpose_sizes',
+    'major_sizes_to_size',
     'major_sizes_to_ptr',
     'minor_sizes_to_ptr',
     'sizes_to_sorting',
     'invert_permutation',
 ]
+
+
+class CattedSequence(NamedTuple):
+    data: Tensor
+    token_sizes: Tensor
+
+    def to(self, dtype: torch.dtype = None, device: Device = None, *args, **kwargs) -> 'CattedSequence':
+        return CattedSequence(
+            data=self.data.to(device=device, dtype=dtype, *args, **kwargs),
+            token_sizes=self.token_sizes.to(device=device, dtype=dtype, *args, **kwargs),
+        )
+
+
+def major_sizes_to_indices(sizes: Tensor, device: Device = None):
+    if device is None:
+        device = sizes.device
+
+    sizes = sizes.to(device=device)
+    a, b = major_sizes_to_size(sizes=sizes)
+
+    major_ptr = torch.arange(a, dtype=torch.long, device=device)
+    minor_ptr = torch.arange(b, dtype=torch.long, device=device)
+
+    mask = major_ptr[None, :] < sizes[:, None]
+    major_ptr = torch.masked_select(major_ptr[None, :], mask=mask)
+    minor_ptr = torch.masked_select(minor_ptr[:, None], mask=mask)
+    sizes = mask.long().sum(dim=0)
+
+    return major_ptr, minor_ptr, sizes
+
+
+def minor_sizes_to_indices(sizes: Tensor, device: Device = None):
+    if device is None:
+        device = sizes.device
+
+    sizes = sizes.to(device=device)
+    a, b = major_sizes_to_size(sizes=sizes)
+
+    major_ptr = torch.arange(a, dtype=torch.long, device=device)
+    minor_ptr = torch.arange(b, dtype=torch.long, device=device)
+
+    mask = major_ptr[:, None] < sizes[None, :]
+    major_ptr = torch.masked_select(major_ptr[:, None], mask=mask)
+    minor_ptr = torch.masked_select(minor_ptr[None, :], mask=mask)
+    sizes = mask.long().sum(dim=1)
+
+    return major_ptr, minor_ptr, sizes
 
 
 @torch.no_grad()
@@ -22,8 +71,14 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
 
 @torch.no_grad()
 def transpose_sizes(sizes: Tensor) -> Tensor:
-    index = torch.arange(sizes.max().item(), device=sizes.device)
+    n, _ = major_sizes_to_size(sizes=sizes)
+    index = torch.arange(n, device=sizes.device)
     return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
+
+
+@torch.no_grad()
+def major_sizes_to_size(sizes: Tensor) -> Tuple[int, int]:
+    return sizes.max().item(), sizes.size()[0]
 
 
 @torch.no_grad()
@@ -37,27 +92,26 @@ def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
 
 
 @torch.no_grad()
-def minor_sizes_to_ptr(token_sizes: Tensor,
-                       token_ptr: Optional[Tensor] = None,
-                       batch_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
-    t = token_sizes.max().item()
-    b = token_sizes.size()[0]
+def minor_sizes_to_ptr(sizes: Tensor,
+                       minor_ptr: Optional[Tensor] = None,
+                       major_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
+    t, b = major_sizes_to_size(sizes=sizes)
 
-    if token_ptr is None:
-        token_ptr = torch.arange(t, device=token_sizes.device)
-    assert token_ptr.size() == (t,)
+    if minor_ptr is None:
+        minor_ptr = torch.arange(t, device=sizes.device)
+    if major_ptr is None:
+        major_ptr = torch.arange(b, device=sizes.device)
 
-    if batch_ptr is None:
-        batch_ptr = torch.arange(b, device=token_sizes.device)
-    assert batch_ptr.size() == (b,)
+    assert minor_ptr.size() == (t,), f'{minor_ptr.size()} != ({t},)'
+    assert major_ptr.size() == (b,), f'{major_ptr.size()} != ({b},)'
 
-    tb_mask = token_ptr[:, None] < token_sizes[None, :]
+    mask = minor_ptr[:, None] < sizes[None, :]
 
-    token_ptr = torch.masked_select(token_ptr[:, None], mask=tb_mask)
-    batch_ptr = torch.masked_select(batch_ptr[None, :], mask=tb_mask)
-    sorted_batch_sizes = tb_mask.long().sum(dim=1)
+    minor_ptr = torch.masked_select(minor_ptr[:, None], mask=mask)
+    major_ptr = torch.masked_select(major_ptr[None, :], mask=mask)
+    major_sizes = mask.long().sum(dim=1)
 
-    return token_ptr, batch_ptr, sorted_batch_sizes
+    return minor_ptr, major_ptr, major_sizes
 
 
 @torch.no_grad()
@@ -74,13 +128,11 @@ def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tens
 
 
 @torch.no_grad()
-def invert_permutation(tensor: Tensor, device: Device = None, dtype: torch.dtype = None) -> Tensor:
-    if dtype is None:
-        dtype = tensor.dtype
+def invert_permutation(tensor: Tensor, device: Device = None) -> Tensor:
     if device is None:
         device = tensor.device
 
-    ret = torch.empty(tensor.size()[0], dtype=dtype, device=device)
-    index = torch.arange(tensor.size()[0], dtype=dtype, device=device)
-    ret[tensor] = index
-    return ret
+    index = torch.arange(tensor.size()[0], dtype=torch.long, device=device)
+    permutation = torch.empty_like(index)
+    permutation[tensor] = index
+    return permutation

@@ -1,15 +1,23 @@
+from functools import singledispatch
+from typing import Union
+
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.catting import CattedSequence
-from torchrua.core import major_sizes_to_ptr, accumulate_sizes
+from torchrua.core import major_sizes_to_ptr, major_sizes_to_indices, accumulate_sizes, CattedSequence
 
 __all__ = [
+    'reverse_sequence',
     'reverse_catted_indices', 'reverse_catted_sequence',
     'reverse_packed_indices', 'reverse_packed_sequence',
 ]
+
+
+@singledispatch
+def reverse_sequence(sequence: Union[CattedSequence, PackedSequence]):
+    raise TypeError(f'type {type(sequence)} is not supported')
 
 
 @torch.no_grad()
@@ -21,13 +29,14 @@ def reverse_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-    token_ptr = token_sizes[batch_ptr] - token_ptr - 1
+    token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
 
     return acc_token_sizes[batch_ptr] + token_ptr
 
 
+@reverse_sequence.register
 def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
-    indices = reverse_catted_indices(sequence.token_sizes, device=sequence.data.device)
+    indices = reverse_catted_indices(token_sizes=sequence.token_sizes, device=sequence.data.device)
 
     return CattedSequence(
         data=sequence.data[indices],
@@ -43,13 +52,13 @@ def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
-    _, token_sizes = torch.unique(batch_ptr, sorted=True, return_counts=True)
-    token_ptr = token_sizes[batch_ptr] - token_ptr - 1
+    batch_ptr, token_ptr, token_sizes = major_sizes_to_indices(sizes=batch_sizes)
+    token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
 
-    return acc_batch_sizes[token_ptr] + batch_ptr
+    return batch_ptr + acc_batch_sizes[token_ptr]
 
 
+@reverse_sequence.register
 def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
     indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes, device=sequence.data.device)
 
