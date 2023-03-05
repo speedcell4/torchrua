@@ -9,7 +9,7 @@ from torchrua.catting import cat_sequence
 from torchrua.core import minor_sizes_to_ptr, accumulate_sizes, sizes_to_sorting, CattedSequence
 
 __all__ = [
-    'PackedSequence', 'pack_sequence',
+    'pack_sequence',
     'pack_catted_indices', 'pack_catted_sequence',
     'pack_padded_indices', 'pack_padded_sequence',
 ]
@@ -31,16 +31,10 @@ def pack_catted_indices(token_sizes: Tensor, device: Device = None):
     token_sizes = token_sizes.to(device=device)
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
 
-    token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
-        sizes=token_sizes, device=device,
-    )
-    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
-        sizes=token_sizes,
-        major_ptr=sorted_indices,
-    )
-    indices = acc_token_sizes[batch_ptr] + token_ptr
+    token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(sizes=token_sizes, device=device)
+    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(sizes=token_sizes, major_ptr=sorted_indices)
 
-    return indices, batch_sizes, sorted_indices, unsorted_indices
+    return acc_token_sizes[batch_ptr] + token_ptr, batch_sizes, sorted_indices, unsorted_indices
 
 
 def pack_catted_sequence(sequence: CattedSequence, device: Device = None) -> PackedSequence:
@@ -66,19 +60,13 @@ def pack_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device =
 
     token_sizes = token_sizes.to(device=device)
 
-    sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
-        sizes=token_sizes, device=device,
-    )
-    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
-        sizes=sorted_token_sizes,
-        major_ptr=sorted_indices,
-    )
+    sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(sizes=token_sizes, device=device)
+    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(sizes=sorted_token_sizes, major_ptr=sorted_indices)
 
     if batch_first:
-        indices = batch_ptr, token_ptr
+        return (batch_ptr, token_ptr), batch_sizes, sorted_indices, unsorted_indices
     else:
-        indices = token_ptr, batch_ptr
-    return indices, batch_sizes, sorted_indices, unsorted_indices
+        return (token_ptr, batch_ptr), batch_sizes, sorted_indices, unsorted_indices
 
 
 def pack_padded_sequence(sequence: Tensor, token_sizes: Tensor,

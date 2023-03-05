@@ -7,7 +7,6 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes, transpose_sizes, CattedSequence
-from torchrua.padding import PaddedSequence
 
 __all__ = [
     'ReductionIndices', 'reduce_sequence',
@@ -190,7 +189,7 @@ def reduce_packed_sequence(op: Callable[[Tensor, Tensor], Tensor]):
 
 
 def reduce_padded_sequence(op: Callable[[Tensor, Tensor], Tensor]):
-    def wrap(sequence: PaddedSequence, batch_first: bool = True, indices: ReductionIndices = None) -> Tensor:
+    def wrap(sequence: Tuple[Tensor, Tensor], batch_first: bool = True, indices: ReductionIndices = None) -> Tensor:
         data, token_sizes = sequence
 
         if indices is None:

@@ -4,16 +4,6 @@ import torch
 from torch import Tensor
 from torch.types import Device
 
-__all__ = [
-    'CattedSequence',
-    'accumulate_sizes', 'transpose_sizes',
-    'major_sizes_to_size',
-    'major_sizes_to_ptr',
-    'minor_sizes_to_ptr',
-    'sizes_to_sorting',
-    'invert_permutation',
-]
-
 
 class CattedSequence(NamedTuple):
     data: Tensor
