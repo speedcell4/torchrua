@@ -16,7 +16,38 @@ class CattedSequence(NamedTuple):
         )
 
 
-def major_sizes_to_indices(sizes: Tensor, device: Device = None):
+@torch.no_grad()
+def major_sizes_to_ptr(sizes: Tensor):
+    minor_ptr = torch.repeat_interleave(repeats=sizes)
+
+    major_ptr = torch.repeat_interleave(accumulate_sizes(sizes), repeats=sizes)
+    major_ptr = torch.arange(major_ptr.size()[0], device=major_ptr.device) - major_ptr
+
+    return major_ptr, minor_ptr
+
+
+@torch.no_grad()
+def minor_sizes_to_ptr(sizes: Tensor, minor_ptr: Optional[Tensor] = None, major_ptr: Optional[Tensor] = None):
+    t, b = major_sizes_to_size(sizes=sizes)
+
+    if minor_ptr is None:
+        minor_ptr = torch.arange(t, device=sizes.device)
+    if major_ptr is None:
+        major_ptr = torch.arange(b, device=sizes.device)
+
+    assert minor_ptr.size() == (t,), f'{minor_ptr.size()} != ({t},)'
+    assert major_ptr.size() == (b,), f'{major_ptr.size()} != ({b},)'
+
+    mask = minor_ptr[:, None] < sizes[None, :]
+
+    minor_ptr = torch.masked_select(minor_ptr[:, None], mask=mask)
+    major_ptr = torch.masked_select(major_ptr[None, :], mask=mask)
+    major_sizes = mask.long().sum(dim=1)
+
+    return minor_ptr, major_ptr, major_sizes
+
+
+def major_masked_select(sizes: Tensor, device: Device = None):
     if device is None:
         device = sizes.device
 
@@ -34,7 +65,7 @@ def major_sizes_to_indices(sizes: Tensor, device: Device = None):
     return major_ptr, minor_ptr, sizes
 
 
-def minor_sizes_to_indices(sizes: Tensor, device: Device = None):
+def minor_masked_select(sizes: Tensor, device: Device = None):
     if device is None:
         device = sizes.device
 
@@ -69,39 +100,6 @@ def transpose_sizes(sizes: Tensor) -> Tensor:
 @torch.no_grad()
 def major_sizes_to_size(sizes: Tensor) -> Tuple[int, int]:
     return sizes.max().item(), sizes.size()[0]
-
-
-@torch.no_grad()
-def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
-    minor_ptr = torch.repeat_interleave(repeats=sizes)
-
-    major_ptr = torch.repeat_interleave(accumulate_sizes(sizes), repeats=sizes)
-    major_ptr = torch.arange(major_ptr.size()[0], device=major_ptr.device) - major_ptr
-
-    return major_ptr, minor_ptr
-
-
-@torch.no_grad()
-def minor_sizes_to_ptr(sizes: Tensor,
-                       minor_ptr: Optional[Tensor] = None,
-                       major_ptr: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor]:
-    t, b = major_sizes_to_size(sizes=sizes)
-
-    if minor_ptr is None:
-        minor_ptr = torch.arange(t, device=sizes.device)
-    if major_ptr is None:
-        major_ptr = torch.arange(b, device=sizes.device)
-
-    assert minor_ptr.size() == (t,), f'{minor_ptr.size()} != ({t},)'
-    assert major_ptr.size() == (b,), f'{major_ptr.size()} != ({b},)'
-
-    mask = minor_ptr[:, None] < sizes[None, :]
-
-    minor_ptr = torch.masked_select(minor_ptr[:, None], mask=mask)
-    major_ptr = torch.masked_select(major_ptr[None, :], mask=mask)
-    major_sizes = mask.long().sum(dim=1)
-
-    return minor_ptr, major_ptr, major_sizes
 
 
 @torch.no_grad()

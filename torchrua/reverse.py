@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import major_sizes_to_ptr, major_sizes_to_indices, accumulate_sizes, CattedSequence
+from torchrua.core import major_sizes_to_ptr, major_masked_select, accumulate_sizes, CattedSequence
 
 __all__ = [
     'reverse_sequence',
@@ -52,7 +52,7 @@ def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    batch_ptr, token_ptr, token_sizes = major_sizes_to_indices(sizes=batch_sizes)
+    batch_ptr, token_ptr, token_sizes = major_masked_select(sizes=batch_sizes)
     token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
 
     return batch_ptr + acc_batch_sizes[token_ptr]
