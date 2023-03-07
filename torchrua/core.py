@@ -1,7 +1,8 @@
-from typing import Tuple, Optional, NamedTuple
+from typing import Tuple, Optional, NamedTuple, Union
 
 import torch
 from torch import Tensor
+from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 
@@ -124,3 +125,7 @@ def invert_permutation(tensor: Tensor, device: Device = None) -> Tensor:
     permutation = torch.empty_like(index)
     permutation[tensor] = index
     return permutation
+
+
+CP = Union[CattedSequence, PackedSequence]
+TCP = Union[Tensor, CattedSequence, PackedSequence]
