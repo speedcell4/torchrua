@@ -87,7 +87,12 @@ def reduce_catted_indices(token_sizes: Tensor, device: Device = None):
 @torch.no_grad()
 def reduce_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, device: Device = None):
     if device is None:
-        device = (unsorted_indices or batch_sizes).device
+        if unsorted_indices is not None:
+            device = unsorted_indices.device
+        elif batch_sizes is not None:
+            device = batch_sizes.device
+        else:
+            raise RuntimeError('batch_sizes and unsorted_indices are all None')
 
     batch_sizes = batch_sizes.to(device=device)
     token_sizes = transpose_sizes(sizes=batch_sizes)

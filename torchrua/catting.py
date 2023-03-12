@@ -27,7 +27,12 @@ def cat_sequence(sequences: List[Tensor], dtype: torch.dtype = None, device: Dev
 @torch.no_grad()
 def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: Device = None):
     if device is None:
-        device = (unsorted_indices or batch_sizes).device
+        if unsorted_indices is not None:
+            device = unsorted_indices.device
+        elif batch_sizes is not None:
+            device = batch_sizes.device
+        else:
+            raise RuntimeError('batch_sizes and unsorted_indices are all None')
 
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)

@@ -90,7 +90,14 @@ def pad_catted_sequence(sequence: CattedSequence, batch_first: bool,
 def pad_packed_indices(batch_sizes: Tensor, sorted_indices: Tensor, unsorted_indices: Tensor,
                        batch_first: bool, device: Device = None):
     if device is None:
-        device = (unsorted_indices or sorted_indices or batch_sizes).device
+        if unsorted_indices is not None:
+            device = unsorted_indices.device
+        elif sorted_indices is not None:
+            device = sorted_indices.device
+        elif batch_sizes is not None:
+            device = batch_sizes.device
+        else:
+            raise RuntimeError('batch_sizes, sorted_indices, and unsorted_indices are all None')
 
     batch_sizes = batch_sizes.to(device=device)
     b, t = major_sizes_to_size(sizes=batch_sizes)
