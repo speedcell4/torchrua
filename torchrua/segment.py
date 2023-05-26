@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import CattedSequence, get_device, major_sizes_to_ptr, major_sizes_to_shapes
+from torchrua.core import CattedSequence, get_device, major_sizes_to_ptr, major_sizes_to_shape
 
 __all__ = [
     'segment_indices', 'segment_sequence',
@@ -32,7 +32,7 @@ def segment_catted_indices(sizes: CattedSequence, token_size: int, device: torch
     sizes = sizes.to(device=device)
     token_sizes = token_sizes.to(device=device)
 
-    t, b = major_sizes_to_shapes(sizes=token_sizes)
+    t, b = major_sizes_to_shape(sizes=token_sizes)
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
     lengths = torch.zeros((b, t + 1), dtype=torch.long, device=device)
@@ -53,7 +53,7 @@ def segment_packed_indices(sizes: PackedSequence, token_size: int, device: torch
     batch_sizes = batch_sizes.to(device=device)
     sorted_indices = sorted_indices.to(device=device)
 
-    b, t = major_sizes_to_shapes(sizes=batch_sizes)
+    b, t = major_sizes_to_shape(sizes=batch_sizes)
     batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
     batch_ptr = sorted_indices[batch_ptr]
 

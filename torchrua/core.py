@@ -37,7 +37,7 @@ def get_device(*tensors: Optional[Tensor], device: torch.device = None) -> torch
     raise RuntimeError(f'tensors are all None')
 
 
-def major_sizes_to_shapes(sizes: Tensor) -> Tuple[int, int]:
+def major_sizes_to_shape(sizes: Tensor) -> Tuple[int, int]:
     return sizes.max().item(), sizes.size()[0]
 
 
@@ -66,7 +66,7 @@ def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
 
 @torch.no_grad()
 def minor_sizes_to_ptr(sizes: Tensor, minor_ptr: Optional[Tensor] = None, major_ptr: Optional[Tensor] = None):
-    t, b = major_sizes_to_shapes(sizes=sizes)
+    t, b = major_sizes_to_shape(sizes=sizes)
 
     if minor_ptr is None:
         minor_ptr = torch.arange(t, device=sizes.device)
@@ -90,7 +90,7 @@ def major_masked_select(sizes: Tensor, device: torch.device = None):
         device = sizes.device
 
     sizes = sizes.to(device=device)
-    a, b = major_sizes_to_shapes(sizes=sizes)
+    a, b = major_sizes_to_shape(sizes=sizes)
 
     major_ptr = torch.arange(a, dtype=torch.long, device=device)
     minor_ptr = torch.arange(b, dtype=torch.long, device=device)
@@ -108,7 +108,7 @@ def minor_masked_select(sizes: Tensor, device: torch.device = None):
         device = sizes.device
 
     sizes = sizes.to(device=device)
-    a, b = major_sizes_to_shapes(sizes=sizes)
+    a, b = major_sizes_to_shape(sizes=sizes)
 
     major_ptr = torch.arange(a, dtype=torch.long, device=device)
     minor_ptr = torch.arange(b, dtype=torch.long, device=device)
@@ -129,7 +129,7 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
 
 @torch.no_grad()
 def transpose_sizes(sizes: Tensor) -> Tensor:
-    n, _ = major_sizes_to_shapes(sizes=sizes)
+    n, _ = major_sizes_to_shape(sizes=sizes)
     index = torch.arange(n, device=sizes.device)
     return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
 

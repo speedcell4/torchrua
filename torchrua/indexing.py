@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import accumulate_sizes, CattedSequence, major_sizes_to_ptr, major_sizes_to_shapes, transpose_sizes
+from torchrua.core import accumulate_sizes, CattedSequence, major_sizes_to_ptr, major_sizes_to_shape, transpose_sizes
 
 __all__ = [
     'init_sequence',
@@ -123,7 +123,7 @@ def tail_packed_indices(batch_sizes: Tensor, n: int = 1, device: Device = None) 
     if device is None:
         device = batch_sizes.device
 
-    b, _ = major_sizes_to_shapes(sizes=batch_sizes)
+    b, _ = major_sizes_to_shape(sizes=batch_sizes)
     indices = torch.arange(b * n, batch_sizes.sum().item(), device=device)
 
     return indices, batch_sizes[n:]
@@ -170,7 +170,7 @@ def head_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, de
     if unsorted_indices is not None:
         return unsorted_indices.to(device=device)
 
-    b, _ = major_sizes_to_shapes(sizes=batch_sizes)
+    b, _ = major_sizes_to_shape(sizes=batch_sizes)
     return torch.arange(b, device=device)
 
 
@@ -210,7 +210,7 @@ def last_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, de
     batch_sizes = batch_sizes.to(device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    b, _ = major_sizes_to_shapes(sizes=batch_sizes)
+    b, _ = major_sizes_to_shape(sizes=batch_sizes)
     batch_ptr = torch.arange(b, device=device)
     token_ptr = transpose_sizes(sizes=batch_sizes) - 1
     indices = batch_ptr + acc_batch_sizes[token_ptr]
