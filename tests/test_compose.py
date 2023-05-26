@@ -3,8 +3,8 @@ from hypothesis import given
 from torch import nn
 
 from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import sizes, device, TINY_BATCH_SIZE, TINY_TOKEN_SIZE, EMBEDDING_DIM
-from torchrua import cat_sequence, pack_sequence, compose_catted_sequences
+from tests.strategy import device, EMBEDDING_DIM, sizes, TINY_BATCH_SIZE, TINY_TOKEN_SIZE
+from torchrua import cat_sequence, compose_catted_sequences, pack_sequence
 
 
 @given(

@@ -2,7 +2,7 @@ import torch
 from hypothesis import given, settings
 from torch.testing import assert_close
 
-from tests.strategy import sizes, TINY_BATCH_SIZE, TINY_TOKEN_SIZE, device
+from tests.strategy import device, sizes, TINY_BATCH_SIZE, TINY_TOKEN_SIZE
 from torchrua.core import major_sizes_to_ptr
 
 
