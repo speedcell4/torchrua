@@ -10,7 +10,7 @@ help you rua tensors with `PackedSequence` and `CattedSequence`!
 
 ## Requirements
 
-- Python 3.8
+- Python 3.9
 - PyTorch 1.11
 
 ## Installation
