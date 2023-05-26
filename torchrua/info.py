@@ -12,10 +12,11 @@ Sequence = Union[CattedSequence, PackedSequence]
 
 def sequence_info(sequence: Sequence):
     if isinstance(sequence, CattedSequence):
-        return catted_sequence_info(
+        (b, t), (batch_ptr, token_ptr), token_sizes = catted_sequence_info(
             token_sizes=sequence.token_sizes,
             device=sequence.data.device,
         )
+        return (b, t), (batch_ptr, token_ptr)
 
     if isinstance(sequence, PackedSequence):
         return packed_sequence_info(
@@ -34,7 +35,7 @@ def catted_sequence_info(token_sizes: Tensor, device: torch.device = None):
     t, b = major_sizes_to_shape(sizes=token_sizes)
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
 
-    return (b, t), (batch_ptr, token_ptr)
+    return (b, t), (batch_ptr, token_ptr), token_sizes
 
 
 def packed_sequence_info(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device = None):
