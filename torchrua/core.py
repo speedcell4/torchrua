@@ -17,11 +17,10 @@ class CattedSequence(NamedTuple):
         )
 
 
-@torch.no_grad()
-def major_sizes_to_ptr(sizes: Tensor):
-    minor_ptr = torch.repeat_interleave(repeats=sizes)
+def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
+    minor_ptr = repeat_interleave(repeats=sizes)
 
-    major_ptr = torch.repeat_interleave(accumulate_sizes(sizes), repeats=sizes)
+    major_ptr = repeat_interleave(accumulate_sizes(sizes), repeats=sizes)
     major_ptr = torch.arange(major_ptr.size()[0], device=major_ptr.device) - major_ptr
 
     return major_ptr, minor_ptr
@@ -84,11 +83,18 @@ def minor_masked_select(sizes: Tensor, device: Device = None):
     return major_ptr, minor_ptr, sizes
 
 
-@torch.no_grad()
 def accumulate_sizes(sizes: Tensor) -> Tensor:
-    acc_sizes = sizes.cumsum(dim=0).roll(shifts=1, dims=0)
-    acc_sizes[0] = 0
-    return acc_sizes
+    sizes = sizes.cumsum(dim=0).roll(shifts=1, dims=0)
+    sizes[0] = 0
+    return sizes
+
+
+def repeat_interleave(tensor: Tensor = None, *, repeats: Tensor) -> Tensor:
+    if tensor is None:
+        n, *_ = repeats.size()
+        tensor = torch.arange(n, dtype=torch.long, device=repeats.device)
+
+    return torch.repeat_interleave(tensor, repeats=repeats)
 
 
 @torch.no_grad()
