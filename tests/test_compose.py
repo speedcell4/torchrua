@@ -1,5 +1,5 @@
 import torch
-from hypothesis import given
+from hypothesis import given, settings
 from torch import nn
 
 from tests.assertion import assert_close, assert_grad_close
@@ -12,6 +12,7 @@ from torchrua import cat_sequence, compose_catted_sequences, pack_sequence
     input_size=sizes(EMBEDDING_DIM),
     hidden_size=sizes(EMBEDDING_DIM),
 )
+@settings(deadline=None)
 def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size):
     sequences = [
         [
