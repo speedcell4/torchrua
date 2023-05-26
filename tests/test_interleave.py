@@ -5,11 +5,11 @@ from hypothesis import given
 from torch.testing import assert_close
 
 from tests.assertion import assert_grad_close
-from tests.strategy import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
 from torchrua.catting import cat_sequence
 from torchrua.interleave import repeat_interleave_sequence
 from torchrua.packing import pack_sequence
-from torchrua.padding import pad_packed_sequence, pad_catted_sequence
+from torchrua.padding import pad_catted_sequence, pad_packed_sequence
 
 
 @given(

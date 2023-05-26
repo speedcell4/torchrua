@@ -1,6 +1,5 @@
 import functools
-from typing import Any
-from typing import Union, Tuple, Dict
+from typing import Any, Dict, Tuple, Union
 
 import torch
 from torch import nn, Tensor

@@ -1,39 +1,172 @@
 import torch
 from hypothesis import given, strategies as st
+from torch import Tensor
+from torch.testing import assert_close
 
-from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
-from torchrua import cat_sequence, pack_sequence, cat_packed_sequence, segment_sequence
+from tests.assertion import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
+from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
+from torchrua import pad_sequence, segment_sequence
+from torchrua.catting import cat_sequence
+from torchrua.packing import pack_sequence
+from torchrua.reduce import segment_max, segment_mean, segment_min, segment_sum
+
+
+def reduce_mean(x: Tensor) -> Tensor:
+    return x.mean(dim=0)
+
+
+def reduce_sum(x: Tensor) -> Tensor:
+    return x.sum(dim=0)
+
+
+def reduce_max(x: Tensor) -> Tensor:
+    return x.max(dim=0).values
+
+
+def reduce_min(x: Tensor) -> Tensor:
+    return x.min(dim=0).values
+
+
+def raw_segment(tensor, durations, reduce_fn):
+    expected = []
+
+    for index, duration in enumerate(durations):
+        start, end, seq = 0, 0, []
+        for size in duration:
+            start, end = end, end + size
+            seq.append(reduce_fn(tensor[index][start:end]))
+
+        seq = torch.stack(seq, dim=0)
+        expected.append(seq)
+
+    return expected
 
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(EMBEDDING_DIM),
-    reduce=st.sampled_from(['mean', 'sum', 'max', 'min']),
-    batch_first=st.booleans(),
+    reduce_segment=st.sampled_from([
+        (reduce_mean, segment_mean),
+        (reduce_sum, segment_sum),
+        (reduce_max, segment_max),
+        (reduce_min, segment_min),
+    ]),
 )
-def test_segment_sequence(token_sizes, dim, reduce, batch_first):
-    chunk_sizes = [
+def test_segment_catted_sequence(token_sizes, dim, reduce_segment):
+    durations = [
         torch.unique(torch.randint(token_size, (token_size,), device=device), return_counts=True)[1]
         for token_size in token_sizes
     ]
 
-    if batch_first:
-        tensor = torch.randn((len(token_sizes), max(token_sizes), dim), device=device, requires_grad=True)
-    else:
-        tensor = torch.randn((max(token_sizes), len(token_sizes), dim), device=device, requires_grad=True)
+    tensor = torch.randn((len(token_sizes), max(token_sizes), dim), device=device, requires_grad=True)
 
-    actual = segment_sequence(
-        cat_sequence(sequences=chunk_sizes, device=device),
-        tensor=tensor, reduce=reduce, batch_first=batch_first,
+    reduce_fn, segment_fn = reduce_segment
+
+    actual, _, _ = segment_sequence(
+        tensor=tensor, reduce_fn=segment_fn, keep=False,
+        sizes=cat_sequence(sequences=durations, device=device),
     )
 
-    expected = segment_sequence(
-        pack_sequence(sequences=chunk_sizes, device=device),
-        tensor=tensor, reduce=reduce, batch_first=batch_first,
-    )
-    expected = cat_packed_sequence(expected, device=device)
+    expected = cat_sequence(raw_segment(tensor, durations, reduce_fn))
 
-    assert_close(actual=actual.data, expected=expected.data)
-    assert_close(actual=actual.token_sizes, expected=expected.token_sizes)
+    assert_catted_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=tensor)
+
+
+@given(
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
+    reduce_segment=st.sampled_from([
+        (reduce_mean, segment_mean),
+        (reduce_sum, segment_sum),
+        (reduce_max, segment_max),
+        (reduce_min, segment_min),
+    ]),
+)
+def test_segment_packed_sequence(token_sizes, dim, reduce_segment):
+    durations = [
+        torch.unique(torch.randint(token_size, (token_size,), device=device), return_counts=True)[1]
+        for token_size in token_sizes
+    ]
+
+    tensor = torch.randn((len(token_sizes), max(token_sizes), dim), device=device, requires_grad=True)
+
+    reduce_fn, segment_fn = reduce_segment
+
+    actual, _, _ = segment_sequence(
+        tensor=tensor, reduce_fn=segment_fn, keep=False,
+        sizes=pack_sequence(sequences=durations, device=device),
+    )
+
+    expected = pack_sequence(raw_segment(tensor, durations, reduce_fn))
+
+    assert_packed_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=tensor)
+
+
+@given(
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
+    reduce_segment=st.sampled_from([
+        (reduce_mean, segment_mean),
+        (reduce_sum, segment_sum),
+        (reduce_max, segment_max),
+        (reduce_min, segment_min),
+    ]),
+)
+def test_segment_catted_sequence_and_keep(token_sizes, dim, reduce_segment):
+    durations = [
+        torch.unique(torch.randint(token_size, (token_size,), device=device), return_counts=True)[1]
+        for token_size in token_sizes
+    ]
+
+    tensor = torch.randn((len(token_sizes), max(token_sizes), dim), device=device, requires_grad=True)
+
+    reduce_fn, segment_fn = reduce_segment
+
+    actual, mask, _ = segment_sequence(
+        tensor=tensor, reduce_fn=segment_fn, keep=True,
+        sizes=cat_sequence(sequences=durations, device=device),
+    )
+
+    expected, _ = pad_sequence(raw_segment(tensor, durations, reduce_fn), batch_first=True)
+
+    assert not torch.isinf(actual).any().item()
+    assert not torch.isnan(actual).any().item()
+
+    assert_close(actual=actual[mask], expected=expected[mask])
+    assert_grad_close(actual=actual, expected=expected, inputs=tensor)
+
+
+@given(
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(EMBEDDING_DIM),
+    reduce_segment=st.sampled_from([
+        (reduce_mean, segment_mean),
+        (reduce_sum, segment_sum),
+        (reduce_max, segment_max),
+        (reduce_min, segment_min),
+    ]),
+)
+def test_segment_packed_sequence_and_keep(token_sizes, dim, reduce_segment):
+    durations = [
+        torch.unique(torch.randint(token_size, (token_size,), device=device), return_counts=True)[1]
+        for token_size in token_sizes
+    ]
+
+    tensor = torch.randn((len(token_sizes), max(token_sizes), dim), device=device, requires_grad=True)
+
+    reduce_fn, segment_fn = reduce_segment
+
+    actual, mask, _ = segment_sequence(
+        tensor=tensor, reduce_fn=segment_fn, keep=True,
+        sizes=pack_sequence(sequences=durations, device=device),
+    )
+
+    expected, _ = pad_sequence(raw_segment(tensor, durations, reduce_fn), batch_first=True)
+
+    assert not torch.isinf(actual).any().item()
+    assert not torch.isnan(actual).any().item()
+
+    assert_close(actual=actual[mask], expected=expected[mask])
+    assert_grad_close(actual=actual, expected=expected, inputs=tensor)

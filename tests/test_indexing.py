@@ -1,12 +1,11 @@
 import torch
 from hypothesis import given, strategies as st
 
-from tests.assertion import assert_catted_sequence_close, assert_packed_sequence_close, assert_close, assert_grad_close
-from tests.strategy import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.assertion import assert_catted_sequence_close, assert_close, assert_grad_close, assert_packed_sequence_close
+from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
 from torchrua.catting import cat_sequence
-from torchrua.indexing import head_catted_sequence, last_catted_sequence
-from torchrua.indexing import head_packed_sequence, last_packed_sequence
-from torchrua.indexing import init_sequence, tail_sequence
+from torchrua.indexing import head_catted_sequence, head_packed_sequence, init_sequence, last_catted_sequence, \
+    last_packed_sequence, tail_sequence
 from torchrua.packing import pack_sequence
 
 

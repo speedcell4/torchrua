@@ -1,11 +1,10 @@
 import torch
 from hypothesis import given, strategies as st
-from torch.nn.utils.rnn import pack_sequence as excepted_pack_sequence
-from torch.nn.utils.rnn import pad_sequence as excepted_pad_sequence
+from torch.nn.utils.rnn import pack_sequence as excepted_pack_sequence, pad_sequence as excepted_pad_sequence
 
 from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
-from torchrua import pad_sequence, cat_sequence
+from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
+from torchrua import cat_sequence, pad_sequence
 
 
 @given(

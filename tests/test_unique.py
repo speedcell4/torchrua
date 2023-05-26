@@ -2,7 +2,7 @@ import torch
 from hypothesis import given
 
 from tests.assertion import assert_close
-from tests.strategy import device, sizes, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
+from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
 from torchrua import cat_sequence, pack_sequence, unique_sequence
 
 

@@ -2,10 +2,9 @@ import torch
 from hypothesis import given, strategies as st
 
 from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
-from torchrua import cat_sequence
-from torchrua import scatter_max, scatter_min, scatter_sum, scatter_mean, scatter_prod, scatter_logsumexp
-from torchrua import segment_max, segment_min, segment_sum, segment_mean, segment_prod, segment_logsumexp
+from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
+from torchrua import cat_sequence, scatter_logsumexp, scatter_max, scatter_mean, scatter_min, scatter_prod, scatter_sum, \
+    segment_logsumexp, segment_max, segment_mean, segment_min, segment_prod, segment_sum
 
 
 @given(
