@@ -1,4 +1,3 @@
-from functools import singledispatch
 from typing import Union
 
 import torch
@@ -9,18 +8,28 @@ from torch.types import Device
 from torchrua.core import major_sizes_to_ptr, accumulate_sizes, CattedSequence, major_masked_select
 
 __all__ = [
-    'roll_sequence',
-    'roll_catted_indices', 'roll_catted_sequence',
-    'roll_packed_indices', 'roll_packed_sequence',
+    'roll_sequence', 'roll_indices',
+    'roll_catted_indices',
+    'roll_packed_indices',
 ]
 
 
-@singledispatch
-def roll_sequence(sequence: Union[CattedSequence, PackedSequence], shifts: int):
+def roll_indices(sequence: Union[CattedSequence, PackedSequence], shifts: int):
+    if isinstance(sequence, CattedSequence):
+        return roll_catted_indices(
+            token_sizes=sequence.token_sizes,
+            shifts=shifts, device=sequence.data.device,
+        )
+
+    if isinstance(sequence, PackedSequence):
+        return roll_packed_indices(
+            batch_sizes=sequence.batch_sizes,
+            shifts=shifts, device=sequence.data.device,
+        )
+
     raise TypeError(f'type {type(sequence)} is not supported')
 
 
-@torch.no_grad()
 def roll_catted_indices(token_sizes: Tensor, shifts: int, device: Device = None) -> Tensor:
     if device is None:
         device = token_sizes.device
@@ -35,17 +44,6 @@ def roll_catted_indices(token_sizes: Tensor, shifts: int, device: Device = None)
     return acc_token_sizes[batch_ptr] + token_ptr
 
 
-@roll_sequence.register
-def roll_catted_sequence(sequence: CattedSequence, shifts: int) -> CattedSequence:
-    indices = roll_catted_indices(token_sizes=sequence.token_sizes, shifts=shifts, device=sequence.data.device)
-
-    return CattedSequence(
-        data=sequence.data[indices],
-        token_sizes=sequence.token_sizes,
-    )
-
-
-@torch.no_grad()
 def roll_packed_indices(batch_sizes: Tensor, shifts: int, device: Device = None) -> Tensor:
     if device is None:
         device = batch_sizes.device
@@ -60,13 +58,7 @@ def roll_packed_indices(batch_sizes: Tensor, shifts: int, device: Device = None)
     return batch_ptr + acc_batch_sizes[token_ptr]
 
 
-@roll_sequence.register
-def roll_packed_sequence(sequence: PackedSequence, shifts: int) -> PackedSequence:
-    indices = roll_packed_indices(batch_sizes=sequence.batch_sizes, shifts=shifts, device=sequence.data.device)
+def roll_sequence(sequence: Union[CattedSequence, PackedSequence], shifts: int):
+    indices = roll_indices(sequence=sequence, shifts=shifts)
 
-    return PackedSequence(
-        data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes.detach().cpu(),
-        sorted_indices=sequence.sorted_indices,
-        unsorted_indices=sequence.unsorted_indices,
-    )
+    return sequence._replace(data=sequence.data[indices])
