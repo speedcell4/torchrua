@@ -4,7 +4,7 @@ from typing import Union
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import major_sizes_to_size, major_sizes_to_ptr, CattedSequence
+from torchrua.core import major_sizes_to_shapes, major_sizes_to_ptr, CattedSequence
 
 __all__ = [
     'sequence_ptr', 'catted_sequence_ptr', 'packed_sequence_ptr',
@@ -42,13 +42,13 @@ def sequence_shape(sequence: Union[CattedSequence, PackedSequence], batch_first:
 
 @sequence_shape.register
 def catted_sequence_shape(sequence: CattedSequence, batch_first: bool = True):
-    t, b = major_sizes_to_size(sizes=sequence.token_sizes)
+    t, b = major_sizes_to_shapes(sizes=sequence.token_sizes)
     n, *_ = sequence.data.size()
     return (n, b, t) if batch_first else (n, t, b)
 
 
 @sequence_shape.register
 def packed_sequence_shape(sequence: PackedSequence, batch_first: bool = True):
-    b, t = major_sizes_to_size(sizes=sequence.batch_sizes)
+    b, t = major_sizes_to_shapes(sizes=sequence.batch_sizes)
     n, *_ = sequence.data.size()
     return (n, b, t) if batch_first else (n, t, b)

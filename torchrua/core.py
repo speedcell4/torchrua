@@ -1,8 +1,7 @@
-from typing import Tuple, Optional, NamedTuple, Union
+from typing import Tuple, Optional, NamedTuple
 
 import torch
 from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
 
 
 class CattedSequence(NamedTuple):
@@ -16,18 +15,58 @@ class CattedSequence(NamedTuple):
         )
 
 
+def get_dtype(*tensors: Optional[Tensor], dtype: torch.dtype = None) -> torch.dtype:
+    if dtype is not None:
+        return dtype
+
+    for tensor in tensors:
+        if tensor is not None:
+            return tensor.dtype
+
+    raise RuntimeError(f'tensors are all None')
+
+
+def get_device(*tensors: Optional[Tensor], device: torch.device = None) -> torch.device:
+    if device is not None:
+        return device
+
+    for tensor in tensors:
+        if tensor is not None:
+            return tensor.device
+
+    raise RuntimeError(f'tensors are all None')
+
+
+def major_sizes_to_shapes(sizes: Tensor) -> Tuple[int, int]:
+    return sizes.max().item(), sizes.size()[0]
+
+
+def arange_like(tensor: Tensor, dtype: torch.dtype = torch.long, device: torch.device = None) -> Tensor:
+    device = get_device(tensor, device=device)
+    size, *_ = tensor.size()
+
+    return torch.arange(size, dtype=dtype, device=device)
+
+
+def repeat_interleave(tensor: Tensor = None, *, repeats: Tensor) -> Tensor:
+    if tensor is None:
+        tensor = arange_like(repeats, dtype=torch.long)
+
+    return torch.repeat_interleave(tensor, repeats=repeats)
+
+
 def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
     minor_ptr = repeat_interleave(repeats=sizes)
 
     major_ptr = repeat_interleave(accumulate_sizes(sizes=sizes), repeats=sizes)
-    major_ptr = torch.arange(major_ptr.size()[0], device=major_ptr.device) - major_ptr
+    major_ptr = arange_like(major_ptr) - major_ptr
 
     return major_ptr, minor_ptr
 
 
 @torch.no_grad()
 def minor_sizes_to_ptr(sizes: Tensor, minor_ptr: Optional[Tensor] = None, major_ptr: Optional[Tensor] = None):
-    t, b = major_sizes_to_size(sizes=sizes)
+    t, b = major_sizes_to_shapes(sizes=sizes)
 
     if minor_ptr is None:
         minor_ptr = torch.arange(t, device=sizes.device)
@@ -51,7 +90,7 @@ def major_masked_select(sizes: Tensor, device: torch.device = None):
         device = sizes.device
 
     sizes = sizes.to(device=device)
-    a, b = major_sizes_to_size(sizes=sizes)
+    a, b = major_sizes_to_shapes(sizes=sizes)
 
     major_ptr = torch.arange(a, dtype=torch.long, device=device)
     minor_ptr = torch.arange(b, dtype=torch.long, device=device)
@@ -69,7 +108,7 @@ def minor_masked_select(sizes: Tensor, device: torch.device = None):
         device = sizes.device
 
     sizes = sizes.to(device=device)
-    a, b = major_sizes_to_size(sizes=sizes)
+    a, b = major_sizes_to_shapes(sizes=sizes)
 
     major_ptr = torch.arange(a, dtype=torch.long, device=device)
     minor_ptr = torch.arange(b, dtype=torch.long, device=device)
@@ -88,24 +127,11 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
     return sizes
 
 
-def repeat_interleave(tensor: Tensor = None, *, repeats: Tensor) -> Tensor:
-    if tensor is None:
-        n, *_ = repeats.size()
-        tensor = torch.arange(n, dtype=torch.long, device=repeats.device)
-
-    return torch.repeat_interleave(tensor, repeats=repeats)
-
-
 @torch.no_grad()
 def transpose_sizes(sizes: Tensor) -> Tensor:
-    n, _ = major_sizes_to_size(sizes=sizes)
+    n, _ = major_sizes_to_shapes(sizes=sizes)
     index = torch.arange(n, device=sizes.device)
     return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
-
-
-@torch.no_grad()
-def major_sizes_to_size(sizes: Tensor) -> Tuple[int, int]:
-    return sizes.max().item(), sizes.size()[0]
 
 
 @torch.no_grad()
@@ -121,16 +147,8 @@ def sizes_to_sorting(sizes: Tensor, device: torch.device = None) -> Tuple[Tensor
     return sizes, sorted_indices, unsorted_indices
 
 
-@torch.no_grad()
-def invert_permutation(tensor: Tensor, device: torch.device = None) -> Tensor:
-    if device is None:
-        device = tensor.device
-
-    index = torch.arange(tensor.size()[0], dtype=torch.long, device=device)
+def invert_permutation(tensor: Tensor) -> Tensor:
+    index = arange_like(tensor)
     permutation = torch.empty_like(index)
     permutation[tensor] = index
     return permutation
-
-
-CP = Union[CattedSequence, PackedSequence]
-TCP = Union[Tensor, CattedSequence, PackedSequence]

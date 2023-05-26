@@ -24,7 +24,7 @@ def compose_catted_indices(token_sizes: List[Tensor], device: Device = None):
     indices0, batch_sizes, _, unsorted_indices = pack_catted_indices(token_sizes=token_sizes, device=device)
     indices1, _, _, _ = pack_catted_indices(token_sizes=sizes, device=device)
     unsorted_indices = unsorted_indices[indices1]
-    sorted_indices = invert_permutation(unsorted_indices, device=device)
+    sorted_indices = invert_permutation(unsorted_indices)
 
     return indices0, batch_sizes, sorted_indices, unsorted_indices
 
