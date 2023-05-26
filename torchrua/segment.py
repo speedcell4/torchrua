@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Union
 
 import torch
 from torch import Tensor
@@ -7,8 +7,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torchrua.core import CattedSequence, get_device, major_sizes_to_ptr, major_sizes_to_shapes
 
 __all__ = [
-    'segment_sequence',
-    'segment_indices',
+    'segment_indices', 'segment_sequence',
     'segment_catted_indices',
     'segment_packed_indices',
 ]
@@ -68,18 +67,14 @@ def segment_packed_indices(sizes: PackedSequence, token_size: int, device: torch
     return lengths.view(-1), mask, (b, t), (batch_ptr, token_ptr)
 
 
-def segment_sequence(tensor: Tensor, sizes: Sequence, reduce: Literal['sum', 'max', 'min', 'mean'], keep: bool):
+def segment_sequence(tensor: Tensor, sizes: Sequence, reduce_fn, keep: bool):
     _, t, *_ = tensor.size()
     tensor = tensor.flatten(start_dim=0, end_dim=1)
 
     lengths, mask, (b, t), (batch_ptr, token_ptr) = segment_indices(sizes, token_size=t, device=tensor.device)
-    data = torch.segment_reduce(tensor, reduce=reduce, lengths=lengths, unsafe=True)
+    data = reduce_fn(tensor, lengths)
 
     if keep:
-        return data.view((b, t + 1, *data.size()[1:]))[:, :-1]
+        return data.view((b, t + 1, *data.size()[1:]))[:, :-1], mask, (batch_ptr, token_ptr)
 
-    return sizes._replace(data=data[batch_ptr * (t + 1) + token_ptr])
-
-
-if __name__ == '__main__':
-    print(torch.segment_reduce(torch.randn((10,)), lengths=torch.tensor([0, 10]), reduce='mean'))
+    return sizes._replace(data=data[batch_ptr * (t + 1) + token_ptr]), mask, (batch_ptr, token_ptr)
