@@ -1,12 +1,10 @@
-from functools import singledispatch
 from typing import Union
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device
 
-from torchrua.core import accumulate_sizes, CattedSequence, major_sizes_to_ptr, major_sizes_to_shapes
+from torchrua.core import accumulate_sizes, CattedSequence, get_device, major_sizes_to_ptr, major_sizes_to_shapes
 
 __all__ = [
     'segment_sequence',
@@ -15,19 +13,23 @@ __all__ = [
     'segment_packed_indices',
 ]
 
+Sequence = Union[CattedSequence, PackedSequence]
 
-@singledispatch
-def segment_indices(sizes: Union[CattedSequence, PackedSequence], token_size: int, device: Device = None):
+
+def segment_indices(sizes: Sequence, token_size: int, device: torch.device = None):
+    if isinstance(sizes, CattedSequence):
+        return segment_catted_indices(sizes=sizes, token_size=token_size, device=device)
+
+    if isinstance(sizes, PackedSequence):
+        return segment_packed_indices(sizes=sizes, token_size=token_size, device=device)
+
     raise TypeError(f'type {type(sizes)} is not supported')
 
 
-@segment_indices.register
-def segment_catted_indices(sizes: CattedSequence, token_size: int, device: Device = None):
-    if device is None:
-        device = sizes.data.device
+def segment_catted_indices(sizes: CattedSequence, token_size: int, device: torch.device = None):
+    device = get_device(sizes.data, device=device)
 
     sizes, token_sizes = sizes
-
     sizes = sizes.to(device=device)
     token_sizes = token_sizes.to(device=device)
 
@@ -46,13 +48,10 @@ def segment_catted_indices(sizes: CattedSequence, token_size: int, device: Devic
     return torch.masked_select(out, mask), acc_token_sizes[batch_ptr] + token_ptr
 
 
-@segment_indices.register
-def segment_packed_indices(sizes: PackedSequence, token_size: int, device: Device = None):
-    if device is None:
-        device = sizes.data.device
+def segment_packed_indices(sizes: PackedSequence, token_size: int, device: torch.device = None):
+    device = get_device(sizes.data, device=device)
 
     sizes, batch_sizes, sorted_indices, _ = sizes
-
     sizes = sizes.to(device=device)
     batch_sizes = batch_sizes.to(device=device)
     sorted_indices = sorted_indices.to(device=device)
@@ -73,13 +72,9 @@ def segment_packed_indices(sizes: PackedSequence, token_size: int, device: Devic
     return torch.masked_select(out, mask), acc_token_sizes[batch_ptr] + token_ptr
 
 
-def segment_sequence(sizes: Union[CattedSequence, PackedSequence], tensor: Tensor, reduce: str, batch_first: bool):
-    if batch_first:
-        _, token_size, *_ = tensor.size()
-        tensor = tensor.flatten(start_dim=0, end_dim=2)
-    else:
-        token_size, _, *_ = tensor.size()
-        tensor = tensor.transpose(0, 1).flatten(start_dim=0, end_dim=2)
+def segment_sequence(tensor: Tensor, sizes: Sequence, reduce: str):
+    _, token_size, *_ = tensor.size()
+    tensor = tensor.flatten(start_dim=0, end_dim=2)
 
     token_sizes, indices = segment_indices(sizes, token_size=token_size, device=tensor.device)
     data = torch.segment_reduce(tensor, reduce=reduce, lengths=token_sizes, unsafe=True)
