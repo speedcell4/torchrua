@@ -40,9 +40,6 @@ def segment_catted_indices(sizes: CattedSequence, token_size: int, device: torch
     lengths[batch_ptr, token_ptr] = sizes
     lengths[:, -1] = token_size - lengths.sum(dim=-1)
 
-    mask = torch.zeros((b, t), dtype=torch.bool, device=device)
-    mask[batch_ptr, token_ptr] = True
-
     return lengths.view(-1), (b, t), (batch_ptr, token_ptr)
 
 
@@ -61,9 +58,6 @@ def segment_packed_indices(sizes: PackedSequence, token_size: int, device: torch
     lengths = torch.zeros((b, t + 1), dtype=torch.long, device=device)
     lengths[batch_ptr, token_ptr] = sizes
     lengths[:, -1] = token_size - lengths.sum(dim=-1)
-
-    mask = torch.zeros((b, t), dtype=torch.bool, device=device)
-    mask[batch_ptr, token_ptr] = True
 
     return lengths.view(-1), (b, t), (batch_ptr, token_ptr)
 
