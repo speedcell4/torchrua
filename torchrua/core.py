@@ -3,24 +3,23 @@ from typing import Tuple, Optional, NamedTuple, Union
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device
 
 
 class CattedSequence(NamedTuple):
     data: Tensor
     token_sizes: Tensor
 
-    def to(self, dtype: torch.dtype = None, device: Device = None, *args, **kwargs) -> 'CattedSequence':
+    def to(self, dtype: torch.dtype = None, device: torch.device = None, **kwargs) -> 'CattedSequence':
         return CattedSequence(
-            data=self.data.to(device=device, dtype=dtype, *args, **kwargs),
-            token_sizes=self.token_sizes.to(device=device, dtype=dtype, *args, **kwargs),
+            data=self.data.to(dtype=dtype, device=device, **kwargs),
+            token_sizes=self.token_sizes.to(dtype=dtype, device=device, **kwargs),
         )
 
 
 def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
     minor_ptr = repeat_interleave(repeats=sizes)
 
-    major_ptr = repeat_interleave(accumulate_sizes(sizes), repeats=sizes)
+    major_ptr = repeat_interleave(accumulate_sizes(sizes=sizes), repeats=sizes)
     major_ptr = torch.arange(major_ptr.size()[0], device=major_ptr.device) - major_ptr
 
     return major_ptr, minor_ptr
@@ -47,7 +46,7 @@ def minor_sizes_to_ptr(sizes: Tensor, minor_ptr: Optional[Tensor] = None, major_
     return minor_ptr, major_ptr, major_sizes
 
 
-def major_masked_select(sizes: Tensor, device: Device = None):
+def major_masked_select(sizes: Tensor, device: torch.device = None):
     if device is None:
         device = sizes.device
 
@@ -65,7 +64,7 @@ def major_masked_select(sizes: Tensor, device: Device = None):
     return major_ptr, minor_ptr, sizes
 
 
-def minor_masked_select(sizes: Tensor, device: Device = None):
+def minor_masked_select(sizes: Tensor, device: torch.device = None):
     if device is None:
         device = sizes.device
 
@@ -110,7 +109,7 @@ def major_sizes_to_size(sizes: Tensor) -> Tuple[int, int]:
 
 
 @torch.no_grad()
-def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tensor, Tensor]:
+def sizes_to_sorting(sizes: Tensor, device: torch.device = None) -> Tuple[Tensor, Tensor, Tensor]:
     if device is None:
         device = sizes.device
 
@@ -123,7 +122,7 @@ def sizes_to_sorting(sizes: Tensor, device: Device = None) -> Tuple[Tensor, Tens
 
 
 @torch.no_grad()
-def invert_permutation(tensor: Tensor, device: Device = None) -> Tensor:
+def invert_permutation(tensor: Tensor, device: torch.device = None) -> Tensor:
     if device is None:
         device = tensor.device
 
