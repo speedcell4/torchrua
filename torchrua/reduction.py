@@ -1,4 +1,4 @@
-from typing import Union, NamedTuple, Callable, Tuple
+from typing import Callable, NamedTuple, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -6,7 +6,7 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import major_sizes_to_ptr, accumulate_sizes, transpose_sizes, CattedSequence
+from torchrua.core import accumulate_sizes, CattedSequence, major_sizes_to_ptr, transpose_sizes
 
 __all__ = [
     'ReductionIndices', 'reduce_sequence',

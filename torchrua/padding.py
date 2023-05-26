@@ -1,5 +1,5 @@
 from functools import singledispatch
-from typing import Tuple, List, Union
+from typing import List, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device, Number
 
 from torchrua.catting import cat_sequence
-from torchrua.core import major_sizes_to_ptr, major_sizes_to_shapes, CattedSequence, major_masked_select
+from torchrua.core import CattedSequence, major_masked_select, major_sizes_to_ptr, major_sizes_to_shapes
 
 __all__ = [
     'pad_sequence', 'pad_indices',

@@ -4,7 +4,7 @@ from typing import Union
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import major_sizes_to_shapes, major_sizes_to_ptr, CattedSequence
+from torchrua.core import CattedSequence, major_sizes_to_ptr, major_sizes_to_shapes
 
 __all__ = [
     'sequence_ptr', 'catted_sequence_ptr', 'packed_sequence_ptr',

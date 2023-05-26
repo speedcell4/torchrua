@@ -6,8 +6,7 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import CattedSequence, major_sizes_to_shapes
-from torchrua.core import major_sizes_to_ptr, transpose_sizes, accumulate_sizes
+from torchrua.core import accumulate_sizes, CattedSequence, major_sizes_to_ptr, major_sizes_to_shapes, transpose_sizes
 
 __all__ = [
     'init_sequence',
