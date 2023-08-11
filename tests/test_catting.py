@@ -1,6 +1,5 @@
 import torch
 from hypothesis import given
-from hypothesis import strategies as st
 from torch.nn.utils.rnn import pack_sequence as torch_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as torch_pad_sequence
 from torchnyan import BATCH_SIZE
@@ -36,9 +35,8 @@ def test_cat_packed_sequence(token_sizes, dim):
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    batch_first=st.booleans(),
 )
-def test_cat_padded_sequence(token_sizes, dim, batch_first):
+def test_cat_padded_sequence(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -46,9 +44,8 @@ def test_cat_padded_sequence(token_sizes, dim, batch_first):
 
     actual = cat_sequence(inputs, device=device)
     expected = cat_padded_sequence(
-        sequence=torch_pad_sequence(inputs, batch_first=batch_first),
+        sequence=torch_pad_sequence(inputs, batch_first=True),
         token_sizes=torch.tensor(token_sizes, device=device),
-        batch_first=batch_first,
         device=device,
     )
 

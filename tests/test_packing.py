@@ -58,18 +58,16 @@ def test_pack_catted_sequence(data, token_sizes, dim):
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    batch_first=st.booleans(),
 )
-def test_pack_padded_sequence(data, token_sizes, dim, batch_first):
+def test_pack_padded_sequence(data, token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
     actual = pack_padded_sequence(
-        excepted_pad_sequence(inputs, batch_first=batch_first),
+        excepted_pad_sequence(inputs, batch_first=True),
         torch.tensor(token_sizes, device=device),
-        batch_first=batch_first,
     )
 
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)

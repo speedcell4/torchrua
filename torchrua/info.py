@@ -12,22 +12,21 @@ from torchrua.core import major_sizes_to_shape
 Sequence = Union[CattedSequence, PackedSequence]
 
 __all__ = [
-    'sequence_info',
-    'token_sizes_info',
-    'batch_sizes_info',
+    'sequence_major_ptr2', 'batch_sizes_to_major_ptr2', 'token_sizes_to_major_ptr2',
+    'sequence_major_ptr3', 'batch_sizes_to_major_ptr3', 'token_sizes_to_major_ptr3',
+    'batch_sizes_to_minor_ptr3', 'token_sizes_to_minor_ptr3',
 ]
 
 
-def sequence_info(sequence: Sequence):
+def sequence_major_ptr2(sequence: Sequence):
     if isinstance(sequence, CattedSequence):
-        (b, t), (batch_ptr, token_ptr) = token_sizes_info(
+        return token_sizes_to_major_ptr2(
             token_sizes=sequence.token_sizes,
             device=sequence.data.device,
         )
-        return (b, t), (batch_ptr, token_ptr)
 
     if isinstance(sequence, PackedSequence):
-        return batch_sizes_info(
+        return batch_sizes_to_major_ptr2(
             batch_sizes=sequence.batch_sizes,
             sorted_indices=sequence.sorted_indices,
             device=sequence.data.device,
@@ -36,7 +35,7 @@ def sequence_info(sequence: Sequence):
     raise TypeError(f'{type(sequence)} is not supported')
 
 
-def token_sizes_info(token_sizes: Tensor, device: torch.device = None):
+def token_sizes_to_major_ptr2(token_sizes: Tensor, device: torch.device = None):
     token_sizes, device = broadcast_devices(token_sizes, device=device)
 
     t, b = major_sizes_to_shape(sizes=token_sizes)
@@ -45,11 +44,88 @@ def token_sizes_info(token_sizes: Tensor, device: torch.device = None):
     return (b, t), (batch_ptr, token_ptr)
 
 
-def batch_sizes_info(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device = None):
+def batch_sizes_to_major_ptr2(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device = None):
     sorted_indices, batch_sizes, device = broadcast_devices(sorted_indices, batch_sizes, device=device)
 
-    b, t = major_sizes_to_shape(sizes=batch_sizes)
-    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
-    batch_ptr = sorted_indices[batch_ptr]
+    (t, b), (token_ptr, batch_ptr) = token_sizes_to_major_ptr2(batch_sizes, device=device)
+    return (b, t), (sorted_indices[batch_ptr], token_ptr)
 
-    return (b, t), (batch_ptr, token_ptr)
+
+def sequence_major_ptr3(sequence: Sequence):
+    if isinstance(sequence, CattedSequence):
+        return token_sizes_to_major_ptr3(
+            token_sizes=sequence.token_sizes,
+            device=sequence.data.device,
+        )
+
+    if isinstance(sequence, PackedSequence):
+        return batch_sizes_to_major_ptr3(
+            batch_sizes=sequence.batch_sizes,
+            sorted_indices=sequence.sorted_indices,
+            unsorted_indices=sequence.unsorted_indices,
+            device=sequence.data.device,
+        )
+
+    raise TypeError(f'{type(sequence)} is not supported')
+
+
+def token_sizes_to_major_ptr3(token_sizes: Tensor, device: torch.device = None):
+    token_sizes, device = broadcast_devices(token_sizes, device=device)
+
+    t, b = major_sizes_to_shape(sizes=token_sizes)
+
+    token_ptr = torch.arange(t, dtype=torch.long, device=device)
+    batch_ptr = torch.arange(b, dtype=torch.long, device=device)
+
+    mask = token_ptr[None, :] < token_sizes[:, None]
+    token_ptr = torch.masked_select(token_ptr[None, :], mask=mask)
+    batch_ptr = torch.masked_select(batch_ptr[:, None], mask=mask)
+    batch_sizes = mask.long().sum(dim=0)
+
+    return (b, t), (batch_ptr, token_ptr), (batch_sizes, token_sizes)
+
+
+def batch_sizes_to_major_ptr3(batch_sizes: Tensor, sorted_indices: Tensor,
+                              unsorted_indices: Tensor, device: torch.device = None):
+    sorted_indices, unsorted_indices, batch_sizes, device = broadcast_devices(
+        sorted_indices, unsorted_indices, batch_sizes, device=device,
+    )
+
+    (t, b), (token_ptr, batch_ptr), (token_sizes, batch_sizes) = token_sizes_to_major_ptr3(batch_sizes, device=device)
+    return (b, t), (sorted_indices[batch_ptr], token_ptr), (batch_sizes, token_sizes[unsorted_indices])
+
+
+def token_sizes_to_minor_ptr3(token_sizes: Tensor, batch_ptr: Tensor = None):
+    t, b = major_sizes_to_shape(sizes=token_sizes)
+
+    if batch_ptr is None:
+        batch_ptr = torch.arange(b, device=token_sizes.device)
+    assert batch_ptr.size() == (b,), f'{batch_ptr.size()} != ({b},)'
+
+    token_ptr = torch.arange(t, device=token_sizes.device)
+
+    mask = token_ptr[:, None] < token_sizes[None, :]
+
+    token_ptr = torch.masked_select(token_ptr[:, None], mask=mask)
+    batch_ptr = torch.masked_select(batch_ptr[None, :], mask=mask)
+    batch_sizes = mask.long().sum(dim=1)
+
+    return (b, t), (batch_ptr, token_ptr), batch_sizes
+
+
+def batch_sizes_to_minor_ptr3(batch_sizes: Tensor, batch_ptr: Tensor = None):
+    b, t = major_sizes_to_shape(sizes=batch_sizes)
+
+    if batch_ptr is None:
+        batch_ptr = torch.arange(b, device=batch_sizes.device)
+    assert batch_ptr.size() == (b,), f'{batch_ptr.size()} != ({b},)'
+
+    token_ptr = torch.arange(t, device=batch_sizes.device)
+
+    mask = batch_ptr[:, None] < batch_sizes[None, :]
+
+    batch_ptr = torch.masked_select(batch_ptr[:, None], mask=mask)
+    token_ptr = torch.masked_select(token_ptr[None, :], mask=mask)
+    token_sizes = mask.long().sum(dim=1)
+
+    return (b, t), (batch_ptr, token_ptr), token_sizes
