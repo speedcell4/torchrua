@@ -12,22 +12,19 @@ from torchrua.core import major_sizes_to_shape
 Sequence = Union[CattedSequence, PackedSequence]
 
 __all__ = [
-    'sequence_info',
-    'token_sizes_info',
-    'batch_sizes_info',
+    'sequence_ptr2', 'batch_sizes_ptr2', 'token_sizes_ptr2',
 ]
 
 
-def sequence_info(sequence: Sequence):
+def sequence_ptr2(sequence: Sequence):
     if isinstance(sequence, CattedSequence):
-        (b, t), (batch_ptr, token_ptr) = token_sizes_info(
+        return token_sizes_ptr2(
             token_sizes=sequence.token_sizes,
             device=sequence.data.device,
         )
-        return (b, t), (batch_ptr, token_ptr)
 
     if isinstance(sequence, PackedSequence):
-        return batch_sizes_info(
+        return batch_sizes_ptr2(
             batch_sizes=sequence.batch_sizes,
             sorted_indices=sequence.sorted_indices,
             device=sequence.data.device,
@@ -36,7 +33,7 @@ def sequence_info(sequence: Sequence):
     raise TypeError(f'{type(sequence)} is not supported')
 
 
-def token_sizes_info(token_sizes: Tensor, device: torch.device = None):
+def token_sizes_ptr2(token_sizes: Tensor, device: torch.device = None):
     token_sizes, device = broadcast_devices(token_sizes, device=device)
 
     t, b = major_sizes_to_shape(sizes=token_sizes)
@@ -45,7 +42,7 @@ def token_sizes_info(token_sizes: Tensor, device: torch.device = None):
     return (b, t), (batch_ptr, token_ptr)
 
 
-def batch_sizes_info(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device = None):
+def batch_sizes_ptr2(batch_sizes: Tensor, sorted_indices: Tensor, device: torch.device = None):
     sorted_indices, batch_sizes, device = broadcast_devices(sorted_indices, batch_sizes, device=device)
 
     b, t = major_sizes_to_shape(sizes=batch_sizes)
