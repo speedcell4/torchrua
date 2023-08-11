@@ -12,9 +12,8 @@ from torchrua.core import major_sizes_to_shape
 Sequence = Union[CattedSequence, PackedSequence]
 
 __all__ = [
-    'sequence_major_ptr2',
-    'batch_sizes_to_major_ptr2', 'token_sizes_to_major_ptr2',
-    'batch_sizes_to_major_ptr3', 'token_sizes_to_major_ptr3',
+    'sequence_major_ptr2', 'batch_sizes_to_major_ptr2', 'token_sizes_to_major_ptr2',
+    'sequence_major_ptr3', 'batch_sizes_to_major_ptr3', 'token_sizes_to_major_ptr3',
     'batch_sizes_to_minor_ptr3', 'token_sizes_to_minor_ptr3',
 ]
 
@@ -50,6 +49,24 @@ def batch_sizes_to_major_ptr2(batch_sizes: Tensor, sorted_indices: Tensor, devic
 
     (t, b), (token_ptr, batch_ptr) = token_sizes_to_major_ptr2(batch_sizes, device=device)
     return (b, t), (sorted_indices[batch_ptr], token_ptr)
+
+
+def sequence_major_ptr3(sequence: Sequence):
+    if isinstance(sequence, CattedSequence):
+        return token_sizes_to_major_ptr3(
+            token_sizes=sequence.token_sizes,
+            device=sequence.data.device,
+        )
+
+    if isinstance(sequence, PackedSequence):
+        return batch_sizes_to_major_ptr3(
+            batch_sizes=sequence.batch_sizes,
+            sorted_indices=sequence.sorted_indices,
+            unsorted_indices=sequence.unsorted_indices,
+            device=sequence.data.device,
+        )
+
+    raise TypeError(f'{type(sequence)} is not supported')
 
 
 def token_sizes_to_major_ptr3(token_sizes: Tensor, device: torch.device = None):

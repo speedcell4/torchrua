@@ -9,7 +9,7 @@ from torchrua.core import accumulate_sizes
 from torchrua.core import broadcast_devices
 from torchrua.core import get_device
 from torchrua.info import batch_sizes_to_minor_ptr3
-from torchrua.info import token_sizes_to_major_ptr2
+from torchrua.info import token_sizes_to_major_ptr3
 
 __all__ = [
     'cat_sequence',
@@ -31,14 +31,15 @@ def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: to
     unsorted_indices, batch_sizes, device = broadcast_devices(unsorted_indices, batch_sizes, device=device)
 
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    _, (batch_ptr, token_ptr), token_sizes = batch_sizes_to_minor_ptr3(batch_sizes=batch_sizes,
-                                                                       batch_ptr=unsorted_indices)
+    _, (batch_ptr, token_ptr), token_sizes = batch_sizes_to_minor_ptr3(
+        batch_sizes=batch_sizes, batch_ptr=unsorted_indices,
+    )
 
     return batch_ptr + acc_batch_sizes[token_ptr], token_sizes
 
 
 def cat_packed_sequence(sequence: PackedSequence, device: torch.device = None):
-    sequence, batch_sizes, sorted_indices, unsorted_indices, device = broadcast_devices(
+    sequence, batch_sizes, _, unsorted_indices, device = broadcast_devices(
         *sequence, device=device,
     )
 
@@ -55,9 +56,7 @@ def cat_packed_sequence(sequence: PackedSequence, device: torch.device = None):
 
 
 def cat_padded_indices(token_sizes: Tensor, device: torch.device = None):
-    token_sizes, device = broadcast_devices(token_sizes, device=device)
-
-    _, (batch_ptr, token_ptr) = token_sizes_to_major_ptr2(token_sizes, device=device)
+    _, (batch_ptr, token_ptr), (_, token_sizes) = token_sizes_to_major_ptr3(token_sizes, device=device)
     return (batch_ptr, token_ptr), token_sizes
 
 
