@@ -93,42 +93,6 @@ def minor_sizes_to_ptr(sizes: Tensor, minor_ptr: Optional[Tensor] = None, major_
     return minor_ptr, major_ptr, major_sizes
 
 
-def major_masked_select(sizes: Tensor, device: torch.device = None):
-    if device is None:
-        device = sizes.device
-
-    sizes = sizes.to(device=device)
-    a, b = major_sizes_to_shape(sizes=sizes)
-
-    major_ptr = torch.arange(a, dtype=torch.long, device=device)
-    minor_ptr = torch.arange(b, dtype=torch.long, device=device)
-
-    mask = major_ptr[None, :] < sizes[:, None]
-    major_ptr = torch.masked_select(major_ptr[None, :], mask=mask)
-    minor_ptr = torch.masked_select(minor_ptr[:, None], mask=mask)
-    sizes = mask.long().sum(dim=0)
-
-    return major_ptr, minor_ptr, sizes
-
-
-def minor_masked_select(sizes: Tensor, device: torch.device = None):
-    if device is None:
-        device = sizes.device
-
-    sizes = sizes.to(device=device)
-    a, b = major_sizes_to_shape(sizes=sizes)
-
-    major_ptr = torch.arange(a, dtype=torch.long, device=device)
-    minor_ptr = torch.arange(b, dtype=torch.long, device=device)
-
-    mask = major_ptr[:, None] < sizes[None, :]
-    major_ptr = torch.masked_select(major_ptr[:, None], mask=mask)
-    minor_ptr = torch.masked_select(minor_ptr[None, :], mask=mask)
-    sizes = mask.long().sum(dim=1)
-
-    return major_ptr, minor_ptr, sizes
-
-
 def accumulate_sizes(sizes: Tensor) -> Tensor:
     sizes = sizes.cumsum(dim=0).roll(shifts=1, dims=0)
     sizes[0] = 0

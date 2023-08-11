@@ -4,10 +4,10 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
+from torchrua import broadcast_devices
 from torchrua.core import CattedSequence
 from torchrua.core import accumulate_sizes
 from torchrua.core import get_device
-from torchrua.core import major_masked_select
 from torchrua.core import major_sizes_to_ptr
 
 __all__ = [
@@ -15,6 +15,8 @@ __all__ = [
     'roll_catted_indices',
     'roll_packed_indices',
 ]
+
+from torchrua.info import token_sizes_ptr3
 
 Sequence = Union[CattedSequence, PackedSequence]
 
@@ -49,12 +51,10 @@ def roll_catted_indices(token_sizes: Tensor, shifts: int, device: torch.device =
 
 
 def roll_packed_indices(batch_sizes: Tensor, shifts: int, device: torch.device = None) -> Tensor:
-    device = get_device(batch_sizes, device=device)
-
-    batch_sizes = batch_sizes.to(device=device)
+    batch_sizes, device = broadcast_devices(batch_sizes, device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    batch_ptr, token_ptr, token_sizes = major_masked_select(sizes=batch_sizes, device=device)
+    _, (token_ptr, batch_ptr), token_sizes = token_sizes_ptr3(batch_sizes, device=device)
     token_sizes = token_sizes[batch_ptr]
     token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
 
