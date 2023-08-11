@@ -11,8 +11,8 @@ from torchrua import get_device
 from torchrua.catting import cat_sequence
 from torchrua.core import CattedSequence
 from torchrua.core import broadcast_devices
-from torchrua.info import batch_sizes_ptr3
-from torchrua.info import token_sizes_ptr2
+from torchrua.info import batch_sizes_to_major_ptr3
+from torchrua.info import token_sizes_to_major_ptr2
 
 Sequence = Union[CattedSequence, PackedSequence]
 
@@ -60,7 +60,7 @@ def pad_indices(sequence: Sequence, batch_first: bool, device: torch.device = No
 def pad_catted_indices(token_sizes: Tensor, batch_first: bool, device: torch.device = None):
     token_sizes, device = broadcast_devices(token_sizes, device=device)
 
-    (b, t), (batch_ptr, token_ptr) = token_sizes_ptr2(token_sizes, device=device)
+    (b, t), (batch_ptr, token_ptr) = token_sizes_to_major_ptr2(token_sizes, device=device)
 
     if batch_first:
         return (b, t), (batch_ptr, token_ptr), token_sizes
@@ -91,7 +91,7 @@ def pad_catted_sequence(sequence: CattedSequence, batch_first: bool,
 
 def pad_packed_indices(batch_sizes: Tensor, sorted_indices: Tensor, unsorted_indices: Tensor,
                        batch_first: bool, device: torch.device = None):
-    (b, t), (batch_ptr, token_ptr), token_sizes = batch_sizes_ptr3(
+    (b, t), (batch_ptr, token_ptr), token_sizes = batch_sizes_to_major_ptr3(
         batch_sizes=batch_sizes,
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,

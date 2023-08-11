@@ -9,7 +9,7 @@ from torchrua.core import accumulate_sizes
 from torchrua.core import broadcast_devices
 from torchrua.core import get_device
 from torchrua.core import major_sizes_to_ptr
-from torchrua.core import minor_sizes_to_ptr
+from torchrua.info import batch_sizes_to_minor_ptr3
 
 __all__ = [
     'cat_sequence',
@@ -31,7 +31,7 @@ def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: to
     unsorted_indices, batch_sizes, device = broadcast_devices(unsorted_indices, batch_sizes, device=device)
 
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-    batch_ptr, token_ptr, token_sizes = minor_sizes_to_ptr(sizes=batch_sizes, minor_ptr=unsorted_indices)
+    _, (batch_ptr, token_ptr), token_sizes = batch_sizes_to_minor_ptr3(sizes=batch_sizes, batch_ptr=unsorted_indices)
 
     return batch_ptr + acc_batch_sizes[token_ptr], token_sizes
 

@@ -10,14 +10,13 @@ from torchrua.core import CattedSequence
 from torchrua.core import accumulate_sizes
 from torchrua.core import broadcast_devices
 from torchrua.core import major_sizes_to_ptr
+from torchrua.info import token_sizes_to_major_ptr3
 
 __all__ = [
     'reverse_sequence',
     'reverse_catted_indices', 'reverse_catted_sequence',
     'reverse_packed_indices', 'reverse_packed_sequence',
 ]
-
-from torchrua.info import token_sizes_ptr3
 
 
 @singledispatch
@@ -53,7 +52,7 @@ def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor
     batch_sizes, device = broadcast_devices(batch_sizes, device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    _, (token_ptr, batch_ptr), token_sizes = token_sizes_ptr3(batch_sizes)
+    _, (token_ptr, batch_ptr), token_sizes = token_sizes_to_major_ptr3(batch_sizes)
     token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
 
     return batch_ptr + acc_batch_sizes[token_ptr]
