@@ -1,6 +1,5 @@
 import torch
 from hypothesis import given
-from hypothesis import strategies as st
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
 from torchnyan import TOKEN_SIZE
@@ -30,7 +29,7 @@ def test_reduce_catted_sequence(token_sizes, dim):
     catted_sequence = cat_sequence(sequences, device=device)
     actual = reduce_catted_sequence(torch.add)(catted_sequence)
 
-    excepted, _ = pad_sequence(sequences, batch_first=True, device=device)
+    excepted, _ = pad_sequence(sequences, device=device)
     excepted = excepted.sum(dim=1)
 
     assert_close(actual=actual, expected=excepted)
@@ -50,7 +49,7 @@ def test_reduce_packed_sequence(token_sizes, dim):
     packed_sequence = pack_sequence(sequences, device=device)
     actual = reduce_packed_sequence(torch.add)(packed_sequence)
 
-    excepted, _ = pad_sequence(sequences, batch_first=True, device=device)
+    excepted, _ = pad_sequence(sequences, device=device)
     excepted = excepted.sum(dim=1)
 
     assert_close(actual=actual, expected=excepted)
@@ -60,18 +59,17 @@ def test_reduce_packed_sequence(token_sizes, dim):
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    batch_first=st.booleans(),
 )
-def test_reduce_padded_sequence(token_sizes, dim, batch_first):
+def test_reduce_padded_sequence(token_sizes, dim):
     sequences = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
-    padded_sequence = pad_sequence(sequences, batch_first=batch_first, device=device)
-    actual = reduce_padded_sequence(torch.add)(padded_sequence, batch_first=batch_first)
+    padded_sequence = pad_sequence(sequences, device=device)
+    actual = reduce_padded_sequence(torch.add)(padded_sequence)
 
-    excepted, _ = pad_sequence(sequences, batch_first=True, device=device)
+    excepted, _ = pad_sequence(sequences, device=device)
     excepted = excepted.sum(dim=1)
 
     assert_close(actual=actual, expected=excepted)

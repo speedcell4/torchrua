@@ -140,7 +140,7 @@ def test_segment_catted_sequence_and_keep(token_sizes, dim, reduce_segment):
         sizes=cat_sequence(sequences=durations, device=device),
     )
 
-    expected, _ = pad_sequence(raw_segment(tensor, durations, reduce_fn), batch_first=True)
+    expected, _ = pad_sequence(raw_segment(tensor, durations, reduce_fn))
 
     assert not torch.isinf(actual).any().item()
     assert not torch.isnan(actual).any().item()
@@ -174,7 +174,7 @@ def test_segment_packed_sequence_and_keep(token_sizes, dim, reduce_segment):
         sizes=pack_sequence(sequences=durations, device=device),
     )
 
-    expected, _ = pad_sequence(raw_segment(tensor, durations, reduce_fn), batch_first=True)
+    expected, _ = pad_sequence(raw_segment(tensor, durations, reduce_fn))
 
     assert not torch.isinf(actual).any().item()
     assert not torch.isnan(actual).any().item()

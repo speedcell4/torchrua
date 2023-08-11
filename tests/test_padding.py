@@ -19,16 +19,15 @@ from torchrua import pad_sequence
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    batch_first=st.booleans(),
 )
-def test_pad_sequence(data, token_sizes, dim, batch_first):
+def test_pad_sequence(data, token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
-    actual, _ = pad_sequence(inputs, batch_first=batch_first)
-    excepted = excepted_pad_sequence(inputs, batch_first=batch_first)
+    actual, _ = pad_sequence(inputs)
+    excepted = excepted_pad_sequence(inputs, batch_first=True)
 
     assert_close(actual=actual, expected=excepted)
     assert_grad_close(actual=actual, expected=excepted, inputs=inputs)
@@ -38,9 +37,8 @@ def test_pad_sequence(data, token_sizes, dim, batch_first):
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    batch_first=st.booleans(),
 )
-def test_pad_catted_sequence(data, token_sizes, dim, batch_first):
+def test_pad_catted_sequence(data, token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -48,10 +46,9 @@ def test_pad_catted_sequence(data, token_sizes, dim, batch_first):
 
     actual, actual_token_sizes = pad_sequence(
         cat_sequence(inputs),
-        batch_first=batch_first,
     )
 
-    excepted = excepted_pad_sequence(inputs, batch_first=batch_first)
+    excepted = excepted_pad_sequence(inputs, batch_first=True)
     excepted_token_sizes = torch.tensor(token_sizes, device=device)
 
     assert_close(actual=actual, expected=excepted)
@@ -63,9 +60,8 @@ def test_pad_catted_sequence(data, token_sizes, dim, batch_first):
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    batch_first=st.booleans(),
 )
-def test_pad_packed_sequence(data, token_sizes, dim, batch_first):
+def test_pad_packed_sequence(data, token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -73,10 +69,9 @@ def test_pad_packed_sequence(data, token_sizes, dim, batch_first):
 
     actual, actual_token_sizes = pad_sequence(
         excepted_pack_sequence(inputs, enforce_sorted=False),
-        batch_first=batch_first,
     )
 
-    excepted = excepted_pad_sequence(inputs, batch_first=batch_first)
+    excepted = excepted_pad_sequence(inputs, batch_first=True)
     excepted_token_sizes = torch.tensor(token_sizes, device=device)
 
     assert_close(actual=actual, expected=excepted)

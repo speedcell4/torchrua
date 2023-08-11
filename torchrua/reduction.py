@@ -122,7 +122,7 @@ def reduce_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor = None, 
 
 
 @torch.no_grad()
-def reduce_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device = None):
+def reduce_padded_indices(token_sizes: Tensor, device: Device = None):
     if device is None:
         device = token_sizes.device
 
@@ -130,17 +130,11 @@ def reduce_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device
         token_sizes=token_sizes, device=device,
     )
 
-    if batch_first:
-        return ReductionIndices(
-            batch_size=batch_size, cache_size=cache_size,
-            sizes=sizes[:-1], src=(src, batch_ptr, token_ptr), tgt=tgt,
-        )
-    else:
-        return ReductionIndices(
-            batch_size=batch_size, cache_size=cache_size,
-            sizes=sizes[:-1], src=(src, token_ptr, batch_ptr), tgt=tgt,
-        )
-
+    return ReductionIndices(
+        batch_size=batch_size, cache_size=cache_size,
+        sizes=sizes[:-1], src=(src, batch_ptr, token_ptr), tgt=tgt,
+    )
+    
 
 def reduce_sequence(data: Tensor, indices: ReductionIndices, op: Callable[[Tensor, Tensor], Tensor]) -> Tensor:
     batch_size, cache_size, sizes, src, tgt = indices
@@ -200,13 +194,13 @@ def reduce_packed_sequence(op: Callable[[Tensor, Tensor], Tensor]):
 
 
 def reduce_padded_sequence(op: Callable[[Tensor, Tensor], Tensor]):
-    def wrap(sequence: Tuple[Tensor, Tensor], batch_first: bool = True, indices: ReductionIndices = None) -> Tensor:
+    def wrap(sequence: Tuple[Tensor, Tensor], indices: ReductionIndices = None) -> Tensor:
         data, token_sizes = sequence
 
         if indices is None:
             indices = reduce_padded_indices(
                 token_sizes=token_sizes,
-                batch_first=batch_first, device=data.device,
+                device=data.device,
             )
 
         return reduce_sequence(data=data, indices=indices, op=op)
