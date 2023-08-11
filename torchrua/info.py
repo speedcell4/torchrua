@@ -95,14 +95,15 @@ def batch_sizes_to_major_ptr3(batch_sizes: Tensor, sorted_indices: Tensor,
     return (b, t), (sorted_indices[batch_ptr], token_ptr), (batch_sizes, token_sizes[unsorted_indices])
 
 
-def token_sizes_to_minor_ptr3(token_sizes: Tensor, batch_ptr: Tensor = None):
+def token_sizes_to_minor_ptr3(token_sizes: Tensor, batch_ptr: Tensor = None, device: torch.device = None):
+    token_sizes, batch_ptr, device = broadcast_devices(token_sizes, batch_ptr, device=device)
     t, b = major_sizes_to_shape(sizes=token_sizes)
 
     if batch_ptr is None:
-        batch_ptr = torch.arange(b, device=token_sizes.device)
+        batch_ptr = torch.arange(b, device=device)
     assert batch_ptr.size() == (b,), f'{batch_ptr.size()} != ({b},)'
 
-    token_ptr = torch.arange(t, device=token_sizes.device)
+    token_ptr = torch.arange(t, device=device)
 
     mask = token_ptr[:, None] < token_sizes[None, :]
 
@@ -110,17 +111,18 @@ def token_sizes_to_minor_ptr3(token_sizes: Tensor, batch_ptr: Tensor = None):
     batch_ptr = torch.masked_select(batch_ptr[None, :], mask=mask)
     batch_sizes = mask.long().sum(dim=1)
 
-    return (b, t), (batch_ptr, token_ptr), batch_sizes
+    return (b, t), (batch_ptr, token_ptr), (batch_sizes, token_sizes)
 
 
-def batch_sizes_to_minor_ptr3(batch_sizes: Tensor, batch_ptr: Tensor = None):
+def batch_sizes_to_minor_ptr3(batch_sizes: Tensor, batch_ptr: Tensor = None, device: torch.device = None):
+    batch_sizes, batch_ptr, device = broadcast_devices(batch_sizes, batch_ptr, device=device)
     b, t = major_sizes_to_shape(sizes=batch_sizes)
 
     if batch_ptr is None:
-        batch_ptr = torch.arange(b, device=batch_sizes.device)
+        batch_ptr = torch.arange(b, device=device)
     assert batch_ptr.size() == (b,), f'{batch_ptr.size()} != ({b},)'
 
-    token_ptr = torch.arange(t, device=batch_sizes.device)
+    token_ptr = torch.arange(t, device=device)
 
     mask = batch_ptr[:, None] < batch_sizes[None, :]
 
@@ -128,4 +130,4 @@ def batch_sizes_to_minor_ptr3(batch_sizes: Tensor, batch_ptr: Tensor = None):
     token_ptr = torch.masked_select(token_ptr[None, :], mask=mask)
     token_sizes = mask.long().sum(dim=1)
 
-    return (b, t), (batch_ptr, token_ptr), token_sizes
+    return (b, t), (batch_ptr, token_ptr), (batch_sizes, token_sizes)

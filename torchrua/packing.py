@@ -32,8 +32,9 @@ def pack_catted_indices(token_sizes: Tensor, device: torch.device = None):
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
 
     token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(sizes=token_sizes, device=device)
-    _, (batch_ptr, token_ptr), batch_sizes = token_sizes_to_minor_ptr3(token_sizes=token_sizes,
-                                                                       batch_ptr=sorted_indices)
+    _, (batch_ptr, token_ptr), (batch_sizes, _) = token_sizes_to_minor_ptr3(
+        token_sizes=token_sizes, batch_ptr=sorted_indices,
+    )
 
     return acc_token_sizes[batch_ptr] + token_ptr, batch_sizes, sorted_indices, unsorted_indices
 
@@ -57,7 +58,7 @@ def pack_padded_indices(token_sizes: Tensor, device: torch.device = None):
     token_sizes, device = broadcast_devices(token_sizes, device=device)
 
     sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(sizes=token_sizes, device=device)
-    _, (batch_ptr, token_ptr), batch_sizes = token_sizes_to_minor_ptr3(
+    _, (batch_ptr, token_ptr), (batch_sizes, _) = token_sizes_to_minor_ptr3(
         token_sizes=sorted_token_sizes, batch_ptr=sorted_indices,
     )
 
