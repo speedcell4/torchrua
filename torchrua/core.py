@@ -39,6 +39,12 @@ def get_device(*tensors: Optional[Tensor], device: torch.device = None) -> torch
     raise RuntimeError(f'tensors are all None')
 
 
+def broadcast_devices(*tensors: Optional[Tensor], device: torch.device = None):
+    device = get_device(*tensors, device=device)
+    tensors = (tensor if tensor is None else tensor.to(device=device) for tensor in tensors)
+    return *tensors, device
+
+
 def major_sizes_to_shape(sizes: Tensor) -> Tuple[int, int]:
     return sizes.max().item(), sizes.size()[0]
 
