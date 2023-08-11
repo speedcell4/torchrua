@@ -36,7 +36,7 @@ def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: to
     return batch_ptr + acc_batch_sizes[token_ptr], token_sizes
 
 
-def cat_packed_sequence(sequence: PackedSequence, device: torch.device = None) -> CattedSequence:
+def cat_packed_sequence(sequence: PackedSequence, device: torch.device = None):
     sequence, batch_sizes, sorted_indices, unsorted_indices, device = broadcast_devices(
         *sequence, device=device,
     )
