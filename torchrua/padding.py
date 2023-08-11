@@ -82,7 +82,7 @@ def pad_catted_sequence(sequence: CattedSequence, padding_value: Number = 0, dev
 
 def pad_packed_indices(batch_sizes: Tensor, sorted_indices: Tensor, unsorted_indices: Tensor,
                        device: torch.device = None):
-    (b, t), (batch_ptr, token_ptr), token_sizes = batch_sizes_to_major_ptr3(
+    (b, t), (batch_ptr, token_ptr), (_, token_sizes) = batch_sizes_to_major_ptr3(
         batch_sizes=batch_sizes,
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,

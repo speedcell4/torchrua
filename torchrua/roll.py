@@ -53,7 +53,7 @@ def roll_packed_indices(batch_sizes: Tensor, shifts: int, device: torch.device =
     batch_sizes, device = broadcast_devices(batch_sizes, device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    _, (token_ptr, batch_ptr), token_sizes = token_sizes_to_major_ptr3(batch_sizes, device=device)
+    _, (token_ptr, batch_ptr), (token_sizes, _) = token_sizes_to_major_ptr3(batch_sizes, device=device)
     token_sizes = token_sizes[batch_ptr]
     token_ptr = (token_ptr - shifts + token_sizes) % token_sizes
 

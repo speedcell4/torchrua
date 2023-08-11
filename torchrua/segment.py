@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.core import CattedSequence
 from torchrua.core import get_device
-from torchrua.info import sequence_ptr2
+from torchrua.info import sequence_major_ptr2
 
 __all__ = [
     'segment_indices', 'segment_sequence',
@@ -17,7 +17,7 @@ Sequence = Union[CattedSequence, PackedSequence]
 
 def segment_indices(sizes: Sequence, token_size: int, device: torch.device = None):
     device = get_device(sizes.data, device=device)
-    (b, t), (batch_ptr, token_ptr) = sequence_ptr2(sequence=sizes)
+    (b, t), (batch_ptr, token_ptr) = sequence_major_ptr2(sequence=sizes)
 
     lengths = torch.zeros((b, t + 1), dtype=torch.long, device=device)
     lengths[batch_ptr, token_ptr] = sizes.data

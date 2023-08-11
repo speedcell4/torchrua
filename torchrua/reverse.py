@@ -52,7 +52,7 @@ def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor
     batch_sizes, device = broadcast_devices(batch_sizes, device=device)
     acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
 
-    _, (token_ptr, batch_ptr), token_sizes = token_sizes_to_major_ptr3(batch_sizes)
+    _, (token_ptr, batch_ptr), (token_sizes, _) = token_sizes_to_major_ptr3(batch_sizes)
     token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
 
     return batch_ptr + acc_batch_sizes[token_ptr]
