@@ -35,10 +35,10 @@ def segment_sequence(tensor: Tensor, sizes: Sequence, reduce_fn, keep: bool):
 
     lengths, mask, (b, t), (batch_ptr, token_ptr) = segment_indices(sizes, token_size=t, device=tensor.device)
     data = reduce_fn(tensor, lengths)
+    data = data.view((b, t + 1, *data.size()[1:]))
 
     if keep:
-        sequence = data.view((b, t + 1, *data.size()[1:]))[:, :-1]
-        return sequence, mask, (batch_ptr, token_ptr)
+        return data[:, :-1], mask, (batch_ptr, token_ptr)
 
-    sequence = sizes._replace(data=data[batch_ptr * (t + 1) + token_ptr])
+    sequence = sizes._replace(data=data[batch_ptr, token_ptr])
     return sequence, mask, (batch_ptr, token_ptr)
