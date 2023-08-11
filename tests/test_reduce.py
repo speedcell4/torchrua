@@ -1,16 +1,33 @@
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
+from torchnyan import BATCH_SIZE
+from torchnyan import FEATURE_DIM
+from torchnyan import TOKEN_SIZE
+from torchnyan import assert_close
+from torchnyan import assert_grad_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
-from torchrua import cat_sequence, scatter_logsumexp, scatter_max, scatter_mean, scatter_min, scatter_prod, scatter_sum, \
-    segment_logsumexp, segment_max, segment_mean, segment_min, segment_prod, segment_sum
+from torchrua import cat_sequence
+from torchrua import scatter_logsumexp
+from torchrua import scatter_max
+from torchrua import scatter_mean
+from torchrua import scatter_min
+from torchrua import scatter_prod
+from torchrua import scatter_sum
+from torchrua import segment_logsumexp
+from torchrua import segment_max
+from torchrua import segment_mean
+from torchrua import segment_min
+from torchrua import segment_prod
+from torchrua import segment_sum
 
 
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
 def test_scatter_max(data, token_sizes, dim, include_self):
@@ -41,7 +58,7 @@ def test_scatter_max(data, token_sizes, dim, include_self):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
 def test_scatter_min(data, token_sizes, dim, include_self):
@@ -72,7 +89,7 @@ def test_scatter_min(data, token_sizes, dim, include_self):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
 def test_scatter_sum(data, token_sizes, dim, include_self):
@@ -103,7 +120,7 @@ def test_scatter_sum(data, token_sizes, dim, include_self):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
 def test_scatter_mean(data, token_sizes, dim, include_self):
@@ -139,7 +156,7 @@ def test_scatter_mean(data, token_sizes, dim, include_self):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
 def test_scatter_prod(data, token_sizes, dim, include_self):
@@ -170,7 +187,7 @@ def test_scatter_prod(data, token_sizes, dim, include_self):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
 def test_scatter_logsumexp(data, token_sizes, dim, include_self):
@@ -204,7 +221,7 @@ def test_scatter_logsumexp(data, token_sizes, dim, include_self):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_segment_max(data, token_sizes, dim):
     inputs = [
@@ -224,7 +241,7 @@ def test_segment_max(data, token_sizes, dim):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_segment_min(data, token_sizes, dim):
     inputs = [
@@ -244,7 +261,7 @@ def test_segment_min(data, token_sizes, dim):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_segment_sum(data, token_sizes, dim):
     inputs = [
@@ -264,7 +281,7 @@ def test_segment_sum(data, token_sizes, dim):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_segment_mean(data, token_sizes, dim):
     inputs = [
@@ -284,7 +301,7 @@ def test_segment_mean(data, token_sizes, dim):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_segment_prod(data, token_sizes, dim):
     inputs = [
@@ -304,7 +321,7 @@ def test_segment_prod(data, token_sizes, dim):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_segment_logsumexp(data, token_sizes, dim):
     inputs = [

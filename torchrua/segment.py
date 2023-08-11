@@ -4,7 +4,8 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import CattedSequence, get_device
+from torchrua.core import CattedSequence
+from torchrua.core import get_device
 from torchrua.info import sequence_info
 
 __all__ = [

@@ -1,14 +1,25 @@
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 from torch import Tensor
 from torch.testing import assert_close
+from torchnyan import BATCH_SIZE
+from torchnyan import FEATURE_DIM
+from torchnyan import TOKEN_SIZE
+from torchnyan import assert_catted_sequence_close
+from torchnyan import assert_grad_close
+from torchnyan import assert_packed_sequence_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
-from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
-from torchrua import pad_sequence, segment_sequence
+from torchrua import pad_sequence
+from torchrua import segment_sequence
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
-from torchrua.reduce import segment_max, segment_mean, segment_min, segment_sum
+from torchrua.reduce import segment_max
+from torchrua.reduce import segment_mean
+from torchrua.reduce import segment_min
+from torchrua.reduce import segment_sum
 
 
 def reduce_mean(x: Tensor) -> Tensor:
@@ -44,7 +55,7 @@ def raw_segment(tensor, durations, reduce_fn):
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     reduce_segment=st.sampled_from([
         (reduce_mean, segment_mean),
         (reduce_sum, segment_sum),
@@ -75,7 +86,7 @@ def test_segment_catted_sequence(token_sizes, dim, reduce_segment):
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     reduce_segment=st.sampled_from([
         (reduce_mean, segment_mean),
         (reduce_sum, segment_sum),
@@ -106,7 +117,7 @@ def test_segment_packed_sequence(token_sizes, dim, reduce_segment):
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     reduce_segment=st.sampled_from([
         (reduce_mean, segment_mean),
         (reduce_sum, segment_sum),
@@ -140,7 +151,7 @@ def test_segment_catted_sequence_and_keep(token_sizes, dim, reduce_segment):
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     reduce_segment=st.sampled_from([
         (reduce_mean, segment_mean),
         (reduce_sum, segment_sum),

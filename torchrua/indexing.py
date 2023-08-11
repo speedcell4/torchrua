@@ -1,12 +1,17 @@
 from functools import singledispatch
-from typing import Tuple, Union
+from typing import Tuple
+from typing import Union
 
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import accumulate_sizes, CattedSequence, major_sizes_to_ptr, major_sizes_to_shape, transpose_sizes
+from torchrua.core import CattedSequence
+from torchrua.core import accumulate_sizes
+from torchrua.core import major_sizes_to_ptr
+from torchrua.core import major_sizes_to_shape
+from torchrua.core import transpose_sizes
 
 __all__ = [
     'init_sequence',

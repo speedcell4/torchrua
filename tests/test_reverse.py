@@ -1,14 +1,22 @@
 import torch
 from hypothesis import given
+from torchnyan import BATCH_SIZE
+from torchnyan import FEATURE_DIM
+from torchnyan import TOKEN_SIZE
+from torchnyan import assert_catted_sequence_close
+from torchnyan import assert_grad_close
+from torchnyan import assert_packed_sequence_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
-from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
-from torchrua import cat_sequence, pack_sequence, reverse_sequence
+from torchrua import cat_sequence
+from torchrua import pack_sequence
+from torchrua import reverse_sequence
 
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_reverse_catted_sequence(token_sizes, dim):
     inputs = [
@@ -26,7 +34,7 @@ def test_reverse_catted_sequence(token_sizes, dim):
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_reverse_packed_sequence(token_sizes, dim):
     inputs = [

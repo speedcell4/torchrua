@@ -4,7 +4,11 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import accumulate_sizes, CattedSequence, get_device, major_masked_select, major_sizes_to_ptr
+from torchrua.core import CattedSequence
+from torchrua.core import accumulate_sizes
+from torchrua.core import get_device
+from torchrua.core import major_masked_select
+from torchrua.core import major_sizes_to_ptr
 
 __all__ = [
     'roll_indices', 'roll_sequence',

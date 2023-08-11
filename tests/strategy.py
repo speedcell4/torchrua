@@ -3,16 +3,16 @@ from hypothesis import strategies as st
 
 TINY_BATCH_SIZE = 5
 TINY_TOKEN_SIZE = 11
-TINY_EMBEDDING_DIM = 13
+TINY_FEATURE_DIM = 13
 
 if torch.cuda.is_available():
     BATCH_SIZE = 53
     TOKEN_SIZE = 83
-    EMBEDDING_DIM = 107
+    FEATURE_DIM = 107
 else:
     BATCH_SIZE = 37
     TOKEN_SIZE = 53
-    EMBEDDING_DIM = 61
+    FEATURE_DIM = 61
 
 if torch.cuda.is_available():
     device = torch.device('cuda:0')

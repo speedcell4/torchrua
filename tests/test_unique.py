@@ -1,13 +1,19 @@
 import torch
 from hypothesis import given
+from torchnyan import BATCH_SIZE
+from torchnyan import FEATURE_DIM
+from torchnyan import TOKEN_SIZE
+from torchnyan import assert_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_close
-from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
-from torchrua import cat_sequence, pack_sequence, unique_sequence
+from torchrua import cat_sequence
+from torchrua import pack_sequence
+from torchrua import unique_sequence
 
 
 @given(
-    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM),
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE, FEATURE_DIM),
 )
 def test_unique_catted_sequence(token_sizes):
     sequence = cat_sequence([
@@ -21,7 +27,7 @@ def test_unique_catted_sequence(token_sizes):
 
 
 @given(
-    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM),
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE, FEATURE_DIM),
 )
 def test_unique_packed_sequence(token_sizes):
     sequence = pack_sequence([

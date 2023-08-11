@@ -1,8 +1,12 @@
 import functools
-from typing import Any, Dict, Tuple, Union
+from typing import Any
+from typing import Dict
+from typing import Tuple
+from typing import Union
 
 import torch
-from torch import nn, Tensor
+from torch import Tensor
+from torch import nn
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.core import CattedSequence

@@ -1,17 +1,25 @@
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
+from torchnyan import BATCH_SIZE
+from torchnyan import FEATURE_DIM
+from torchnyan import TOKEN_SIZE
+from torchnyan import assert_close
+from torchnyan import assert_grad_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
 from torchrua.catting import cat_sequence
 from torchrua.packing import pack_sequence
 from torchrua.padding import pad_sequence
-from torchrua.reduction import reduce_catted_sequence, reduce_packed_sequence, reduce_padded_sequence
+from torchrua.reduction import reduce_catted_sequence
+from torchrua.reduction import reduce_packed_sequence
+from torchrua.reduction import reduce_padded_sequence
 
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_reduce_catted_sequence(token_sizes, dim):
     sequences = [
@@ -31,7 +39,7 @@ def test_reduce_catted_sequence(token_sizes, dim):
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_reduce_packed_sequence(token_sizes, dim):
     sequences = [
@@ -51,7 +59,7 @@ def test_reduce_packed_sequence(token_sizes, dim):
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     batch_first=st.booleans(),
 )
 def test_reduce_padded_sequence(token_sizes, dim, batch_first):

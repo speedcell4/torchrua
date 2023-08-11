@@ -3,7 +3,8 @@ from typing import Union
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device, Number
+from torch.types import Device
+from torch.types import Number
 
 from torchrua.core import CattedSequence
 from torchrua.utils import sequence_shape

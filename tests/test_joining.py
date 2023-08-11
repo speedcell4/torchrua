@@ -3,15 +3,24 @@ from typing import List
 
 import torch
 from hypothesis import given
+from torchnyan import BATCH_SIZE
+from torchnyan import FEATURE_DIM
+from torchnyan import TINY_BATCH_SIZE
+from torchnyan import TOKEN_SIZE
+from torchnyan import assert_catted_sequence_close
+from torchnyan import assert_grad_close
+from torchnyan import assert_packed_sequence_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_catted_sequence_close, assert_grad_close, assert_packed_sequence_close
-from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TINY_BATCH_SIZE, TOKEN_SIZE
-from torchrua import cat_sequence, cat_sequences, pack_sequence
+from torchrua import cat_sequence
+from torchrua import cat_sequences
+from torchrua import pack_sequence
 
 
 @given(
     token_sizes_batch=sizes(TINY_BATCH_SIZE, BATCH_SIZE, TOKEN_SIZE),
-    embedding_dim=sizes(EMBEDDING_DIM),
+    embedding_dim=sizes(FEATURE_DIM),
 )
 def test_concat_catted_sequences(token_sizes_batch, embedding_dim):
     sequences_batch = [
@@ -36,7 +45,7 @@ def test_concat_catted_sequences(token_sizes_batch, embedding_dim):
 
 @given(
     token_sizes_batch=sizes(TINY_BATCH_SIZE, BATCH_SIZE, TOKEN_SIZE),
-    embedding_dim=sizes(EMBEDDING_DIM),
+    embedding_dim=sizes(FEATURE_DIM),
 )
 def test_concat_packed_sequences(token_sizes_batch: List[List[int]], embedding_dim: int):
     sequences_batch = [

@@ -1,16 +1,24 @@
 import torch
-from hypothesis import given, settings
+from hypothesis import given
+from hypothesis import settings
 from torch import nn
+from torchnyan import FEATURE_DIM
+from torchnyan import TINY_BATCH_SIZE
+from torchnyan import TINY_TOKEN_SIZE
+from torchnyan import assert_close
+from torchnyan import assert_grad_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import device, EMBEDDING_DIM, sizes, TINY_BATCH_SIZE, TINY_TOKEN_SIZE
-from torchrua import cat_sequence, compose_catted_sequences, pack_sequence
+from torchrua import cat_sequence
+from torchrua import compose_catted_sequences
+from torchrua import pack_sequence
 
 
 @given(
     token_sizes_batch=sizes(TINY_BATCH_SIZE, TINY_BATCH_SIZE, TINY_TOKEN_SIZE),
-    input_size=sizes(EMBEDDING_DIM),
-    hidden_size=sizes(EMBEDDING_DIM),
+    input_size=sizes(FEATURE_DIM),
+    hidden_size=sizes(FEATURE_DIM),
 )
 @settings(deadline=None)
 def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size):

@@ -1,16 +1,26 @@
 import torch
-from hypothesis import given, strategies as st
-from torch.nn.utils.rnn import pack_sequence as excepted_pack_sequence, pad_sequence as excepted_pad_sequence
+from hypothesis import given
+from hypothesis import strategies as st
+from torch.nn.utils.rnn import pack_sequence as excepted_pack_sequence
+from torch.nn.utils.rnn import pad_sequence as excepted_pad_sequence
+from torchnyan import BATCH_SIZE
+from torchnyan import FEATURE_DIM
+from torchnyan import TOKEN_SIZE
+from torchnyan import assert_grad_close
+from torchnyan import assert_packed_sequence_close
+from torchnyan import device
+from torchnyan import sizes
 
-from tests.assertion import assert_grad_close, assert_packed_sequence_close
-from tests.strategy import BATCH_SIZE, device, EMBEDDING_DIM, sizes, TOKEN_SIZE
-from torchrua import cat_sequence, pack_catted_sequence, pack_padded_sequence, pack_sequence
+from torchrua import cat_sequence
+from torchrua import pack_catted_sequence
+from torchrua import pack_padded_sequence
+from torchrua import pack_sequence
 
 
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_pack_sequence(data, token_sizes, dim):
     inputs = [
@@ -28,7 +38,7 @@ def test_pack_sequence(data, token_sizes, dim):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
 )
 def test_pack_catted_sequence(data, token_sizes, dim):
     inputs = [
@@ -47,7 +57,7 @@ def test_pack_catted_sequence(data, token_sizes, dim):
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
     batch_first=st.booleans(),
 )
 def test_pack_padded_sequence(data, token_sizes, dim, batch_first):

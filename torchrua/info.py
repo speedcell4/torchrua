@@ -5,7 +5,9 @@ from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua import major_sizes_to_ptr
-from torchrua.core import CattedSequence, get_device, major_sizes_to_shape
+from torchrua.core import CattedSequence
+from torchrua.core import get_device
+from torchrua.core import major_sizes_to_shape
 
 Sequence = Union[CattedSequence, PackedSequence]
 

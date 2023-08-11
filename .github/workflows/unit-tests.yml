@@ -15,7 +15,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install torch
-          python -m pip install -e '.[dev]'
+          python -m pip install pytest hypothesis torchnyan
       - name: Test with pytest
         run: |
           python -m pytest tests

@@ -1,4 +1,5 @@
-from setuptools import find_packages, setup
+from setuptools import find_packages
+from setuptools import setup
 
 name = 'torchrua'
 
@@ -16,14 +17,4 @@ setup(
         'numpy',
         'einops',
     ],
-    extras_require={
-        'dev': [
-            'pytest',
-            'hypothesis',
-        ],
-        'benchmark': [
-            'aku',
-            'tqdm',
-        ]
-    }
 )
