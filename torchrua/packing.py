@@ -52,24 +52,22 @@ def pack_catted_sequence(sequence: CattedSequence, device: torch.device = None):
     )
 
 
-def pack_padded_indices(token_sizes: Tensor, batch_first: bool, device: torch.device = None):
+def pack_padded_indices(token_sizes: Tensor, device: torch.device = None):
     token_sizes, device = broadcast_devices(token_sizes, device=device)
 
     sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(sizes=token_sizes, device=device)
-    _, (batch_ptr, token_ptr), batch_sizes = token_sizes_to_minor_ptr3(sizes=sorted_token_sizes,
-                                                                       batch_ptr=sorted_indices)
+    _, (batch_ptr, token_ptr), batch_sizes = token_sizes_to_minor_ptr3(
+        sizes=sorted_token_sizes, batch_ptr=sorted_indices,
+    )
 
-    if batch_first:
-        return (batch_ptr, token_ptr), batch_sizes, sorted_indices, unsorted_indices
-    else:
-        return (token_ptr, batch_ptr), batch_sizes, sorted_indices, unsorted_indices
+    return (batch_ptr, token_ptr), batch_sizes, sorted_indices, unsorted_indices
 
 
-def pack_padded_sequence(sequence: Tensor, token_sizes: Tensor, batch_first: bool, device: torch.device = None):
+def pack_padded_sequence(sequence: Tensor, token_sizes: Tensor, device: torch.device = None):
     sequence, token_sizes, device = broadcast_devices(sequence, token_sizes, device=device)
 
     indices, batch_sizes, sorted_indices, unsorted_indices = pack_padded_indices(
-        token_sizes=token_sizes, batch_first=batch_first, device=device,
+        token_sizes=token_sizes, device=device,
     )
 
     return PackedSequence(
