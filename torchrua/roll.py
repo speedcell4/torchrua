@@ -4,10 +4,9 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua import broadcast_devices
 from torchrua.core import CattedSequence
 from torchrua.core import accumulate_sizes
-from torchrua.core import get_device
+from torchrua.core import broadcast_devices
 from torchrua.core import major_sizes_to_ptr
 from torchrua.info import token_sizes_to_major_ptr3
 
@@ -37,9 +36,8 @@ def roll_indices(sequence: Sequence, shifts: int):
 
 
 def roll_catted_indices(token_sizes: Tensor, shifts: int, device: torch.device = None) -> Tensor:
-    device = get_device(token_sizes, device=device)
+    token_sizes, device = broadcast_devices(token_sizes, device=device)
 
-    token_sizes = token_sizes.to(device=device)
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)

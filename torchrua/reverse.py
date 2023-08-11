@@ -26,10 +26,7 @@ def reverse_sequence(sequence: Union[CattedSequence, PackedSequence]):
 
 @torch.no_grad()
 def reverse_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
-    if device is None:
-        device = token_sizes.device
-
-    token_sizes = token_sizes.to(device=device)
+    token_sizes, device = broadcast_devices(token_sizes, device=device)
     acc_token_sizes = accumulate_sizes(sizes=token_sizes)
 
     token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
