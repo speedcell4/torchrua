@@ -8,8 +8,8 @@ from torchrua.core import CattedSequence
 from torchrua.core import accumulate_sizes
 from torchrua.core import broadcast_devices
 from torchrua.core import get_device
-from torchrua.core import major_sizes_to_ptr
 from torchrua.info import batch_sizes_to_minor_ptr3
+from torchrua.info import token_sizes_to_major_ptr2
 
 __all__ = [
     'cat_sequence',
@@ -53,27 +53,22 @@ def cat_packed_sequence(sequence: PackedSequence, device: torch.device = None):
     )
 
 
-def cat_padded_indices(token_sizes: Tensor, batch_first: bool, device: torch.device = None):
+def cat_padded_indices(token_sizes: Tensor, device: torch.device = None):
     token_sizes, device = broadcast_devices(token_sizes, device=device)
 
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-
-    if batch_first:
-        return (batch_ptr, token_ptr), token_sizes
-    else:
-        return (token_ptr, batch_ptr), token_sizes
+    _, (batch_ptr, token_ptr) = token_sizes_to_major_ptr2(token_sizes, device=device)
+    return (batch_ptr, token_ptr), token_sizes
 
 
-def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor, batch_first: bool = False, device: torch.device = None):
+def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor, device: torch.device = None):
     sequence, token_sizes, device = broadcast_devices(sequence, token_sizes, device=device)
 
-    indices, token_sizes = cat_padded_indices(
+    (batch_ptr, token_ptr), token_sizes = cat_padded_indices(
         token_sizes=token_sizes,
-        batch_first=batch_first,
         device=device,
     )
 
     return CattedSequence(
-        data=sequence[indices],
+        data=sequence[batch_ptr, token_ptr],
         token_sizes=token_sizes,
     )
