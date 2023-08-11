@@ -20,6 +20,7 @@ __all__ = [
     'pad_sequence', 'pad_indices',
     'pad_catted_indices', 'pad_catted_sequence',
     'pad_packed_indices', 'pad_packed_sequence',
+    'prepare_token_ids',
 ]
 
 
@@ -115,3 +116,18 @@ def pad_packed_sequence(sequence: PackedSequence,
     data[indices] = sequence
 
     return data, token_sizes
+
+
+def prepare_token_ids(sequence: Sequence, pad_token_id: int = 0):
+    (b, t), (batch_ptr, token_ptr), _ = pad_indices(sequence)
+
+    input_ids = torch.full(
+        (b, t), fill_value=pad_token_id,
+        dtype=torch.long, device=sequence.data.device,
+    )
+    attention_mask = torch.zeros_like(input_ids, dtype=torch.bool)
+
+    input_ids[batch_ptr, token_ptr] = sequence.data
+    attention_mask[batch_ptr, token_ptr] = True
+
+    return input_ids, attention_mask, (b, t), (batch_ptr, token_ptr)
