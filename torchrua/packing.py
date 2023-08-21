@@ -22,7 +22,7 @@ __all__ = [
 def pack_sequence(sequences: List[Tensor], device: torch.device = None):
     device = get_device(*sequences, device=device)
 
-    sequence = cat_sequence(sequences=sequences, device=device)
+    sequence = cat_sequence(sequence=sequences, device=device)
     return pack_catted_sequence(sequence=sequence, device=device)
 
 

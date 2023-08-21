@@ -10,8 +10,6 @@ from torchnyan import assert_grad_close
 from torchnyan import device
 from torchnyan import sizes
 
-from torchrua import cat_packed_sequence
-from torchrua import cat_padded_sequence
 from torchrua import cat_sequence
 
 
@@ -26,7 +24,7 @@ def test_cat_packed_sequence(token_sizes, dim):
     ]
 
     actual = cat_sequence(inputs, device=device)
-    expected = cat_packed_sequence(torch_pack_sequence(inputs, enforce_sorted=False), device=device)
+    expected = cat_sequence(torch_pack_sequence(inputs, enforce_sorted=False), device=device)
 
     assert_catted_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
@@ -43,9 +41,8 @@ def test_cat_padded_sequence(token_sizes, dim):
     ]
 
     actual = cat_sequence(inputs, device=device)
-    expected = cat_padded_sequence(
-        sequence=torch_pad_sequence(inputs, batch_first=True),
-        token_sizes=torch.tensor(token_sizes, device=device),
+    expected = cat_sequence(
+        sequence=(torch_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device)),
         device=device,
     )
 

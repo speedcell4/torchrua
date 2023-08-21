@@ -75,7 +75,7 @@ def test_segment_catted_sequence(token_sizes, dim, reduce_segment):
 
     actual, _, _ = segment_sequence(
         tensor=tensor, reduce_fn=segment_fn, keep=False,
-        sizes=cat_sequence(sequences=durations, device=device),
+        sizes=cat_sequence(sequence=durations, device=device),
     )
 
     expected = cat_sequence(raw_segment(tensor, durations, reduce_fn))
@@ -137,7 +137,7 @@ def test_segment_catted_sequence_and_keep(token_sizes, dim, reduce_segment):
 
     actual, mask, _ = segment_sequence(
         tensor=tensor, reduce_fn=segment_fn, keep=True,
-        sizes=cat_sequence(sequences=durations, device=device),
+        sizes=cat_sequence(sequence=durations, device=device),
     )
 
     expected, _ = pad_sequence(raw_segment(tensor, durations, reduce_fn))
