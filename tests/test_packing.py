@@ -12,8 +12,6 @@ from torchnyan import device
 from torchnyan import sizes
 
 from torchrua import cat_sequence
-from torchrua import pack_catted_sequence
-from torchrua import pack_padded_sequence
 from torchrua import pack_sequence
 
 
@@ -46,7 +44,7 @@ def test_pack_catted_sequence(data, token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = pack_catted_sequence(cat_sequence(inputs))
+    actual = pack_sequence(cat_sequence(inputs))
 
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
 
@@ -65,9 +63,8 @@ def test_pack_padded_sequence(data, token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = pack_padded_sequence(
-        excepted_pad_sequence(inputs, batch_first=True),
-        torch.tensor(token_sizes, device=device),
+    actual = pack_sequence(
+        (excepted_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device)),
     )
 
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)

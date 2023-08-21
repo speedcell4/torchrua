@@ -40,7 +40,7 @@ def cat_catted_indices(token_sizes: List[Tensor], device: Device = None):
 
 
 def cat_catted_sequences(sequences: List[CattedSequence]) -> CattedSequence:
-    data, token_sizes = zip(*sequences)
+    data, token_sizes = map(list, zip(*sequences))
 
     indices, token_sizes = cat_catted_indices(
         token_sizes=token_sizes,
@@ -77,7 +77,7 @@ def cat_packed_indices(batch_sizes: List[Tensor], sorted_indices: List[Tensor], 
 
 
 def cat_packed_sequences(sequences: List[PackedSequence]) -> PackedSequence:
-    data, batch_sizes, sorted_indices, _ = zip(*sequences)
+    data, batch_sizes, sorted_indices, _ = map(list, zip(*sequences))
 
     indices, batch_sizes, sorted_indices, unsorted_indices = cat_packed_indices(
         batch_sizes=batch_sizes,

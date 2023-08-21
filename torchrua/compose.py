@@ -34,7 +34,7 @@ def compose_catted_sequences(sequence: CattedSequence, *sequences: CattedSequenc
     if device is None:
         device = sequence.data.device
 
-    data, token_sizes = zip(sequence, *sequences)
+    data, token_sizes = map(list, zip(sequence, *sequences))
     data = torch.cat(data, dim=0).to(device=device)
 
     indices, batch_sizes, sorted_indices, unsorted_indices = compose_catted_indices(

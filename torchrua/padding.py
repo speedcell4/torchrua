@@ -21,8 +21,8 @@ __all__ = [
 ]
 
 
-def pad_sequence(sequence: Union[Ts, C, P], fill_value: Number = 0,
-                 output_token_sizes: bool = True, output_attention_mask: bool = False, device: torch.device = None):
+def pad_sequence(sequence: Union[Ts, C, P], fill_value: Number = 0, device: torch.device = None,
+                 output_token_sizes: bool = True, output_attention_mask: bool = False) -> Tuple[T, ...]:
     if is_type(sequence, Ts):
         sequence = cat_sequence(sequence, device=device)
 
