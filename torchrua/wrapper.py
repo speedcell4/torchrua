@@ -9,7 +9,7 @@ from torch import Tensor
 from torch import nn
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import CattedSequence
+from torchrua.ty import CattedSequence
 
 __all__ = [
     'rua_fn', 'rua_method',

@@ -10,8 +10,8 @@ from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.catting import cat_packed_sequence
 from torchrua.catting import cat_padded_sequence
-from torchrua.core import CattedSequence
 from torchrua.core import broadcast_devices
+from torchrua.ty import CattedSequence
 
 
 @singledispatch

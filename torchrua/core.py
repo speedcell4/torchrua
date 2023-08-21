@@ -1,20 +1,8 @@
-from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
 
 import torch
 from torch import Tensor
-
-
-class CattedSequence(NamedTuple):
-    data: Tensor
-    token_sizes: Tensor
-
-    def to(self, dtype: torch.dtype = None, device: torch.device = None, **kwargs) -> 'CattedSequence':
-        return CattedSequence(
-            data=self.data.to(dtype=dtype, device=device, **kwargs),
-            token_sizes=self.token_sizes.to(dtype=dtype, device=device, **kwargs),
-        )
 
 
 def get_dtype(*tensors: Optional[Tensor], dtype: torch.dtype = None) -> torch.dtype:

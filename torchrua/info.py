@@ -4,10 +4,10 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import CattedSequence
 from torchrua.core import broadcast_devices
 from torchrua.core import major_sizes_to_ptr
 from torchrua.core import major_sizes_to_shape
+from torchrua.ty import CattedSequence
 
 Sequence = Union[CattedSequence, PackedSequence]
 

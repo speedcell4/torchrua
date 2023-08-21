@@ -9,10 +9,10 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import CattedSequence
 from torchrua.core import accumulate_sizes
 from torchrua.core import major_sizes_to_ptr
 from torchrua.core import transpose_sizes
+from torchrua.ty import CattedSequence
 
 __all__ = [
     'ReductionIndices', 'reduce_sequence',

@@ -4,9 +4,9 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import CattedSequence
 from torchrua.core import get_device
 from torchrua.info import sequence_major_ptr2
+from torchrua.ty import CattedSequence
 
 __all__ = [
     'segment_indices', 'segment_sequence',

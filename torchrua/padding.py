@@ -9,10 +9,10 @@ from torch.types import Number
 
 from torchrua import get_device
 from torchrua.catting import cat_sequence
-from torchrua.core import CattedSequence
 from torchrua.core import broadcast_devices
 from torchrua.info import batch_sizes_to_major_ptr3
 from torchrua.info import token_sizes_to_major_ptr2
+from torchrua.ty import CattedSequence
 
 Sequence = Union[CattedSequence, PackedSequence]
 

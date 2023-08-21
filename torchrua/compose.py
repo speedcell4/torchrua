@@ -6,9 +6,9 @@ from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
 from torchrua.catting import cat_sequence
-from torchrua.core import CattedSequence
 from torchrua.core import invert_permutation
 from torchrua.packing import pack_catted_indices
+from torchrua.ty import CattedSequence
 
 __all__ = [
     'compose_catted_indices', 'compose_catted_sequences',

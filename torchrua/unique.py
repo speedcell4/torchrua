@@ -5,8 +5,8 @@ import torch
 from torch.nn.utils.rnn import PackedSequence
 from torch.types import Device
 
-from torchrua.core import CattedSequence
 from torchrua.core import major_sizes_to_ptr
+from torchrua.ty import CattedSequence
 
 __all__ = [
     'unique_sequence',
