@@ -58,7 +58,7 @@ def is_type(obj: Any, ty: Type) -> bool:
         return all(is_type(o, __args__[0]) for o in obj)
 
     if __origin__ is tuple:
-        if not isinstance(obj, tuple):
+        if isinstance(obj, (C, P)) or not isinstance(obj, tuple):
             return False
 
         if len(__args__) == 2 and __args__[1] is ...:
