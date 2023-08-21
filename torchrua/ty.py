@@ -33,7 +33,7 @@ class CattedSequence(NamedTuple):
 
 
 T = Tensor
-D = Tuple[Tensor, Tensor]
+D = Tuple[T, T]
 C = CattedSequence
 P = PackedSequence
 
@@ -47,7 +47,7 @@ Ps = List[P]
 Sequences = Union[Ts, Ds, Cs, Ps]
 
 
-def is_instance(obj: Any, ty: Type) -> bool:
+def is_type(obj: Any, ty: Type) -> bool:
     __origin__ = getattr(ty, '__origin__', None)
     __args__ = getattr(ty, '__args__', [])
 
@@ -55,21 +55,21 @@ def is_instance(obj: Any, ty: Type) -> bool:
         if not isinstance(obj, list):
             return False
 
-        return all(is_instance(o, __args__[0]) for o in obj)
+        return all(is_type(o, __args__[0]) for o in obj)
 
     if __origin__ is tuple:
         if not isinstance(obj, tuple):
             return False
 
         if len(__args__) == 2 and __args__[1] is ...:
-            return all(is_instance(o, __args__[0]) for o in obj)
+            return all(is_type(o, __args__[0]) for o in obj)
 
         if len(__args__) == len(obj):
-            return all(is_instance(o, t) for o, t in zip(obj, __args__))
+            return all(is_type(o, t) for o, t in zip(obj, __args__))
 
         return False
 
     if __origin__ is Union:
-        return any(is_instance(obj, t) for t in __args__)
+        return any(is_type(obj, t) for t in __args__)
 
     return isinstance(obj, ty)
