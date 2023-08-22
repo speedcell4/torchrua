@@ -12,7 +12,7 @@ from torchrua.ty import Ts
 from torchrua.ty import is_type
 
 
-def split_sequence(sequence: Union[D, C, P]) -> Ts:
+def split(sequence: Union[D, C, P]) -> Ts:
     if is_type(sequence, Union[D, P]):
         sequence = cat_sequence(sequence)
 
@@ -20,5 +20,13 @@ def split_sequence(sequence: Union[D, C, P]) -> Ts:
     return torch.split(sequence.data, sections, dim=0)
 
 
-def decode_sequence(sequence: Union[D, C, P]) -> List[List[Number]]:
-    return [tensor.detach().cpu().tolist() for tensor in split_sequence(sequence)]
+C.split = split
+P.split = split
+
+
+def tolist(sequence: Union[D, C, P]) -> List[List[Number]]:
+    return [tensor.tolist() for tensor in split(sequence.detach().cpu())]
+
+
+C.tolist = tolist
+P.tolist = tolist

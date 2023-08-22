@@ -1,10 +1,10 @@
 from typing import Any
 from typing import List
 from typing import NamedTuple
-from typing import Tuple
 from typing import Type
 from typing import Union
 
+import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
@@ -31,20 +31,55 @@ class CattedSequence(NamedTuple):
             token_sizes=self.token_sizes.cuda(),
         )
 
+    def detach(self) -> 'CattedSequence':
+        return CattedSequence(
+            data=self.data.detach(),
+            token_sizes=self.token_sizes.detach(),
+        )
+
+
+class PaddedSequence(NamedTuple):
+    data: Tensor
+    token_sizes: Tensor
+
+    def to(self, *args, **kwargs) -> 'PaddedSequence':
+        return PaddedSequence(
+            data=self.data.to(*args, **kwargs),
+            token_sizes=self.token_sizes.to(*args, **kwargs),
+        )
+
+    def cpu(self) -> 'PaddedSequence':
+        return PaddedSequence(
+            data=self.data.cpu(),
+            token_sizes=self.token_sizes.cpu(),
+        )
+
+    def cuda(self) -> 'PaddedSequence':
+        return PaddedSequence(
+            data=self.data.cuda(),
+            token_sizes=self.token_sizes.cuda(),
+        )
+
+    def detach(self) -> 'PaddedSequence':
+        return PaddedSequence(
+            data=self.data.detach(),
+            token_sizes=self.token_sizes.detach(),
+        )
+
 
 T = Tensor
-D = Tuple[T, T]
 C = CattedSequence
+D = PaddedSequence
 P = PackedSequence
 
-Sequence = Union[T, D, C, P]
+Sequence = Union[T, C, D, P]
 
 Ts = List[T]
-Ds = List[D]
 Cs = List[C]
+Ds = List[D]
 Ps = List[P]
 
-Sequences = Union[Ts, Ds, Cs, Ps]
+Sequences = Union[Ts, Cs, Ds, Ps]
 
 
 def is_type(obj: Any, ty: Type) -> bool:
@@ -58,7 +93,7 @@ def is_type(obj: Any, ty: Type) -> bool:
         return all(is_type(o, __args__[0]) for o in obj)
 
     if __origin__ is tuple:
-        if isinstance(obj, (C, P)) or not isinstance(obj, tuple):
+        if isinstance(obj, (D, C, P)) or not isinstance(obj, tuple):
             return False
 
         if len(__args__) == 2 and __args__[1] is ...:
@@ -73,3 +108,38 @@ def is_type(obj: Any, ty: Type) -> bool:
         return any(is_type(obj, t) for t in __args__)
 
     return isinstance(obj, ty)
+
+
+def idx_catted_sequence(sequence: C) -> C:
+    data = torch.arange(
+        sequence.data.size()[0],
+        dtype=torch.long, device=sequence.data.device,
+    )
+    return sequence._replace(data=data)
+
+
+def idx_packed_sequence(sequence: P) -> P:
+    data = torch.arange(
+        sequence.data.size()[0],
+        dtype=torch.long, device=sequence.data.device,
+    )
+    return sequence._replace(data=data)
+
+
+def idx_padded_sequence(sequence: D) -> D:
+    (b, t), (batch_ptr, token_ptr), _ = sequence.ptr()
+    return sequence._replace(data=token_ptr + batch_ptr * t)
+
+
+C.idx = idx_catted_sequence
+P.idx = idx_packed_sequence
+D.idx = idx_padded_sequence
+
+
+def rua(index: Union[C, D, P], sequence: Union[C, D, P]) -> Union[C, D, P]:
+    return index._replace(data=sequence.data[index.data])
+
+
+C.rua = rua
+P.rua = rua
+D.rua = rua

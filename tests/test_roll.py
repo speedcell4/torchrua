@@ -12,7 +12,6 @@ from torchnyan import sizes
 
 from torchrua import cat_sequence
 from torchrua import pack_sequence
-from torchrua import roll_sequence
 
 
 @given(
@@ -29,7 +28,7 @@ def test_roll_catted_sequence(data, token_sizes, dim):
     ]
     sequence = cat_sequence(inputs)
 
-    actual = roll_sequence(sequence, shifts=shifts)
+    actual = sequence.roll(shifts=shifts)
     expected = cat_sequence([sequence.roll(shifts, dims=[0]) for sequence in inputs])
 
     assert_catted_sequence_close(actual, expected)
@@ -50,7 +49,7 @@ def test_roll_packed_sequence(data, token_sizes, dim):
     ]
     sequence = pack_sequence(inputs)
 
-    actual = roll_sequence(sequence, shifts=shifts)
+    actual = sequence.roll(shifts=shifts)
     expected = pack_sequence([sequence.roll(shifts, dims=[0]) for sequence in inputs])
 
     assert_packed_sequence_close(actual, expected)

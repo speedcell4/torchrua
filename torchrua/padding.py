@@ -6,49 +6,41 @@ from torch.types import Number
 
 from torchrua.catting import cat_sequence
 from torchrua.core import broadcast_devices
-from torchrua.core import get_device
 from torchrua.info import batch_sizes_to_major_ptr3
 from torchrua.info import token_sizes_to_major_ptr2
 from torchrua.ty import C
+from torchrua.ty import D
 from torchrua.ty import P
+from torchrua.ty import PaddedSequence
 from torchrua.ty import T
 from torchrua.ty import Ts
 from torchrua.ty import is_type
 
 __all__ = [
-    'pad_sequence',
-    'pad_indices', 'pad_catted_indices', 'pad_packed_indices',
+    'pad_sequence', 'pad_indices',
+    'pad_catted_indices', 'pad_packed_indices',
 ]
 
 
-def pad_sequence(sequence: Union[Ts, C, P], fill_value: Number = 0, device: torch.device = None,
-                 output_token_sizes: bool = True, output_attention_mask: bool = False) -> Tuple[T, ...]:
+def pad_sequence(sequence: Union[Ts, C, P], fill_value: Number = 0, device: torch.device = None) -> D:
     if is_type(sequence, Ts):
         sequence = cat_sequence(sequence, device=device)
 
-    device = get_device(*sequence, device=device)
-    (b, t), (batch_ptr, token_ptr), token_sizes = pad_indices(sequence, device=device)
+    (b, t), (batch_ptr, token_ptr), token_sizes = sequence.ptr()
 
-    tensor = torch.full(
-        (b, t, *sequence.data.size()[1:]), fill_value=fill_value,
-        dtype=sequence.data.dtype, device=sequence.data.device, requires_grad=False,
-    )
+    tensor = sequence.data.new_full((b, t, *sequence.data.size()[1:]), fill_value=fill_value)
     tensor[batch_ptr, token_ptr] = sequence.data
-    outputs = (tensor,)
 
-    if output_token_sizes:
-        outputs = (*outputs, token_sizes)
-
-    if output_attention_mask:
-        attention_mask = torch.zeros((b, t), dtype=torch.bool, device=sequence.data.device)
-        attention_mask[batch_ptr, token_ptr] = True
-        outputs = (*outputs, attention_mask)
-
-    return outputs
+    return PaddedSequence(data=tensor, token_sizes=token_sizes)
 
 
-def pad_indices(sequence: Union[C, P], device: torch.device = None) -> Tuple[Tuple[int, int], Tuple[T, T], T]:
-    if is_type(sequence, C):
+C.pad = pad_sequence
+D.pad = D.to
+P.pad = pad_sequence
+
+
+def pad_indices(sequence: Union[C, D, P], device: torch.device = None) -> Tuple[Tuple[int, int], Tuple[T, T], T]:
+    if is_type(sequence, Union[C, D]):
         return pad_catted_indices(
             token_sizes=sequence.token_sizes,
             device=device,
@@ -63,6 +55,11 @@ def pad_indices(sequence: Union[C, P], device: torch.device = None) -> Tuple[Tup
         )
 
     raise TypeError(f'type {type(sequence)} is not supported')
+
+
+C.ptr = pad_indices
+D.ptr = pad_indices
+P.ptr = pad_indices
 
 
 def pad_catted_indices(token_sizes: T, device: torch.device = None):

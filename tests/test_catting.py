@@ -10,6 +10,7 @@ from torchnyan import assert_grad_close
 from torchnyan import device
 from torchnyan import sizes
 
+from torchrua import PaddedSequence
 from torchrua import cat_sequence
 
 
@@ -42,7 +43,7 @@ def test_cat_padded_sequence(token_sizes, dim):
 
     actual = cat_sequence(inputs, device=device)
     expected = cat_sequence(
-        sequence=(torch_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device)),
+        sequence=PaddedSequence(torch_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device)),
         device=device,
     )
 

@@ -1,11 +1,10 @@
 import torch
 from hypothesis import given
+from torch.testing import assert_close
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
 from torchnyan import TOKEN_SIZE
-from torchnyan import assert_catted_sequence_close
 from torchnyan import assert_grad_close
-from torchnyan import assert_packed_sequence_close
 from torchnyan import device
 from torchnyan import sizes
 
@@ -17,33 +16,33 @@ from torchrua import pack_sequence
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_reverse_catted_sequence(token_sizes, dim):
+def test_head_catted_sequence(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
-    sequence = cat_sequence(inputs)
 
-    expected = cat_sequence([sequence.flip(dims=[0]) for sequence in inputs])
-    actual = sequence.rev()
+    actual = cat_sequence(inputs).head()
+    expected = torch.stack([sequence[0] for sequence in inputs], dim=0)
 
-    assert_catted_sequence_close(actual=actual, expected=expected)
-    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
+    assert_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_reverse_packed_sequence(token_sizes, dim):
+def test_head_packed_sequence(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
+
     sequence = pack_sequence(inputs)
+    actual = sequence.head()
 
-    expected = pack_sequence([sequence.flip(dims=[0]) for sequence in inputs])
-    actual = sequence.rev()
+    expected = torch.stack([sequence[0] for sequence in inputs], dim=0)
 
-    assert_packed_sequence_close(actual=actual, expected=expected)
-    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
+    assert_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual, expected=expected, inputs=inputs)

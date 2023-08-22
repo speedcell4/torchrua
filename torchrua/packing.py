@@ -12,17 +12,18 @@ from torchrua.core import sizes_to_sorting
 from torchrua.info import token_sizes_to_minor_ptr3
 from torchrua.ty import C
 from torchrua.ty import D
+from torchrua.ty import P
 from torchrua.ty import T
 from torchrua.ty import Ts
 from torchrua.ty import is_type
 
 __all__ = [
-    'pack_sequence',
-    'pack_indices', 'pack_catted_indices', 'pack_padded_indices',
+    'pack_sequence', 'pack_indices',
+    'pack_catted_indices', 'pack_padded_indices',
 ]
 
 
-def pack_sequence(sequence: Union[Ts, C, D], device: torch.device = None):
+def pack_sequence(sequence: Union[Ts, C, D], device: torch.device = None) -> P:
     if is_type(sequence, Ts):
         sequence = cat_sequence(sequence=sequence, device=device)
 
@@ -35,6 +36,10 @@ def pack_sequence(sequence: Union[Ts, C, D], device: torch.device = None):
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
+
+
+C.pack = pack_sequence
+P.pack = P.to
 
 
 def pack_indices(sequence: Union[C, D], device: torch.device = None):

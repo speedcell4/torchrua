@@ -1,5 +1,6 @@
 import torch
-from torch import Tensor
+
+from torchrua.ty import T
 
 __all__ = [
     'scatter_max', 'segment_max',
@@ -11,27 +12,27 @@ __all__ = [
 ]
 
 
-def scatter_max(tensor: Tensor, index: Tensor, source: Tensor, include_self: bool = False, dim: int = 0):
+def scatter_max(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):
     return torch.index_reduce(tensor, index=index, source=source, reduce='amax', include_self=include_self, dim=dim)
 
 
-def scatter_min(tensor: Tensor, index: Tensor, source: Tensor, include_self: bool = False, dim: int = 0):
+def scatter_min(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):
     return torch.index_reduce(tensor, index=index, source=source, reduce='amin', include_self=include_self, dim=dim)
 
 
-def scatter_sum(tensor: Tensor, index: Tensor, source: Tensor, include_self: bool = False, dim: int = 0):
+def scatter_sum(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):
     return torch.index_add(tensor if include_self else torch.zeros_like(tensor), index=index, source=source, dim=dim)
 
 
-def scatter_mean(tensor: Tensor, index: Tensor, source: Tensor, include_self: bool = False, dim: int = 0):
+def scatter_mean(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):
     return torch.index_reduce(tensor, index=index, source=source, reduce='mean', include_self=include_self, dim=dim)
 
 
-def scatter_prod(tensor: Tensor, index: Tensor, source: Tensor, include_self: bool = False, dim: int = 0):
+def scatter_prod(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):
     return torch.index_reduce(tensor, index=index, source=source, reduce='prod', include_self=include_self, dim=dim)
 
 
-def scatter_logsumexp(tensor: Tensor, index: Tensor, source: Tensor, include_self: bool = False, dim: int = 0):
+def scatter_logsumexp(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):
     m = scatter_max(tensor, index=index, source=source, include_self=include_self, dim=dim).detach()
 
     tensor = (tensor - m).exp()
@@ -39,29 +40,29 @@ def scatter_logsumexp(tensor: Tensor, index: Tensor, source: Tensor, include_sel
     return scatter_sum(tensor, index=index, source=source, include_self=include_self, dim=dim).log() + m
 
 
-def segment_max(tensor: Tensor, segment_sizes: Tensor) -> Tensor:
+def segment_max(tensor: T, segment_sizes: T) -> T:
     m = tensor.min().detach().cpu().item()
     return torch.segment_reduce(tensor, reduce='max', lengths=segment_sizes, unsafe=True, initial=m)
 
 
-def segment_min(tensor: Tensor, segment_sizes: Tensor) -> Tensor:
+def segment_min(tensor: T, segment_sizes: T) -> T:
     m = tensor.max().detach().cpu().item()
     return torch.segment_reduce(tensor, reduce='min', lengths=segment_sizes, unsafe=True, initial=m)
 
 
-def segment_sum(tensor: Tensor, segment_sizes: Tensor) -> Tensor:
+def segment_sum(tensor: T, segment_sizes: T) -> T:
     return torch.segment_reduce(tensor, reduce='sum', lengths=segment_sizes, unsafe=True, initial=0)
 
 
-def segment_mean(tensor: Tensor, segment_sizes: Tensor) -> Tensor:
+def segment_mean(tensor: T, segment_sizes: T) -> T:
     return torch.segment_reduce(tensor, reduce='mean', lengths=segment_sizes, unsafe=True, initial=0)
 
 
-def segment_prod(tensor: Tensor, segment_sizes: Tensor) -> Tensor:
+def segment_prod(tensor: T, segment_sizes: T) -> T:
     return torch.segment_reduce(tensor, reduce='prod', lengths=segment_sizes, unsafe=True, initial=1)
 
 
-def segment_logsumexp(tensor: Tensor, segment_sizes: Tensor) -> Tensor:
+def segment_logsumexp(tensor: T, segment_sizes: T) -> T:
     m = segment_max(tensor, segment_sizes=segment_sizes).detach()
 
     tensor = (tensor - torch.repeat_interleave(m, dim=0, repeats=segment_sizes)).exp()

@@ -8,6 +8,7 @@ from torchrua.core import broadcast_devices
 from torchrua.core import get_device
 from torchrua.info import batch_sizes_to_minor_ptr3
 from torchrua.info import token_sizes_to_major_ptr3
+from torchrua.ty import C
 from torchrua.ty import CattedSequence
 from torchrua.ty import D
 from torchrua.ty import P
@@ -16,12 +17,12 @@ from torchrua.ty import Ts
 from torchrua.ty import is_type
 
 __all__ = [
-    'cat_sequence',
-    'cat_indices', 'cat_packed_indices', 'cat_padded_indices',
+    'cat_sequence', 'cat_indices',
+    'cat_packed_indices', 'cat_padded_indices',
 ]
 
 
-def cat_sequence(sequence: Union[Ts, D, P], device: torch.device = None):
+def cat_sequence(sequence: Union[Ts, D, P], device: torch.device = None) -> C:
     if is_type(sequence, Ts):
         device = get_device(*sequence, device=device)
 
@@ -32,6 +33,10 @@ def cat_sequence(sequence: Union[Ts, D, P], device: torch.device = None):
 
     indices, token_sizes = cat_indices(sequence=sequence, device=device)
     return CattedSequence(data=sequence[0][indices], token_sizes=token_sizes)
+
+
+C.cat = C.to
+P.cat = cat_sequence
 
 
 def cat_indices(sequence: Union[D, P], device: torch.device = None):

@@ -51,7 +51,7 @@ def repeat_interleave(tensor: Tensor = None, *, repeats: Tensor) -> Tensor:
     return torch.repeat_interleave(tensor, repeats=repeats)
 
 
-def major_sizes_to_ptr(sizes: Tensor) -> Tuple[Tensor, Tensor]:
+def major_sizes_to_ptr(sizes: Tensor) -> Tuple[(Tensor), (Tensor)]:
     minor_ptr = repeat_interleave(repeats=sizes)
 
     major_ptr = repeat_interleave(accumulate_sizes(sizes=sizes), repeats=sizes)
@@ -74,7 +74,7 @@ def transpose_sizes(sizes: Tensor) -> Tensor:
 
 
 @torch.no_grad()
-def sizes_to_sorting(sizes: Tensor, device: torch.device = None) -> Tuple[Tensor, Tensor, Tensor]:
+def sizes_to_sorting(sizes: Tensor, device: torch.device = None) -> Tuple[(Tensor), (Tensor), (Tensor)]:
     if device is None:
         device = sizes.device
 

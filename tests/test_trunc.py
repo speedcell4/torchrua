@@ -12,7 +12,6 @@ from torchnyan import sizes
 
 from torchrua import cat_sequence
 from torchrua import pack_sequence
-from torchrua import trunc_sequence
 
 
 @given(
@@ -30,7 +29,7 @@ def test_trunc_catted_sequence(data, token_sizes, dim):
     a = data.draw(st.integers(0, max_value=s))
     b = data.draw(st.integers(0, max_value=s - a))
 
-    actual = trunc_sequence(cat_sequence(inputs, device=device), trunc=(a, b))
+    actual = cat_sequence(inputs, device=device).trunc((a, b))
     excepted = cat_sequence([sequence[a:sequence.size()[0] - b] for sequence in inputs], device=device)
 
     assert_catted_sequence_close(actual=actual, expected=excepted)
@@ -52,7 +51,7 @@ def test_trunc_packed_sequence(data, token_sizes, dim):
     a = data.draw(st.integers(0, max_value=s))
     b = data.draw(st.integers(0, max_value=s - a))
 
-    actual = trunc_sequence(pack_sequence(inputs, device=device), trunc=(a, b))
+    actual = pack_sequence(inputs, device=device).trunc((a, b))
     excepted = pack_sequence([sequence[a:sequence.size()[0] - b] for sequence in inputs], device=device)
 
     assert_packed_sequence_close(actual=actual, expected=excepted)

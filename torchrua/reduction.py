@@ -134,7 +134,7 @@ def reduce_padded_indices(token_sizes: Tensor, device: Device = None):
         batch_size=batch_size, cache_size=cache_size,
         sizes=sizes[:-1], src=(src, batch_ptr, token_ptr), tgt=tgt,
     )
-    
+
 
 def reduce_sequence(data: Tensor, indices: ReductionIndices, op: Callable[[Tensor, Tensor], Tensor]) -> Tensor:
     batch_size, cache_size, sizes, src, tgt = indices
