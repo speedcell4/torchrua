@@ -110,30 +110,20 @@ def is_type(obj: Any, ty: Type) -> bool:
     return isinstance(obj, ty)
 
 
-def idx_catted_sequence(sequence: C) -> C:
-    data = torch.arange(
-        sequence.data.size()[0],
-        dtype=torch.long, device=sequence.data.device,
-    )
+def cp_idx(sequence: Union[C, P]) -> Union[C, P]:
+    n, *_ = sequence.data.size()
+    data = torch.arange(n, dtype=torch.long, device=sequence.data.device)
     return sequence._replace(data=data)
 
 
-def idx_packed_sequence(sequence: P) -> P:
-    data = torch.arange(
-        sequence.data.size()[0],
-        dtype=torch.long, device=sequence.data.device,
-    )
-    return sequence._replace(data=data)
-
-
-def idx_padded_sequence(sequence: D) -> D:
+def d_idx(sequence: D) -> D:
     (b, t), (batch_ptr, token_ptr), _ = sequence.ptr()
     return sequence._replace(data=token_ptr + batch_ptr * t)
 
 
-C.idx = idx_catted_sequence
-P.idx = idx_packed_sequence
-D.idx = idx_padded_sequence
+C.idx = cp_idx
+D.idx = d_idx
+P.idx = cp_idx
 
 
 def rua(index: Union[C, D, P], sequence: Union[C, D, P]) -> Union[C, D, P]:
@@ -141,5 +131,5 @@ def rua(index: Union[C, D, P], sequence: Union[C, D, P]) -> Union[C, D, P]:
 
 
 C.rua = rua
-P.rua = rua
 D.rua = rua
+P.rua = rua
