@@ -3,6 +3,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from torch.nn.utils.rnn import pack_sequence as excepted_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as excepted_pad_sequence
+
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
 from torchnyan import TOKEN_SIZE
@@ -10,7 +11,6 @@ from torchnyan import assert_close
 from torchnyan import assert_grad_close
 from torchnyan import device
 from torchnyan import sizes
-
 from torchrua import cat_sequence
 from torchrua import pad_sequence
 

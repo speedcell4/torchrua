@@ -2,14 +2,14 @@ import torch
 from hypothesis import given
 from torch.nn.utils.rnn import pack_sequence as excepted_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as excepted_pad_sequence
+
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
 from torchnyan import TOKEN_SIZE
 from torchnyan import assert_grad_close
-from torchnyan import assert_packed_sequence_close
+from torchnyan import assert_sequence_close
 from torchnyan import device
 from torchnyan import sizes
-
 from torchrua import PaddedSequence
 from torchrua import cat_sequence
 from torchrua import pack_sequence
@@ -28,7 +28,7 @@ def test_pack_sequence(token_sizes, dim):
     actual = pack_sequence(inputs)
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
 
-    assert_packed_sequence_close(actual=actual, expected=excepted)
+    assert_sequence_close(actual=actual, expected=excepted)
     assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
 
 
@@ -46,7 +46,7 @@ def test_pack_catted_sequence(token_sizes, dim):
 
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
 
-    assert_packed_sequence_close(actual=actual, expected=excepted)
+    assert_sequence_close(actual=actual, expected=excepted)
     assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
 
 
@@ -65,5 +65,5 @@ def test_pack_padded_sequence(token_sizes, dim):
 
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
 
-    assert_packed_sequence_close(actual=actual, expected=excepted)
+    assert_sequence_close(actual=actual, expected=excepted)
     assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)

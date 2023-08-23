@@ -2,14 +2,14 @@ import torch
 from hypothesis import given
 from hypothesis import strategies as st
 from torch import Tensor
+
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
 from torchnyan import TOKEN_SIZE
-from torchnyan import assert_catted_sequence_close
 from torchnyan import assert_grad_close
+from torchnyan import assert_sequence_close
 from torchnyan import device
 from torchnyan import sizes
-
 from torchrua import cat_sequence
 from torchrua import pack_sequence
 from torchrua import pad_sequence
@@ -92,5 +92,5 @@ def test_segment_sequence(token_sizes, dim, fns, rua_sequence, rua_duration):
 
     expected = cat_sequence(raw_segment(pad_sequence(inputs).data, durations, fn1))
 
-    assert_catted_sequence_close(actual=actual, expected=expected)
+    assert_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
