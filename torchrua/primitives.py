@@ -3,7 +3,7 @@ from typing import Union
 
 import torch
 
-from torchrua.core import accumulate_sizes
+from torchrua.core import get_offsets
 from torchrua.core import major_sizes_to_ptr
 from torchrua.ty import C
 from torchrua.ty import D
@@ -57,7 +57,7 @@ P.ptr = ptr_p
 
 def offsets_c(sequence: C) -> T:
     _, token_sizes = sequence
-    return accumulate_sizes(token_sizes)
+    return get_offsets(token_sizes)
 
 
 C.offsets = offsets_c
@@ -74,7 +74,7 @@ D.offsets = offsets_d
 
 def offsets_p(sequence: P) -> T:
     data, batch_sizes, _, _ = sequence
-    return accumulate_sizes(batch_sizes.to(device=data.device))
+    return get_offsets(batch_sizes.to(device=data.device))
 
 
 P.offsets = offsets_p

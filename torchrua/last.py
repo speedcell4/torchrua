@@ -15,7 +15,7 @@ C.last = last_c
 
 
 def last_d(sequence: D) -> T:
-    b, t = sequence.size()
+    b, t, *_ = sequence.size()
     batch_ptr = torch.arange(b, dtype=torch.long, device=sequence.data.device)
     return sequence.data[batch_ptr, sequence.token_sizes - 1]
 

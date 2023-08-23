@@ -1,4 +1,4 @@
-from torchrua.core import accumulate_sizes
+from torchrua.core import get_offsets
 from torchrua.ty import C
 from torchrua.ty import D
 from torchrua.ty import P
@@ -7,7 +7,7 @@ from torchrua.ty import T
 
 def head_c(sequence: C) -> T:
     data, token_sizes = sequence
-    return data[accumulate_sizes(sizes=token_sizes)]
+    return data[get_offsets(sizes=token_sizes)]
 
 
 C.head = head_c
