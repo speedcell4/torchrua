@@ -28,15 +28,15 @@ def pack_c(sequence: C) -> P:
     batch_ptr, token_ptr = sequence.ptr()
     batch_ptr = unsorted_indices[batch_ptr]
 
-    mask = data.new_zeros((b, t), dtype=torch.long)
-    mask[batch_ptr, token_ptr] = 1
+    tensor = data.new_zeros((t, b))
+    tensor[token_ptr, batch_ptr] = data
 
-    tensor = torch.zeros_like(mask, dtype=data.dtype)
-    tensor[batch_ptr, token_ptr] = data
+    mask = torch.zeros_like(tensor, dtype=torch.long)
+    mask[token_ptr, batch_ptr] = 1
 
     return PackedSequence(
-        data=tensor.t()[mask.t().bool()],
-        batch_sizes=mask.sum(dim=0).detach().cpu(),
+        data=tensor[mask.bool()],
+        batch_sizes=mask.sum(dim=1).detach().cpu(),
         sorted_indices=sorting_indices,
         unsorted_indices=unsorted_indices,
     )

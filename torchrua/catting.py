@@ -8,10 +8,6 @@ from torchrua.ty import D
 from torchrua.ty import P
 from torchrua.ty import T
 
-__all__ = [
-    'cat_sequence',
-]
-
 
 def cat_sequence(sequence: List[T]) -> C:
     return CattedSequence(
@@ -34,15 +30,15 @@ def cat_p(sequence: P) -> C:
     batch_ptr, token_ptr = sequence.ptr()
     batch_ptr = sorted_indices[batch_ptr]
 
-    mask = data.new_zeros((t, b), dtype=torch.long)
-    mask[token_ptr, batch_ptr] = 1
+    tensor = data.new_zeros((b, t))
+    tensor[batch_ptr, token_ptr] = data
 
-    tensor = torch.zeros_like(mask, dtype=data.dtype)
-    tensor[token_ptr, batch_ptr] = data
+    mask = torch.zeros_like(tensor, dtype=torch.long)
+    mask[batch_ptr, token_ptr] = 1
 
     return CattedSequence(
-        data=tensor.t()[mask.t().bool()],
-        token_sizes=mask.sum(dim=0),
+        data=tensor[mask.bool()],
+        token_sizes=mask.sum(dim=1),
     )
 
 

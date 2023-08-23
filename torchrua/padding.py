@@ -21,32 +21,26 @@ def pad_c(sequence: C, fill_value: Number = 0) -> D:
     b, t, *sizes = sequence.size()
     batch_ptr, token_ptr = sequence.ptr()
 
-    data = torch.full(
-        (b, t, *sizes), fill_value=fill_value,
-        dtype=data.dtype, device=data.device,
-    )
-    data[batch_ptr, token_ptr] = sequence.data
+    tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
+    tensor[batch_ptr, token_ptr] = data
 
-    return PaddedSequence(data=data, token_sizes=token_sizes)
+    return PaddedSequence(data=tensor, token_sizes=token_sizes)
 
 
 def pad_p(sequence: P, fill_value: Number = 0) -> D:
-    data, _, sorted_indices, unsorted_indices = sequence
+    data, _, sorted_indices, _ = sequence
 
     b, t, *sizes = sequence.size()
     batch_ptr, token_ptr = sequence.ptr()
     batch_ptr = sorted_indices[batch_ptr]
 
-    tensor = torch.full(
-        (t, b, *sizes), fill_value=fill_value,
-        dtype=data.dtype, device=data.device,
-    )
-    tensor[token_ptr, batch_ptr] = data
+    tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
+    tensor[batch_ptr, token_ptr] = data
 
-    mask = torch.zeros((t, b), dtype=torch.long, device=data.device)
-    mask[token_ptr, batch_ptr] = 1
+    mask = data.new_zeros((b, t), dtype=torch.long)
+    mask[batch_ptr, token_ptr] = 1
 
-    return PaddedSequence(data=tensor.transpose(0, 1), token_sizes=mask.sum(dim=0))
+    return PaddedSequence(data=tensor, token_sizes=mask.sum(dim=1))
 
 
 C.pad = pad_c
