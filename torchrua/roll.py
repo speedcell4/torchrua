@@ -1,6 +1,7 @@
 import torch
 
 from torchrua.ty import C
+from torchrua.ty import D
 from torchrua.ty import P
 
 
@@ -15,6 +16,19 @@ def roll_c(sequence: C, shifts: int) -> C:
 
 
 C.roll = roll_c
+
+
+def roll_d(sequence: D, shifts: int) -> D:
+    index1, _ = idx = sequence.idx()
+    index2, _ = idx.roll(shifts)
+
+    data = sequence._data().clone()
+    data[index1] = data[index2]
+
+    return sequence._replace(data=data.view_as(sequence.data))
+
+
+D.roll = roll_d
 
 
 def roll_p(sequence: P, shifts: int) -> P:
