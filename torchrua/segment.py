@@ -31,3 +31,10 @@ def seg_t(sequence: D, duration: Union[C, D, P], fn) -> D:
 
 
 D.seg = seg_t
+
+
+def seg_p(sequence: P, duration: Union[C, D, P], fn) -> P:
+    return sequence.cat().seg(duration, fn).pack()
+
+
+P.seg = seg_p
