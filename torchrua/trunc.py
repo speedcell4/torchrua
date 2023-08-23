@@ -1,62 +1,38 @@
 from typing import Tuple
-from typing import Union
 
 import torch
 
-from torchrua import broadcast_devices
-from torchrua.core import accumulate_sizes
 from torchrua.core import major_sizes_to_ptr
 from torchrua.ty import C
+from torchrua.ty import CattedSequence
 from torchrua.ty import P
-from torchrua.ty import T
-from torchrua.ty import is_type
-
-__all__ = [
-    'trunc_sequence', 'trunc_indices',
-    'trunc_catted_indices', 'trunc_packed_indices',
-]
 
 
-def trunc_sequence(sequence: Union[C, P], trunc: Tuple[int, int]) -> Union[C, P]:
-    indices, sizes = trunc_indices(sequence, trunc=trunc)
-    return type(sequence)(sequence[0][indices], sizes, *sequence[2:])
+def trunc_c(sequence: C, trunc: Tuple[int, int]) -> C:
+    data, token_sizes = sequence
+
+    token_sizes = torch.stack([
+        torch.full_like(token_sizes, fill_value=trunc[0]),
+        token_sizes - trunc[0] - trunc[1],
+        torch.full_like(token_sizes, fill_value=trunc[1]),
+    ], dim=-1)
+
+    data = torch.split(data, token_sizes.view(-1).cpu().tolist(), dim=0)
+
+    return CattedSequence(data=torch.cat(data[1::3]), token_sizes=token_sizes[:, 1])
 
 
-C.trunc = trunc_sequence
-P.trunc = trunc_sequence
+C.trunc = trunc_c
 
 
-def trunc_indices(sequence: Union[C, P], trunc: Tuple[int, int], device: torch.device = None):
-    if is_type(sequence, C):
-        return trunc_catted_indices(
-            token_sizes=sequence.token_sizes,
-            trunc=trunc, device=device,
-        )
-
-    if is_type(sequence, P):
-        return trunc_packed_indices(
-            batch_sizes=sequence.batch_sizes,
-            trunc=trunc, device=device,
-        )
-
-    raise TypeError(f'type {type(sequence)} is not supported')
-
-
-def trunc_catted_indices(token_sizes: T, trunc: Tuple[int, int], device: torch.device = None) -> Tuple[T, T]:
-    token_sizes, device = broadcast_devices(token_sizes, device=device)
-    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
-
-    token_sizes = token_sizes - trunc[0] - trunc[1]
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-
-    return acc_token_sizes[batch_ptr] + token_ptr + trunc[0], token_sizes
-
-
-def trunc_packed_indices(batch_sizes: T, trunc: Tuple[int, int], device: torch.device = None) -> Tuple[T, T]:
-    batch_sizes, device = broadcast_devices(batch_sizes, device=device)
-    acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
+def trunc_p(sequence: P, trunc: Tuple[int, int]) -> P:
+    data, batch_sizes, _, _ = sequence
 
     batch_sizes = batch_sizes[trunc[0] + trunc[1]:]
-    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
+    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes.to(device=data.device))
+    index = batch_ptr + sequence.offsets()[token_ptr + trunc[0]]
 
-    return batch_ptr + acc_batch_sizes[token_ptr + trunc[0]], batch_sizes.cpu()
+    return sequence._replace(data=data[index], batch_sizes=batch_sizes)
+
+
+P.trunc = trunc_p
