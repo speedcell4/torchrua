@@ -21,38 +21,38 @@ from torchrua import segment_prod
 from torchrua import segment_sum
 
 
-def reduce_max(x: Tensor) -> Tensor:
-    return x.max(dim=0).values
+def reduce_max(tensor: Tensor) -> Tensor:
+    return tensor.max(dim=0).values
 
 
-def reduce_min(x: Tensor) -> Tensor:
-    return x.min(dim=0).values
+def reduce_min(tensor: Tensor) -> Tensor:
+    return tensor.min(dim=0).values
 
 
-def reduce_sum(x: Tensor) -> Tensor:
-    return x.sum(dim=0)
+def reduce_sum(tensor: Tensor) -> Tensor:
+    return tensor.sum(dim=0)
 
 
-def reduce_mean(x: Tensor) -> Tensor:
-    return x.mean(dim=0)
+def reduce_mean(tensor: Tensor) -> Tensor:
+    return tensor.mean(dim=0)
 
 
-def reduce_prod(x: Tensor) -> Tensor:
-    return x.prod(dim=0)
+def reduce_prod(tensor: Tensor) -> Tensor:
+    return tensor.prod(dim=0)
 
 
-def reduce_logsumexp(x: Tensor) -> Tensor:
-    return x.logsumexp(dim=0)
+def reduce_logsumexp(tensor: Tensor) -> Tensor:
+    return tensor.logsumexp(dim=0)
 
 
-def raw_segment(tensor, durations, reduce_fn):
+def raw_segment(sequence, duration, fn):
     expected = []
 
-    for index, duration in enumerate(durations):
+    for index, duration in enumerate(duration):
         start, end, seq = 0, 0, []
         for size in duration:
             start, end = end, end + size
-            seq.append(reduce_fn(tensor[index][start:end]))
+            seq.append(fn(sequence[index][start:end]))
 
         seq = torch.stack(seq, dim=0)
         expected.append(seq)
@@ -63,7 +63,7 @@ def raw_segment(tensor, durations, reduce_fn):
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    reduce_segment=st.sampled_from([
+    fns=st.sampled_from([
         (reduce_max, segment_max),
         (reduce_min, segment_min),
         (reduce_sum, segment_sum),
@@ -74,7 +74,7 @@ def raw_segment(tensor, durations, reduce_fn):
     rua_sequence=st.sampled_from([cat_sequence, pad_sequence, pack_sequence]),
     rua_duration=st.sampled_from([cat_sequence, pad_sequence, pack_sequence]),
 )
-def test_segment_sequence(token_sizes, dim, reduce_segment, rua_sequence, rua_duration):
+def test_segment_sequence(token_sizes, dim, fns, rua_sequence, rua_duration):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -85,12 +85,12 @@ def test_segment_sequence(token_sizes, dim, reduce_segment, rua_sequence, rua_du
         for token_size in token_sizes
     ]
 
-    reduce1, reduce2 = reduce_segment
+    fn1, fn2 = fns
 
     sequence = rua_sequence(inputs)
-    actual = sequence.seg(rua_duration(durations), reduce2).cat()
+    actual = sequence.seg(rua_duration(durations), fn2).cat()
 
-    expected = cat_sequence(raw_segment(pad_sequence(inputs).data, durations, reduce1))
+    expected = cat_sequence(raw_segment(pad_sequence(inputs).data, durations, fn1))
 
     assert_catted_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
