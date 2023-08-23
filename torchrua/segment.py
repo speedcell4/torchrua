@@ -19,7 +19,7 @@ def seg_c(sequence: C, duration: Union[C, D, P], fn) -> C:
 C.seg = seg_c
 
 
-def seg_t(sequence: D, duration: Union[C, D, P], fn) -> D:
+def seg_d(sequence: D, duration: Union[C, D, P], fn) -> D:
     duration, token_sizes = duration.pad(fill_value=0)
 
     remaining = sequence.size()[1] - duration.sum(dim=1, keepdim=True)
@@ -30,7 +30,7 @@ def seg_t(sequence: D, duration: Union[C, D, P], fn) -> D:
     return PaddedSequence(data=data[:, :-1], token_sizes=token_sizes)
 
 
-D.seg = seg_t
+D.seg = seg_d
 
 
 def seg_p(sequence: P, duration: Union[C, D, P], fn) -> P:
