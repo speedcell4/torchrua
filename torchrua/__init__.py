@@ -9,6 +9,7 @@ from torchrua.last import *
 from torchrua.mask import *
 from torchrua.packing import *
 from torchrua.padding import *
+from torchrua.primitives import *
 from torchrua.reduce import *
 from torchrua.reduction import *
 from torchrua.reverse import *

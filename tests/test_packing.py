@@ -42,7 +42,7 @@ def test_pack_catted_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = pack_sequence(cat_sequence(inputs))
+    actual = cat_sequence(inputs).pack()
 
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
 
@@ -60,9 +60,8 @@ def test_pack_padded_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = pack_sequence(
-        PaddedSequence(excepted_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device)),
-    )
+    actual = PaddedSequence(excepted_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device))
+    actual = actual.pack()
 
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
 

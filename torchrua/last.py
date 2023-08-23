@@ -1,31 +1,31 @@
-from typing import Union
-
 import torch
 
-from torchrua.core import broadcast_devices
+from torchrua.core import major_sizes_to_size
 from torchrua.ty import C
+from torchrua.ty import D
 from torchrua.ty import P
 from torchrua.ty import T
-from torchrua.ty import is_type
-
-__all__ = [
-    'last_sequence', 'last_catted_indices',
-]
 
 
-def last_sequence(sequence: Union[C, P]) -> T:
-    if is_type(sequence, C):
-        sequence, token_sizes = sequence
-        indices = last_catted_indices(token_sizes, device=sequence.device)
-        return sequence[indices]
-
-    return sequence.data[sequence.idx().cat().last()]
+def last_c(sequence: C) -> T:
+    data, token_sizes = sequence
+    return data[token_sizes.cumsum(dim=0) - 1]
 
 
-C.last = last_sequence
-P.last = last_sequence
+C.last = last_c
 
 
-def last_catted_indices(token_sizes: T, device: torch.device = None) -> T:
-    token_sizes, _ = broadcast_devices(token_sizes, device=device)
-    return token_sizes.cumsum(dim=0) - 1
+def last_d(sequence: D) -> T:
+    t, b = major_sizes_to_size(sequence.token_sizes)
+    batch_ptr = torch.arange(b, dtype=torch.long, device=sequence.data.device)
+    return sequence.data[batch_ptr, sequence.token_sizes - 1]
+
+
+D.last = last_d
+
+
+def last_p(sequence: P) -> T:
+    return sequence.idx().cat().last().rua(sequence)
+
+
+P.last = last_p

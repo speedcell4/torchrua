@@ -33,7 +33,7 @@ def broadcast_devices(*tensors: Optional[Tensor], device: torch.device = None):
     return *tensors, device
 
 
-def major_sizes_to_shape(sizes: Tensor) -> Tuple[int, int]:
+def major_sizes_to_size(sizes: Tensor) -> Tuple[int, int]:
     return sizes.max().item(), sizes.size()[0]
 
 
@@ -64,26 +64,6 @@ def accumulate_sizes(sizes: Tensor) -> Tensor:
     sizes = sizes.cumsum(dim=0).roll(shifts=1, dims=0)
     sizes[0] = 0
     return sizes
-
-
-@torch.no_grad()
-def transpose_sizes(sizes: Tensor) -> Tensor:
-    n, _ = major_sizes_to_shape(sizes=sizes)
-    index = torch.arange(n, device=sizes.device)
-    return (index[:, None] < sizes[None, :]).long().sum(dim=-1)
-
-
-@torch.no_grad()
-def sizes_to_sorting(sizes: Tensor, device: torch.device = None) -> Tuple[(Tensor), (Tensor), (Tensor)]:
-    if device is None:
-        device = sizes.device
-
-    sizes, sorted_indices = sizes.cpu().sort(dim=0, descending=True)
-    sizes = sizes.to(device=device)
-    sorted_indices = sorted_indices.to(device=device)
-    unsorted_indices = invert_permutation(sorted_indices)
-
-    return sizes, sorted_indices, unsorted_indices
 
 
 def invert_permutation(tensor: Tensor) -> Tensor:

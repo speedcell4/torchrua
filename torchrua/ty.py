@@ -110,26 +110,55 @@ def is_type(obj: Any, ty: Type) -> bool:
     return isinstance(obj, ty)
 
 
-def cp_idx(sequence: Union[C, P]) -> Union[C, P]:
+def idx_cp(sequence: Union[C, P]) -> Union[C, P]:
     n, *_ = sequence.data.size()
     data = torch.arange(n, dtype=torch.long, device=sequence.data.device)
     return sequence._replace(data=data)
 
 
-def d_idx(sequence: D) -> D:
-    (b, t), (batch_ptr, token_ptr), _ = sequence.ptr()
-    return sequence._replace(data=token_ptr + batch_ptr * t)
+def idx_d(sequence: D) -> C:
+    _, token_sizes = sequence
+    _, t, *_ = sequence.size()
+    batch_ptr, token_ptr = sequence.ptr()
+    return CattedSequence(data=token_ptr + batch_ptr * t, token_sizes=token_sizes)
 
 
-C.idx = cp_idx
-D.idx = d_idx
-P.idx = cp_idx
+C.idx = idx_cp
+D.idx = idx_d
+P.idx = idx_cp
 
 
-def rua(index: Union[C, D, P], sequence: Union[C, D, P]) -> Union[C, D, P]:
-    return index._replace(data=sequence.data[index.data])
+def _data_t(sequence: T) -> T:
+    return sequence
 
 
+def _data_d(sequence: D) -> T:
+    return sequence.data.flatten(start_dim=0, end_dim=1)
+
+
+def _data_cp(sequence: Union[C, P]) -> T:
+    return sequence.data
+
+
+T._data = _data_t
+C._data = _data_cp
+D._data = _data_d
+P._data = _data_cp
+
+
+def _replace_t(_: T, data: T) -> T:
+    return data
+
+
+T._replace = _replace_t
+
+
+def rua(index: Union[T, C, P], sequence: Union[T, C, D, P], *indices: Union[T, C, P]) -> Union[T, C, D, P]:
+    indices = tuple(index.data for index in (index, *indices))
+    return index._replace(data=sequence._data()[indices])
+
+
+T.rua = rua
 C.rua = rua
 D.rua = rua
 P.rua = rua
