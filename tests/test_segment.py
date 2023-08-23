@@ -61,6 +61,39 @@ def raw_segment(tensor, durations, reduce_fn):
     ]),
     rua_sequence=st.sampled_from([cat_sequence, pad_sequence, pack_sequence]),
 )
+def test_segment_catted_sequence(token_sizes, dim, reduce_segment, rua_sequence):
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+
+    durations = [
+        torch.unique(torch.randint(token_size, (token_size,), device=device), sorted=False, return_counts=True)[1]
+        for token_size in token_sizes
+    ]
+
+    reduce1, reduce2 = reduce_segment
+
+    sequence = cat_sequence(inputs)
+    actual = sequence.seg(rua_sequence(durations), reduce2)
+
+    expected = cat_sequence(raw_segment(pad_sequence(inputs).data, durations, reduce1))
+
+    assert_catted_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
+
+
+@given(
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(FEATURE_DIM),
+    reduce_segment=st.sampled_from([
+        (reduce_mean, segment_mean),
+        (reduce_sum, segment_sum),
+        (reduce_max, segment_max),
+        (reduce_min, segment_min),
+    ]),
+    rua_sequence=st.sampled_from([cat_sequence, pad_sequence, pack_sequence]),
+)
 def test_segment_padded_sequence(token_sizes, dim, reduce_segment, rua_sequence):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
@@ -77,7 +110,7 @@ def test_segment_padded_sequence(token_sizes, dim, reduce_segment, rua_sequence)
     sequence = pad_sequence(inputs)
     actual = sequence.seg(rua_sequence(durations), reduce2).cat()
 
-    expected = cat_sequence(raw_segment(sequence.data, durations, reduce1))
+    expected = cat_sequence(raw_segment(pad_sequence(inputs).data, durations, reduce1))
 
     assert_catted_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)

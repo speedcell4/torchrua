@@ -8,6 +8,17 @@ from torchrua.ty import D
 from torchrua.ty import P
 
 
+def seg_c(sequence: C, duration: Union[C, D, P], fn) -> C:
+    data, token_sizes = sequence
+    duration = duration.cat()
+
+    data = fn(data, duration.data)
+    return duration._replace(data=data)
+
+
+C.seg = seg_c
+
+
 def seg_t(sequence: D, duration: Union[C, D, P], fn) -> D:
     duration, token_sizes = duration.pad(fill_value=0)
 
