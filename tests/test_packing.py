@@ -25,7 +25,7 @@ def test_pack_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = pack_sequence(inputs, device=device)
+    actual = pack_sequence(inputs)
     excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
 
     assert_packed_sequence_close(actual=actual, expected=excepted)

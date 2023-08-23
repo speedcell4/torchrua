@@ -11,8 +11,8 @@ from torchrua.ty import PaddedSequence
 from torchrua.ty import T
 
 
-def pad_sequence(sequence: List[T], fill_value: Number = 0, device: torch.device = None) -> D:
-    return cat_sequence(sequence, device=device).pad(fill_value=fill_value)
+def pad_sequence(sequence: List[T], fill_value: Number = 0) -> D:
+    return cat_sequence(sequence).pad(fill_value=fill_value)
 
 
 def pad_c(sequence: C, fill_value: Number = 0) -> D:

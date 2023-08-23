@@ -11,8 +11,8 @@ from torchrua.ty import P
 from torchrua.ty import T
 
 
-def pack_sequence(sequence: List[T], device: torch.device = None) -> P:
-    return cat_sequence(sequence=sequence, device=device).pack()
+def pack_sequence(sequence: List[T]) -> P:
+    return cat_sequence(sequence=sequence).pack()
 
 
 def pack_c(sequence: C) -> P:

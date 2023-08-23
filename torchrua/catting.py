@@ -2,7 +2,6 @@ from typing import List
 
 import torch
 
-from torchrua.core import get_device
 from torchrua.ty import C
 from torchrua.ty import CattedSequence
 from torchrua.ty import D
@@ -14,12 +13,10 @@ __all__ = [
 ]
 
 
-def cat_sequence(sequence: List[T], device: torch.device = None) -> C:
-    device = get_device(*sequence, device=device)
-
+def cat_sequence(sequence: List[T]) -> C:
     return CattedSequence(
-        data=torch.cat(sequence, dim=0).to(device=device),
-        token_sizes=torch.tensor([s.size()[0] for s in sequence], dtype=torch.long, device=device),
+        data=torch.cat(sequence, dim=0),
+        token_sizes=torch.tensor([s.size()[0] for s in sequence], dtype=torch.long),
     )
 
 

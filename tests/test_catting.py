@@ -24,7 +24,7 @@ def test_cat_packed_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = cat_sequence(inputs, device=device)
+    actual = cat_sequence(inputs)
     expected = torch_pack_sequence(inputs, enforce_sorted=False).cat()
 
     assert_catted_sequence_close(actual=actual, expected=expected)
@@ -41,7 +41,7 @@ def test_cat_padded_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = cat_sequence(inputs, device=device)
+    actual = cat_sequence(inputs)
     expected = PaddedSequence(torch_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device))
     expected = expected.cat()
 
