@@ -31,7 +31,7 @@ def test_trunc_sequence(data, token_sizes, dim, rua_sequence):
     b = data.draw(st.integers(0, max_value=s - a))
 
     actual = rua_sequence(inputs).trunc((a, b)).cat()
-    excepted = cat_sequence([sequence[a:sequence.size()[0] - b] for sequence in inputs])
+    expected = cat_sequence([sequence[a:sequence.size()[0] - b] for sequence in inputs])
 
-    assert_sequence_close(actual=actual, expected=excepted)
-    assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
+    assert_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)

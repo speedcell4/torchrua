@@ -42,11 +42,11 @@
 #     _, (actual, _) = rnn(compose_catted_sequences(*catted_sequences, device=device))
 #     actual = actual.transpose(-3, -2).flatten(start_dim=-2)
 #
-#     excepted = []
+#     expected = []
 #     for packed_sequence in packed_sequences:
 #         _, (hidden, _) = rnn(packed_sequence)
-#         excepted.append(hidden.transpose(-3, -2).flatten(start_dim=-2))
-#     excepted = pack_sequence(excepted).data
+#         expected.append(hidden.transpose(-3, -2).flatten(start_dim=-2))
+#     expected = pack_sequence(expected).data
 #
-#     assert_close(actual, excepted, check_stride=False)
-#     assert_grad_close(actual, excepted, inputs=inputs)
+#     assert_close(actual, expected, check_stride=False)
+#     assert_grad_close(actual, expected, inputs=inputs)

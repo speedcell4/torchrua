@@ -1,7 +1,7 @@
 import torch
 from hypothesis import given
-from torch.nn.utils.rnn import pack_sequence as excepted_pack_sequence
-from torch.nn.utils.rnn import pad_sequence as excepted_pad_sequence
+from torch.nn.utils.rnn import pack_sequence as expected_pack_sequence
+from torch.nn.utils.rnn import pad_sequence as expected_pad_sequence
 
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
@@ -26,10 +26,10 @@ def test_pack_sequence(token_sizes, dim):
     ]
 
     actual = pack_sequence(inputs)
-    excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
+    expected = expected_pack_sequence(inputs, enforce_sorted=False)
 
-    assert_sequence_close(actual=actual, expected=excepted)
-    assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
+    assert_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
 
 
 @given(
@@ -44,10 +44,10 @@ def test_pack_catted_sequence(token_sizes, dim):
 
     actual = cat_sequence(inputs).pack()
 
-    excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
+    expected = expected_pack_sequence(inputs, enforce_sorted=False)
 
-    assert_sequence_close(actual=actual, expected=excepted)
-    assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
+    assert_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
 
 
 @given(
@@ -60,10 +60,10 @@ def test_pack_padded_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = PaddedSequence(excepted_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device))
+    actual = PaddedSequence(expected_pad_sequence(inputs, batch_first=True), torch.tensor(token_sizes, device=device))
     actual = actual.pack()
 
-    excepted = excepted_pack_sequence(inputs, enforce_sorted=False)
+    expected = expected_pack_sequence(inputs, enforce_sorted=False)
 
-    assert_sequence_close(actual=actual, expected=excepted)
-    assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
+    assert_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)

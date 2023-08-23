@@ -32,13 +32,13 @@
 #         cat_sequence(sequences, device=device)
 #         for sequences in sequences_batch
 #     ])
-#     excepted = cat_sequence([
+#     expected = cat_sequence([
 #         torch.cat([seq for seq in sequences if seq is not None], dim=0)
 #         for sequences in zip_longest(*sequences_batch)
 #     ], device=device)
 #
-#     assert_catted_sequence_close(actual=actual, expected=excepted)
-#     assert_grad_close(actual=actual.data, expected=excepted.data, inputs=[
+#     assert_catted_sequence_close(actual=actual, expected=expected)
+#     assert_grad_close(actual=actual.data, expected=expected.data, inputs=[
 #         sequence for sequences in sequences_batch for sequence in sequences
 #     ])
 #
@@ -57,12 +57,12 @@
 #         pack_sequence(sequences, device=device)
 #         for sequences in sequences_batch
 #     ])
-#     excepted = pack_sequence([
+#     expected = pack_sequence([
 #         torch.cat([seq for seq in sequences if seq is not None], dim=0)
 #         for sequences in zip_longest(*sequences_batch)
 #     ], device=device)
 #
-#     assert_packed_sequence_close(actual=actual, expected=excepted)
-#     assert_grad_close(actual=actual.data, expected=excepted.data, inputs=[
+#     assert_packed_sequence_close(actual=actual, expected=expected)
+#     assert_grad_close(actual=actual.data, expected=expected.data, inputs=[
 #         sequence for sequences in sequences_batch for sequence in sequences
 #     ])

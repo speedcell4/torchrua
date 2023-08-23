@@ -65,7 +65,7 @@ C.offsets = offsets_c
 
 def offsets_d(sequence: D) -> T:
     data, token_sizes = sequence
-    b, t = sequence.ptr()
+    b, t = sequence.size()
     return torch.arange(b, dtype=torch.long, device=data.device) * t
 
 
