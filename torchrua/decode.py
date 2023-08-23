@@ -4,29 +4,27 @@ from typing import Union
 import torch
 from torch.types import Number
 
-from torchrua.catting import cat_sequence
 from torchrua.ty import C
 from torchrua.ty import D
 from torchrua.ty import P
-from torchrua.ty import Ts
-from torchrua.ty import is_type
+from torchrua.ty import T
 
 
-def split(sequence: Union[D, C, P]) -> Ts:
-    if is_type(sequence, Union[D, P]):
-        sequence = cat_sequence(sequence)
+def split_cdp(sequence: Union[C, D, P]) -> List[T]:
+    data, token_sizes = sequence.cat()
 
-    sections = sequence.token_sizes.detach().cpu().tolist()
-    return torch.split(sequence.data, sections, dim=0)
+    return torch.split(data, token_sizes.cpu().tolist(), dim=0)
 
 
-C.split = split
-P.split = split
+C.split = split_cdp
+D.split = split_cdp
+P.split = split_cdp
 
 
-def tolist(sequence: Union[D, C, P]) -> List[List[Number]]:
-    return [tensor.tolist() for tensor in split(sequence.detach().cpu())]
+def tolist_cdp(sequence: Union[C, D, P]) -> List[List[Number]]:
+    return [tensor.tolist() for tensor in sequence.detach().cpu().split()]
 
 
-C.tolist = tolist
-P.tolist = tolist
+C.tolist = tolist_cdp
+D.tolist = tolist_cdp
+P.tolist = tolist_cdp

@@ -3,13 +3,13 @@ from typing import Union
 
 import torch
 
-from torchrua import is_type
 from torchrua.core import accumulate_sizes
 from torchrua.core import major_sizes_to_ptr
 from torchrua.ty import C
 from torchrua.ty import D
 from torchrua.ty import P
 from torchrua.ty import T
+from torchrua.ty import is_type
 
 
 def size_c(sequence: C) -> Tuple[int, ...]:

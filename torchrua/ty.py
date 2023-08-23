@@ -1,5 +1,4 @@
 from typing import Any
-from typing import List
 from typing import NamedTuple
 from typing import Type
 from typing import Union
@@ -72,15 +71,6 @@ C = CattedSequence
 D = PaddedSequence
 P = PackedSequence
 
-Sequence = Union[T, C, D, P]
-
-Ts = List[T]
-Cs = List[C]
-Ds = List[D]
-Ps = List[P]
-
-Sequences = Union[Ts, Cs, Ds, Ps]
-
 
 def is_type(obj: Any, ty: Type) -> bool:
     __origin__ = getattr(ty, '__origin__', None)
@@ -93,7 +83,7 @@ def is_type(obj: Any, ty: Type) -> bool:
         return all(is_type(o, __args__[0]) for o in obj)
 
     if __origin__ is tuple:
-        if isinstance(obj, (D, C, P)) or not isinstance(obj, tuple):
+        if isinstance(obj, (C, D, P)) or not isinstance(obj, tuple):
             return False
 
         if len(__args__) == 2 and __args__[1] is ...:
@@ -153,12 +143,11 @@ def _replace_t(_: T, data: T) -> T:
 T._replace = _replace_t
 
 
-def rua(index: Union[T, C, P], sequence: Union[T, C, D, P], *indices: Union[T, C, P]) -> Union[T, C, D, P]:
+def rua(index: Union[T, C, P], sequence: Union[T, C, D, P], *indices: Union[T, C, P]) -> Union[T, C, P]:
     indices = tuple(index.data for index in (index, *indices))
     return index._replace(data=sequence._data()[indices])
 
 
 T.rua = rua
 C.rua = rua
-D.rua = rua
 P.rua = rua
