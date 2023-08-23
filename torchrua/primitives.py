@@ -80,10 +80,10 @@ def offsets_p(sequence: P) -> T:
 P.offsets = offsets_p
 
 
-def __getitem__c(sequence: C, ptr: Tuple[T, T]) -> T:
+def __getitem__c(sequence: C, ptr: Tuple[T, T]) -> C:
     if is_type(ptr, Tuple[T, T]):
         batch_ptr, token_ptr = ptr
-        return sequence.data[sequence.offsets()[batch_ptr] + token_ptr]
+        return sequence._replace(data=sequence.data[sequence.offsets()[batch_ptr] + token_ptr])
 
     return super(C, sequence).__getitem__(ptr)
 
@@ -91,10 +91,10 @@ def __getitem__c(sequence: C, ptr: Tuple[T, T]) -> T:
 C.__getitem__ = __getitem__c
 
 
-def __getitem__d(sequence: D, ptr: Tuple[T, T]) -> T:
+def __getitem__d(sequence: D, ptr: Tuple[T, T]) -> D:
     if is_type(ptr, Tuple[T, T]):
         batch_ptr, token_ptr = ptr
-        return sequence.data[batch_ptr, token_ptr]
+        return sequence._replace(data=sequence.data[batch_ptr, token_ptr])
 
     return super(D, sequence).__getitem__(ptr)
 
@@ -102,10 +102,10 @@ def __getitem__d(sequence: D, ptr: Tuple[T, T]) -> T:
 D.__getitem__ = __getitem__d
 
 
-def __getitem__p(sequence: P, ptr: Tuple[T, T]) -> T:
+def __getitem__p(sequence: P, ptr: Tuple[T, T]) -> P:
     if is_type(ptr, Tuple[T, T]):
         batch_ptr, token_ptr = ptr
-        return sequence.data[batch_ptr + sequence.offsets()[token_ptr]]
+        return sequence._replace(data=sequence.data[batch_ptr + sequence.offsets()[token_ptr]])
 
     return super(P, sequence).__getitem__(ptr)
 
