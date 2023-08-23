@@ -1,6 +1,7 @@
 import torch
 
 from torchrua.ty import C
+from torchrua.ty import D
 from torchrua.ty import P
 
 
@@ -19,6 +20,19 @@ def rev_c(sequence: C) -> C:
 
 
 C.rev = rev_c
+
+
+def rev_d(sequence: D) -> D:
+    index1, _ = idx = sequence.idx()
+    index2, _ = idx.rev()
+
+    data = sequence._data().clone()
+    data[index1] = data[index2]
+
+    return sequence._replace(data=data.view_as(sequence.data))
+
+
+D.rev = rev_d
 
 
 def rev_p(sequence: P) -> P:

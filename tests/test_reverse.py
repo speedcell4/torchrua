@@ -11,6 +11,7 @@ from torchnyan import sizes
 
 from torchrua import cat_sequence
 from torchrua import pack_sequence
+from torchrua import pad_sequence
 
 
 @given(
@@ -22,10 +23,26 @@ def test_reverse_catted_sequence(token_sizes, dim):
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
-    sequence = cat_sequence(inputs)
 
+    actual = cat_sequence(inputs).rev()
     expected = cat_sequence([sequence.flip(dims=[0]) for sequence in inputs])
-    actual = sequence.rev()
+
+    assert_catted_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
+
+
+@given(
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(FEATURE_DIM),
+)
+def test_reverse_padded_sequence(token_sizes, dim):
+    inputs = [
+        torch.randn((token_size, dim), device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+
+    actual = pad_sequence(inputs).rev().cat()
+    expected = cat_sequence([sequence.flip(dims=[0]) for sequence in inputs])
 
     assert_catted_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
@@ -40,10 +57,9 @@ def test_reverse_packed_sequence(token_sizes, dim):
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
-    sequence = pack_sequence(inputs)
 
+    actual = pack_sequence(inputs).rev()
     expected = pack_sequence([sequence.flip(dims=[0]) for sequence in inputs])
-    actual = sequence.rev()
 
     assert_packed_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
