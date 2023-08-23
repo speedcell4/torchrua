@@ -2,6 +2,7 @@ from typing import List
 
 import torch
 
+from torchrua.core import _self
 from torchrua.ty import C
 from torchrua.ty import CattedSequence
 from torchrua.ty import D
@@ -42,6 +43,6 @@ def cat_p(sequence: P) -> C:
     )
 
 
-C.cat = C.to
+C.cat = _self
 D.cat = cat_d
 P.cat = cat_p

@@ -4,6 +4,7 @@ import torch
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua.catting import cat_sequence
+from torchrua.core import _self
 from torchrua.core import invert_permutation
 from torchrua.ty import C
 from torchrua.ty import D
@@ -48,4 +49,4 @@ def pack_d(sequence: D) -> P:
 
 C.pack = pack_c
 D.pack = pack_d
-P.pack = P.to
+P.pack = _self

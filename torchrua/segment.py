@@ -1,44 +1,22 @@
-# from typing import Union
-#
-# import torch
-# from torch import Tensor
-# from torch.nn.utils.rnn import PackedSequence
-#
-# from torchrua.core import get_device
-# from torchrua.info import sequence_major_ptr2
-# from torchrua.ty import CattedSequence
-#
-# __all__ = [
-#     'segment_indices', 'segment_sequence',
-# ]
-#
-# Sequence = Union[CattedSequence, PackedSequence]
-#
-#
-# def segment_indices(sizes: Sequence, token_size: int, device: torch.device = None):
-#     device = get_device(sizes.data, device=device)
-#     (b, t), (batch_ptr, token_ptr) = sequence_major_ptr2(sequence=sizes)
-#
-#     lengths = torch.zeros((b, t + 1), dtype=torch.long, device=device)
-#     lengths[batch_ptr, token_ptr] = sizes.data
-#     lengths[:, -1] = token_size - lengths.sum(dim=-1)
-#
-#     mask = torch.zeros((b, t), dtype=torch.bool, device=device)
-#     mask[batch_ptr, token_ptr] = True
-#
-#     return lengths.view(-1), mask, (b, t), (batch_ptr, token_ptr)
-#
-#
-# def segment_sequence(tensor: Tensor, sizes: Sequence, reduce_fn, keep: bool):
-#     _, t, *_ = tensor.size()
-#     tensor = tensor.flatten(start_dim=0, end_dim=1)
-#
-#     lengths, mask, (b, t), (batch_ptr, token_ptr) = segment_indices(sizes, token_size=t, device=tensor.device)
-#     data = reduce_fn(tensor, lengths)
-#     data = data.view((b, t + 1, *data.size()[1:]))
-#
-#     if keep:
-#         return data[:, :-1], mask, (batch_ptr, token_ptr)
-#
-#     sequence = sizes._replace(data=data[batch_ptr, token_ptr])
-#     return sequence, mask, (batch_ptr, token_ptr)
+from typing import Union
+
+import torch
+
+from torchrua import PaddedSequence
+from torchrua.ty import C
+from torchrua.ty import D
+from torchrua.ty import P
+
+
+def seg_t(sequence: D, duration: Union[C, D, P], fn) -> D:
+    duration, token_sizes = duration.pad(fill_value=0)
+
+    remaining = sequence.size()[1] - duration.sum(dim=1, keepdim=True)
+    duration = torch.cat([duration, remaining], dim=-1)
+
+    data = fn(sequence._data(), duration.view(-1))
+    data = data.view((*duration.size(), *data.size()[1:]))
+    return PaddedSequence(data=data[:, :-1], token_sizes=token_sizes)
+
+
+D.seg = seg_t

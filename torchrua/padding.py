@@ -4,6 +4,7 @@ import torch
 from torch.types import Number
 
 from torchrua.catting import cat_sequence
+from torchrua.core import _self
 from torchrua.ty import C
 from torchrua.ty import D
 from torchrua.ty import P
@@ -44,5 +45,5 @@ def pad_p(sequence: P, fill_value: Number = 0) -> D:
 
 
 C.pad = pad_c
-D.pad = D.to
+D.pad = _self
 P.pad = pad_p
