@@ -24,6 +24,7 @@ def pack_c(sequence: C) -> P:
         return sequence.idx().pack().rua(sequence)
 
     _, sorting_indices = torch.sort(token_sizes.detach().cpu(), descending=True)
+    sorting_indices = sorting_indices.to(device=data.device)
     unsorted_indices = invert_permutation(sorting_indices)
 
     batch_ptr, token_ptr = sequence.ptr()

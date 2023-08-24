@@ -11,10 +11,9 @@ from torchrua.ty import T
 
 
 def cat_sequence(sequence: List[T]) -> C:
-    return CattedSequence(
-        data=torch.cat(sequence, dim=0),
-        token_sizes=torch.tensor([s.size()[0] for s in sequence], dtype=torch.long),
-    )
+    data = torch.cat(sequence, dim=0)
+    token_sizes = [s.size()[0] for s in sequence]
+    return CattedSequence(data=data, token_sizes=data.new_tensor(token_sizes, dtype=torch.long))
 
 
 def cat_d(sequence: D) -> C:
