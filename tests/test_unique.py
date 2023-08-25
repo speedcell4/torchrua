@@ -7,7 +7,7 @@
 # from torchnyan import device
 # from torchnyan import sizes
 #
-# from torchrua import cat_sequence
+# from torchrua import C
 # from torchrua import pack_sequence
 # from torchrua import unique_sequence
 #

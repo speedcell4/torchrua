@@ -3,7 +3,6 @@ from typing import List
 import torch
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.catting import cat_sequence
 from torchrua.core import _self
 from torchrua.core import invert_permutation
 from torchrua.ty import C
@@ -13,7 +12,11 @@ from torchrua.ty import T
 
 
 def pack_sequence(sequence: List[T]) -> P:
-    return cat_sequence(sequence=sequence).pack()
+    return C.new(sequence).pack()
+
+
+P.new = pack_sequence
+P.pack = _self
 
 
 def pack_c(sequence: C) -> P:
@@ -44,10 +47,11 @@ def pack_c(sequence: C) -> P:
     )
 
 
+C.pack = pack_c
+
+
 def pack_d(sequence: D) -> P:
     return sequence.idx().pack().rua(sequence)
 
 
-C.pack = pack_c
 D.pack = pack_d
-P.pack = _self

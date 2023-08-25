@@ -2,7 +2,6 @@ import torch
 from hypothesis import given
 from torch.nn.utils.rnn import pack_sequence as expected_pack_sequence
 from torch.nn.utils.rnn import pad_sequence as expected_pad_sequence
-
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
 from torchnyan import TOKEN_SIZE
@@ -10,9 +9,10 @@ from torchnyan import assert_grad_close
 from torchnyan import assert_sequence_close
 from torchnyan import device
 from torchnyan import sizes
+
+from torchrua import C
+from torchrua import P
 from torchrua import PaddedSequence
-from torchrua import cat_sequence
-from torchrua import pack_sequence
 
 
 @given(
@@ -25,7 +25,7 @@ def test_pack_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = pack_sequence(inputs)
+    actual = P.new(inputs)
     expected = expected_pack_sequence(inputs, enforce_sorted=False)
 
     assert_sequence_close(actual=actual, expected=expected)
@@ -42,7 +42,7 @@ def test_pack_catted_sequence(token_sizes, dim):
         for token_size in token_sizes
     ]
 
-    actual = cat_sequence(inputs).pack()
+    actual = C.new(inputs).pack()
 
     expected = expected_pack_sequence(inputs, enforce_sorted=False)
 

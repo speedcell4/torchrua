@@ -13,8 +13,8 @@
 # from torchnyan import device
 # from torchnyan import sizes
 #
-# from torchrua import cat_sequence
-# from torchrua import cat_sequences
+# from torchrua import C
+# from torchrua import Cs
 # from torchrua import pack_sequence
 #
 #

@@ -16,8 +16,15 @@ def cat_sequence(sequence: List[T]) -> C:
     return CattedSequence(data=data, token_sizes=data.new_tensor(token_sizes, dtype=torch.long))
 
 
+C.new = cat_sequence
+C.cat = _self
+
+
 def cat_d(sequence: D) -> C:
     return sequence.idx().rua(sequence)
+
+
+D.cat = cat_d
 
 
 def cat_p(sequence: P) -> C:
@@ -42,6 +49,4 @@ def cat_p(sequence: P) -> C:
     )
 
 
-C.cat = _self
-D.cat = cat_d
 P.cat = cat_p

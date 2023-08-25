@@ -1,7 +1,6 @@
 import torch
 from hypothesis import given
 from hypothesis import strategies as st
-
 from torchnyan import BATCH_SIZE
 from torchnyan import FEATURE_DIM
 from torchnyan import TOKEN_SIZE
@@ -9,15 +8,16 @@ from torchnyan import assert_close
 from torchnyan import assert_grad_close
 from torchnyan import device
 from torchnyan import sizes
-from torchrua import cat_sequence
-from torchrua import pack_sequence
-from torchrua import pad_sequence
+
+from torchrua import C
+from torchrua import D
+from torchrua import P
 
 
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([cat_sequence, pad_sequence, pack_sequence]),
+    rua_sequence=st.sampled_from([C.new, D.new, P.new]),
 )
 def test_head_sequence_idx(token_sizes, dim, rua_sequence):
     inputs = [
@@ -36,7 +36,7 @@ def test_head_sequence_idx(token_sizes, dim, rua_sequence):
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([cat_sequence, pad_sequence, pack_sequence]),
+    rua_sequence=st.sampled_from([C.new, D.new, P.new]),
 )
 def test_head_sequence(token_sizes, dim, rua_sequence):
     inputs = [

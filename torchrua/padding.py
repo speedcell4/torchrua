@@ -3,7 +3,6 @@ from typing import List
 import torch
 from torch.types import Number
 
-from torchrua.catting import cat_sequence
 from torchrua.core import _self
 from torchrua.ty import C
 from torchrua.ty import D
@@ -13,7 +12,11 @@ from torchrua.ty import T
 
 
 def pad_sequence(sequence: List[T], fill_value: Number = 0) -> D:
-    return cat_sequence(sequence).pad(fill_value=fill_value)
+    return C.new(sequence).pad(fill_value=fill_value)
+
+
+D.new = pad_sequence
+D.pad = _self
 
 
 def pad_c(sequence: C, fill_value: Number = 0) -> D:
@@ -26,6 +29,9 @@ def pad_c(sequence: C, fill_value: Number = 0) -> D:
     tensor[batch_ptr, token_ptr] = data
 
     return PaddedSequence(data=tensor, token_sizes=token_sizes)
+
+
+C.pad = pad_c
 
 
 def pad_p(sequence: P, fill_value: Number = 0) -> D:
@@ -44,6 +50,4 @@ def pad_p(sequence: P, fill_value: Number = 0) -> D:
     return PaddedSequence(data=tensor, token_sizes=mask.sum(dim=1))
 
 
-C.pad = pad_c
-D.pad = _self
 P.pad = pad_p
