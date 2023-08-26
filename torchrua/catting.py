@@ -20,6 +20,14 @@ C.new = cat_sequence
 C.cat = _self
 
 
+def cat_t(sequence: T) -> C:
+    token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
+    return CattedSequence(data=sequence, token_sizes=token_sizes)
+
+
+T.cat = cat_t
+
+
 def cat_d(sequence: D) -> C:
     return sequence.idx().rua(sequence)
 

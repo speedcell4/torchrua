@@ -19,6 +19,22 @@ P.new = pack_sequence
 P.pack = _self
 
 
+def pack_t(sequence: T) -> P:
+    batch_sizes = torch.ones(sequence.size()[:1], dtype=torch.long).cpu()
+    sorted_indices = sequence.data.new_tensor([0], dtype=torch.long)
+    unsorted_indices = sequence.data.new_tensor([0], dtype=torch.long)
+
+    return PackedSequence(
+        data=sequence.data,
+        batch_sizes=batch_sizes,
+        sorted_indices=sorted_indices,
+        unsorted_indices=unsorted_indices,
+    )
+
+
+T.pack = pack_t
+
+
 def pack_c(sequence: C) -> P:
     data, token_sizes = sequence
     b, t, *sizes = sequence.size()

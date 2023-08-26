@@ -19,6 +19,14 @@ D.new = pad_sequence
 D.pad = _self
 
 
+def pad_d(sequence: T, fill_value: Number = 0) -> D:
+    token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
+    return PaddedSequence(data=sequence[None], token_sizes=token_sizes)
+
+
+T.pad = pad_d
+
+
 def pad_c(sequence: C, fill_value: Number = 0) -> D:
     data, token_sizes = sequence
 
