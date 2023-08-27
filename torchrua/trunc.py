@@ -2,10 +2,8 @@ from typing import Tuple
 
 import torch
 
-from torchrua import PaddedSequence
 from torchrua.core import major_sizes_to_ptr
 from torchrua.ty import C
-from torchrua.ty import CattedSequence
 from torchrua.ty import D
 from torchrua.ty import P
 
@@ -21,7 +19,7 @@ def trunc_c(sequence: C, trunc: Tuple[int, int]) -> C:
 
     data = torch.split(data, token_sizes.view(-1).cpu().tolist(), dim=0)
 
-    return CattedSequence(data=torch.cat(data[1::3]), token_sizes=token_sizes[:, 1])
+    return C(data=torch.cat(data[1::3]), token_sizes=token_sizes[:, 1])
 
 
 C.trunc = trunc_c
@@ -31,7 +29,7 @@ def trunc_d(sequence: D, trunc: Tuple[int, int]) -> D:
     data, token_sizes = sequence
     _, t, *_ = sequence.size()
 
-    return PaddedSequence(
+    return D(
         data=data[:, trunc[0]:t - trunc[1]],
         token_sizes=token_sizes - trunc[0] - trunc[1],
     )

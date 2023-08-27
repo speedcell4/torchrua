@@ -4,7 +4,6 @@ import torch
 
 from torchrua.core import _self
 from torchrua.ty import C
-from torchrua.ty import CattedSequence
 from torchrua.ty import D
 from torchrua.ty import P
 from torchrua.ty import T
@@ -13,7 +12,7 @@ from torchrua.ty import T
 def cat_sequence(sequence: List[T]) -> C:
     data = torch.cat(sequence, dim=0)
     token_sizes = [s.size()[0] for s in sequence]
-    return CattedSequence(data=data, token_sizes=data.new_tensor(token_sizes, dtype=torch.long))
+    return C(data=data, token_sizes=data.new_tensor(token_sizes, dtype=torch.long))
 
 
 C.new = cat_sequence
@@ -22,7 +21,7 @@ C.cat = _self
 
 def cat_t(sequence: T) -> C:
     token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
-    return CattedSequence(data=sequence, token_sizes=token_sizes)
+    return C(data=sequence, token_sizes=token_sizes)
 
 
 T.cat = cat_t
@@ -51,7 +50,7 @@ def cat_p(sequence: P) -> C:
     mask = torch.zeros_like(tensor, dtype=torch.long)
     mask[batch_ptr, token_ptr] = 1
 
-    return CattedSequence(
+    return C(
         data=tensor[mask.bool()],
         token_sizes=mask.sum(dim=1),
     )

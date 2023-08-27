@@ -2,7 +2,6 @@ from typing import Union
 
 import torch
 
-from torchrua import PaddedSequence
 from torchrua.ty import C
 from torchrua.ty import D
 from torchrua.ty import P
@@ -27,7 +26,7 @@ def seg_d(sequence: D, duration: Union[C, D, P], fn) -> D:
 
     data = fn(sequence._data(), duration.view(-1))
     data = data.view((*duration.size(), *data.size()[1:]))
-    return PaddedSequence(data=data[:, :-1], token_sizes=token_sizes)
+    return D(data=data[:, :-1], token_sizes=token_sizes)
 
 
 D.seg = seg_d

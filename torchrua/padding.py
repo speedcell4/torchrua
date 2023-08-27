@@ -7,7 +7,6 @@ from torchrua.core import _self
 from torchrua.ty import C
 from torchrua.ty import D
 from torchrua.ty import P
-from torchrua.ty import PaddedSequence
 from torchrua.ty import T
 
 
@@ -21,7 +20,7 @@ D.pad = _self
 
 def pad_d(sequence: T, fill_value: Number = 0) -> D:
     token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
-    return PaddedSequence(data=sequence[None], token_sizes=token_sizes)
+    return D(data=sequence[None], token_sizes=token_sizes)
 
 
 T.pad = pad_d
@@ -36,7 +35,7 @@ def pad_c(sequence: C, fill_value: Number = 0) -> D:
     tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
     tensor[batch_ptr, token_ptr] = data
 
-    return PaddedSequence(data=tensor, token_sizes=token_sizes)
+    return D(data=tensor, token_sizes=token_sizes)
 
 
 C.pad = pad_c
@@ -55,7 +54,7 @@ def pad_p(sequence: P, fill_value: Number = 0) -> D:
     mask = data.new_zeros((b, t), dtype=torch.long)
     mask[batch_ptr, token_ptr] = 1
 
-    return PaddedSequence(data=tensor, token_sizes=mask.sum(dim=1))
+    return D(data=tensor, token_sizes=mask.sum(dim=1))
 
 
 P.pad = pad_p

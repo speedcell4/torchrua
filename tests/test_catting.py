@@ -11,7 +11,7 @@ from torchnyan import device
 from torchnyan import sizes
 
 from torchrua import C
-from torchrua import PaddedSequence
+from torchrua import D
 
 
 @given(
@@ -42,7 +42,7 @@ def test_cat_padded_sequence(token_sizes, dim):
     ]
 
     actual = C.new(inputs)
-    expected = PaddedSequence(
+    expected = D(
         data=pad_sequence(inputs, batch_first=True),
         token_sizes=torch.tensor(token_sizes, device=device),
     ).cat()
