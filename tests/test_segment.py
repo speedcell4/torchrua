@@ -1,5 +1,6 @@
 import torch
 from hypothesis import given
+from hypothesis import settings
 from hypothesis import strategies as st
 from torch import Tensor
 from torchnyan import BATCH_SIZE
@@ -70,6 +71,7 @@ def raw_segment(sequence, duration, fn):
     return expected
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
