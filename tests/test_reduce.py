@@ -16,6 +16,8 @@ from torchrua import scatter_mean
 from torchrua import scatter_min
 from torchrua import scatter_prod
 from torchrua import scatter_sum
+from torchrua import segment_head
+from torchrua import segment_last
 from torchrua import segment_logsumexp
 from torchrua import segment_max
 from torchrua import segment_mean
@@ -25,12 +27,11 @@ from torchrua import segment_sum
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
-def test_scatter_max(data, token_sizes, dim, include_self):
+def test_scatter_max(token_sizes, dim, include_self):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -56,12 +57,11 @@ def test_scatter_max(data, token_sizes, dim, include_self):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
-def test_scatter_min(data, token_sizes, dim, include_self):
+def test_scatter_min(token_sizes, dim, include_self):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -87,12 +87,11 @@ def test_scatter_min(data, token_sizes, dim, include_self):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
-def test_scatter_sum(data, token_sizes, dim, include_self):
+def test_scatter_sum(token_sizes, dim, include_self):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -118,12 +117,11 @@ def test_scatter_sum(data, token_sizes, dim, include_self):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
-def test_scatter_mean(data, token_sizes, dim, include_self):
+def test_scatter_mean(token_sizes, dim, include_self):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -154,12 +152,11 @@ def test_scatter_mean(data, token_sizes, dim, include_self):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
-def test_scatter_prod(data, token_sizes, dim, include_self):
+def test_scatter_prod(token_sizes, dim, include_self):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -185,12 +182,11 @@ def test_scatter_prod(data, token_sizes, dim, include_self):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
     include_self=st.booleans(),
 )
-def test_scatter_logsumexp(data, token_sizes, dim, include_self):
+def test_scatter_logsumexp(token_sizes, dim, include_self):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -219,11 +215,10 @@ def test_scatter_logsumexp(data, token_sizes, dim, include_self):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_segment_max(data, token_sizes, dim):
+def test_segment_max(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -239,11 +234,10 @@ def test_segment_max(data, token_sizes, dim):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_segment_min(data, token_sizes, dim):
+def test_segment_min(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -259,11 +253,10 @@ def test_segment_min(data, token_sizes, dim):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_segment_sum(data, token_sizes, dim):
+def test_segment_sum(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -279,11 +272,10 @@ def test_segment_sum(data, token_sizes, dim):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_segment_mean(data, token_sizes, dim):
+def test_segment_mean(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -299,11 +291,10 @@ def test_segment_mean(data, token_sizes, dim):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_segment_prod(data, token_sizes, dim):
+def test_segment_prod(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -319,11 +310,10 @@ def test_segment_prod(data, token_sizes, dim):
 
 
 @given(
-    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
 )
-def test_segment_logsumexp(data, token_sizes, dim):
+def test_segment_logsumexp(token_sizes, dim):
     inputs = [
         torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
         for token_size in token_sizes
@@ -333,6 +323,44 @@ def test_segment_logsumexp(data, token_sizes, dim):
 
     tensor, segment_sizes = C.new(inputs)
     actual = segment_logsumexp(tensor, segment_sizes=segment_sizes)
+
+    assert_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual, expected=expected, inputs=inputs)
+
+
+@given(
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(FEATURE_DIM),
+)
+def test_segment_head(token_sizes, dim):
+    inputs = [
+        torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+
+    expected = torch.cat([seq[:1] for seq in inputs], dim=0)
+
+    tensor, segment_sizes = C.new(inputs)
+    actual = segment_head(tensor, segment_sizes=segment_sizes)
+
+    assert_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual, expected=expected, inputs=inputs)
+
+
+@given(
+    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
+    dim=sizes(FEATURE_DIM),
+)
+def test_segment_last(token_sizes, dim):
+    inputs = [
+        torch.randn((token_size, dim), dtype=torch.float32, device=device, requires_grad=True)
+        for token_size in token_sizes
+    ]
+
+    expected = torch.cat([seq[-1:] for seq in inputs], dim=0)
+
+    tensor, segment_sizes = C.new(inputs)
+    actual = segment_last(tensor, segment_sizes=segment_sizes)
 
     assert_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)

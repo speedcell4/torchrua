@@ -1,15 +1,7 @@
 import torch
 
+from torchrua.ty import C
 from torchrua.ty import T
-
-__all__ = [
-    'scatter_max', 'segment_max',
-    'scatter_min', 'segment_min',
-    'scatter_sum', 'segment_sum',
-    'scatter_mean', 'segment_mean',
-    'scatter_prod', 'segment_prod',
-    'scatter_logsumexp', 'segment_logsumexp',
-]
 
 
 def scatter_max(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):
@@ -68,3 +60,11 @@ def segment_logsumexp(tensor: T, segment_sizes: T) -> T:
     tensor = (tensor - torch.repeat_interleave(m, dim=0, repeats=segment_sizes)).exp()
     eps = (segment_sizes == 0).to(dtype=tensor.dtype).view((-1, *[1 for _ in tensor.size()[1:]]))
     return (segment_sum(tensor, segment_sizes=segment_sizes) + eps).log() + m
+
+
+def segment_head(tensor: T, segment_sizes: T) -> T:
+    return C(data=tensor, token_sizes=segment_sizes).head()
+
+
+def segment_last(tensor: T, segment_sizes: T) -> T:
+    return C(data=tensor, token_sizes=segment_sizes).last()
