@@ -18,7 +18,7 @@ from torchrua import P
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([C.new, D.new, P.new])
+    rua_sequence=st.sampled_from([C.new, D.new, P.new]),
 )
 def test_pad_sequence(token_sizes, dim, rua_sequence):
     inputs = [
