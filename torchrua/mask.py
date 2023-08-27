@@ -9,7 +9,7 @@ from torchrua.ty import P
 from torchrua.ty import T
 
 
-def mask_cdp(sequence: Union[C, D, P], zero: Number = False, one: Number = True, dtype: torch.dtype = torch.long) -> T:
+def mask_cdp(sequence: Union[C, D, P], zero: Number = False, one: Number = True, dtype: torch.dtype = torch.bool) -> T:
     b, t, *_ = sequence.size()
     batch_ptr, token_ptr = sequence.ptr()
 
