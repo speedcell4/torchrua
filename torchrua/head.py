@@ -1,3 +1,5 @@
+import torch
+
 from torchrua.core import get_offsets
 from torchrua.ty import C
 from torchrua.ty import D
@@ -7,7 +9,10 @@ from torchrua.ty import T
 
 def head_c(sequence: C) -> T:
     data, token_sizes = sequence
-    return data[get_offsets(sizes=token_sizes)]
+    m, *_ = data.size()
+
+    idx = get_offsets(sizes=token_sizes)
+    return data[torch.clamp_max_(idx, max=m - 1)]
 
 
 C.head = head_c
