@@ -19,3 +19,9 @@ jobs:
       - name: Test with pytest
         run: |
           python -m pytest tests
+      - name: Trigger TorchLatent
+        run: |
+          curl -X POST "https://api.github.com/repos/speedcell4/torchlatent/actions/workflows/unit-tests.yml/dispatches" \
+          -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          --data '{"ref":"develop"}'
