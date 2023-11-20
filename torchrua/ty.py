@@ -9,11 +9,35 @@ class CattedSequence(NamedTuple):
     data: Tensor
     token_sizes: Tensor
 
-    def to(self, *args, **kwargs) -> 'CattedSequence':
+    def to(self, dtype: torch.dtype = None, device: torch.device = None) -> 'CattedSequence':
         return CattedSequence(
-            data=self.data.to(*args, **kwargs),
-            token_sizes=self.token_sizes.to(*args, **kwargs),
+            data=self.data.to(dtype=dtype, device=device),
+            token_sizes=self.token_sizes.to(dtype=torch.long, device=device),
         )
+
+    def double(self) -> 'CattedSequence':
+        return self.to(dtype=torch.double)
+
+    def float(self) -> 'CattedSequence':
+        return self.to(dtype=torch.float)
+
+    def half(self) -> 'CattedSequence':
+        return self.to(dtype=torch.half)
+
+    def long(self) -> 'CattedSequence':
+        return self.to(dtype=torch.long)
+
+    def int(self) -> 'CattedSequence':
+        return self.to(dtype=torch.int)
+
+    def short(self) -> 'CattedSequence':
+        return self.to(dtype=torch.short)
+
+    def char(self) -> 'CattedSequence':
+        return self.to(dtype=torch.int8)
+
+    def byte(self) -> 'CattedSequence':
+        return self.to(dtype=torch.uint8)
 
     def cpu(self) -> 'CattedSequence':
         return CattedSequence(
@@ -38,11 +62,35 @@ class PaddedSequence(NamedTuple):
     data: Tensor
     token_sizes: Tensor
 
-    def to(self, *args, **kwargs) -> 'PaddedSequence':
+    def to(self, dtype: torch.dtype = None, device: torch.device = None) -> 'PaddedSequence':
         return PaddedSequence(
-            data=self.data.to(*args, **kwargs),
-            token_sizes=self.token_sizes.to(*args, **kwargs),
+            data=self.data.to(dtype=dtype, device=device),
+            token_sizes=self.token_sizes.to(dtype=torch.long, device=device),
         )
+
+    def double(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.double)
+
+    def float(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.float)
+
+    def half(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.half)
+
+    def long(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.long)
+
+    def int(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.int)
+
+    def short(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.short)
+
+    def char(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.int8)
+
+    def byte(self) -> 'PaddedSequence':
+        return self.to(dtype=torch.uint8)
 
     def cpu(self) -> 'PaddedSequence':
         return PaddedSequence(
