@@ -196,3 +196,12 @@ def rua(index: Union[T, C, P], sequence: Union[T, C, D, P], *indices: Union[T, C
 T.rua = rua
 C.rua = rua
 P.rua = rua
+
+
+def empty_cdp(sequence: Union[C, D, P]) -> Union[C, D, P]:
+    return sequence._replace(data=sequence.data.new_tensor(()))
+
+
+C.empty = empty_cdp
+D.empty = empty_cdp
+P.empty = empty_cdp
