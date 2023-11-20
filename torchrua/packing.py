@@ -3,12 +3,8 @@ from typing import List
 import torch
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import _self
-from torchrua.core import invert_permutation
-from torchrua.ty import C
-from torchrua.ty import D
-from torchrua.ty import P
-from torchrua.ty import T
+from torchrua.core import _self, invert_permutation
+from torchrua.ty import C, D, P, T
 
 
 def pack_sequence(sequence: List[T]) -> P:

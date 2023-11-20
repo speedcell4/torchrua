@@ -1,18 +1,9 @@
 import torch
-from hypothesis import given
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 from torch.nn.utils.rnn import pack_sequence
-from torchnyan import BATCH_SIZE
-from torchnyan import FEATURE_DIM
-from torchnyan import TOKEN_SIZE
-from torchnyan import assert_grad_close
-from torchnyan import assert_sequence_close
-from torchnyan import device
-from torchnyan import sizes
+from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
-from torchrua import C
-from torchrua import D
-from torchrua import P
+from torchrua import C, D, P
 
 
 @given(

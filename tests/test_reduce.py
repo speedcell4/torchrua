@@ -1,29 +1,9 @@
 import torch
-from hypothesis import given
-from hypothesis import strategies as st
-from torchnyan import BATCH_SIZE
-from torchnyan import FEATURE_DIM
-from torchnyan import TINY_TOKEN_SIZE
-from torchnyan import assert_close
-from torchnyan import assert_grad_close
-from torchnyan import device
-from torchnyan import sizes
+from hypothesis import given, strategies as st
+from torchnyan import BATCH_SIZE, FEATURE_DIM, TINY_TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
-from torchrua import C
-from torchrua import scatter_logsumexp
-from torchrua import scatter_max
-from torchrua import scatter_mean
-from torchrua import scatter_min
-from torchrua import scatter_prod
-from torchrua import scatter_sum
-from torchrua import segment_head
-from torchrua import segment_last
-from torchrua import segment_logsumexp
-from torchrua import segment_max
-from torchrua import segment_mean
-from torchrua import segment_min
-from torchrua import segment_prod
-from torchrua import segment_sum
+from torchrua import C, scatter_logsumexp, scatter_max, scatter_mean, scatter_min, scatter_prod, scatter_sum, \
+    segment_head, segment_last, segment_logsumexp, segment_max, segment_mean, segment_min, segment_prod, segment_sum
 
 
 @given(

@@ -1,15 +1,9 @@
-from typing import Tuple
-from typing import Union
+from typing import Tuple, Union
 
 import torch
 
-from torchrua.core import get_offsets
-from torchrua.core import major_sizes_to_ptr
-from torchrua.ty import C
-from torchrua.ty import D
-from torchrua.ty import P
-from torchrua.ty import T
-from torchrua.ty import is_type
+from torchrua.core import get_offsets, major_sizes_to_ptr
+from torchrua.ty import C, D, P, T, is_type
 
 
 def size_c(sequence: C) -> Tuple[int, ...]:

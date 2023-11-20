@@ -1,7 +1,4 @@
-from typing import Any
-from typing import NamedTuple
-from typing import Type
-from typing import Union
+from typing import Any, NamedTuple, Type, Union
 
 import torch
 from torch import Tensor

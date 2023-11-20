@@ -1,27 +1,10 @@
 import torch
-from hypothesis import given
-from hypothesis import settings
-from hypothesis import strategies as st
+from hypothesis import given, settings, strategies as st
 from torch import Tensor
-from torchnyan import BATCH_SIZE
-from torchnyan import FEATURE_DIM
-from torchnyan import TOKEN_SIZE
-from torchnyan import assert_grad_close
-from torchnyan import assert_sequence_close
-from torchnyan import device
-from torchnyan import sizes
+from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
-from torchrua import C
-from torchrua import D
-from torchrua import P
-from torchrua import segment_head
-from torchrua import segment_last
-from torchrua import segment_logsumexp
-from torchrua import segment_max
-from torchrua import segment_mean
-from torchrua import segment_min
-from torchrua import segment_prod
-from torchrua import segment_sum
+from torchrua import C, D, P, segment_head, segment_last, segment_logsumexp, segment_max, segment_mean, segment_min, \
+    segment_prod, segment_sum
 
 
 def reduce_max(tensor: Tensor) -> Tensor:

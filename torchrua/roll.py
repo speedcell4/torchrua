@@ -1,8 +1,6 @@
 import torch
 
-from torchrua.ty import C
-from torchrua.ty import D
-from torchrua.ty import P
+from torchrua.ty import C, D, P
 
 
 def roll_c(sequence: C, shifts: int) -> C:

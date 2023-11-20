@@ -2,9 +2,7 @@ from typing import Union
 
 import torch
 
-from torchrua.ty import C
-from torchrua.ty import D
-from torchrua.ty import P
+from torchrua.ty import C, D, P
 
 
 def seg_c(sequence: C, duration: Union[C, D, P], fn) -> C:

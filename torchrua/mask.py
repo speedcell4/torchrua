@@ -3,10 +3,7 @@ from typing import Union
 import torch
 from torch.types import Number
 
-from torchrua.ty import C
-from torchrua.ty import D
-from torchrua.ty import P
-from torchrua.ty import T
+from torchrua.ty import C, D, P, T
 
 
 def mask_cd(sequence: Union[C, D, P], zero: Number = False, one: Number = True, dtype: torch.dtype = torch.bool) -> T:

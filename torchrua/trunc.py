@@ -3,9 +3,7 @@ from typing import Tuple
 import torch
 
 from torchrua.core import major_sizes_to_ptr
-from torchrua.ty import C
-from torchrua.ty import D
-from torchrua.ty import P
+from torchrua.ty import C, D, P
 
 
 def trunc_c(sequence: C, trunc: Tuple[int, int]) -> C:

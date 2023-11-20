@@ -1,11 +1,8 @@
-from typing import List
-from typing import Union
+from typing import List, Union
 
 import torch
 
-from torchrua import C
-from torchrua import D
-from torchrua import P
+from torchrua import C, D, P
 from torchrua.core import invert_permutation
 
 

@@ -1,7 +1,6 @@
 import torch
 
-from torchrua.ty import C
-from torchrua.ty import T
+from torchrua.ty import C, T
 
 
 def scatter_max(tensor: T, index: T, source: T, include_self: bool = False, dim: int = 0):

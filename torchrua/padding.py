@@ -4,10 +4,7 @@ import torch
 from torch.types import Number
 
 from torchrua.core import _self
-from torchrua.ty import C
-from torchrua.ty import D
-from torchrua.ty import P
-from torchrua.ty import T
+from torchrua.ty import C, D, P, T
 
 
 def pad_sequence(sequence: List[T], fill_value: Number = 0) -> D:
