@@ -18,3 +18,8 @@ def broadcast_shapes(*sizes: torch.Size, dim: int):
 def broadcast_tensors(*tensors: Tensor, dim: int):
     shapes = broadcast_shapes(*[tensor.size() for tensor in tensors], dim=dim)
     return [tensor.expand(shape) for tensor, shape in zip(tensors, shapes)]
+
+
+def gather(tensor: Tensor, index: Tensor, dim: int) -> Tensor:
+    tensor, index = broadcast_tensors(tensor, index, dim=dim)
+    return tensor.gather(dim=dim, index=index)
