@@ -1,70 +1,40 @@
-from functools import singledispatch
-from typing import Union
-
 import torch
-from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device
 
-from torchrua.core import major_sizes_to_ptr, major_sizes_to_indices, accumulate_sizes, CattedSequence
-
-__all__ = [
-    'reverse_sequence',
-    'reverse_catted_indices', 'reverse_catted_sequence',
-    'reverse_packed_indices', 'reverse_packed_sequence',
-]
+from torchrua.ty import C, D, P
 
 
-@singledispatch
-def reverse_sequence(sequence: Union[CattedSequence, PackedSequence]):
-    raise TypeError(f'type {type(sequence)} is not supported')
+def rev_c(sequence: C) -> C:
+    data, token_sizes = sequence
+    _, _, *sizes = sequence.size()
+
+    if len(sizes) > 0:
+        return sequence.idx().rev().rua(sequence)
+
+    data = torch.flip(data, dims=[0])
+    token_sizes = torch.flip(token_sizes, dims=[0])
+
+    data = torch.split(data, token_sizes.detach().cpu().tolist(), dim=0)
+    return sequence._replace(data=torch.cat(data[::-1], dim=0))
 
 
-@torch.no_grad()
-def reverse_catted_indices(token_sizes: Tensor, device: Device = None) -> Tensor:
-    if device is None:
-        device = token_sizes.device
-
-    token_sizes = token_sizes.to(device=device)
-    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
-
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-    token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
-
-    return acc_token_sizes[batch_ptr] + token_ptr
+C.rev = rev_c
 
 
-@reverse_sequence.register
-def reverse_catted_sequence(sequence: CattedSequence) -> CattedSequence:
-    indices = reverse_catted_indices(token_sizes=sequence.token_sizes, device=sequence.data.device)
+def rev_d(sequence: D) -> D:
+    index1, _ = idx = sequence.idx()
+    index2, _ = idx.rev()
 
-    return CattedSequence(
-        data=sequence.data[indices],
-        token_sizes=sequence.token_sizes,
-    )
+    data = sequence._data().clone()
+    data[index1] = data[index2]
 
-
-@torch.no_grad()
-def reverse_packed_indices(batch_sizes: Tensor, device: Device = None) -> Tensor:
-    if device is None:
-        device = batch_sizes.device
-
-    batch_sizes = batch_sizes.to(device=device)
-    acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-
-    batch_ptr, token_ptr, token_sizes = major_sizes_to_indices(sizes=batch_sizes)
-    token_ptr = (token_sizes - 1)[batch_ptr] - token_ptr
-
-    return batch_ptr + acc_batch_sizes[token_ptr]
+    return sequence._replace(data=data.view_as(sequence.data))
 
 
-@reverse_sequence.register
-def reverse_packed_sequence(sequence: PackedSequence) -> PackedSequence:
-    indices = reverse_packed_indices(batch_sizes=sequence.batch_sizes, device=sequence.data.device)
+D.rev = rev_d
 
-    return PackedSequence(
-        data=sequence.data[indices],
-        batch_sizes=sequence.batch_sizes.detach().cpu(),
-        sorted_indices=sequence.sorted_indices,
-        unsorted_indices=sequence.unsorted_indices,
-    )
+
+def rev_p(sequence: P) -> P:
+    return sequence.idx().cat().rev().pack().rua(sequence)
+
+
+P.rev = rev_p

@@ -1,98 +1,69 @@
 from typing import List
 
 import torch
-from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device
 
-from torchrua.catting import cat_sequence
-from torchrua.core import minor_sizes_to_ptr, accumulate_sizes, sizes_to_sorting, CattedSequence
-
-__all__ = [
-    'PackedSequence', 'pack_sequence',
-    'pack_catted_indices', 'pack_catted_sequence',
-    'pack_padded_indices', 'pack_padded_sequence',
-]
+from torchrua.core import _self, invert_permutation
+from torchrua.ty import C, D, P, T
 
 
-def pack_sequence(sequences: List[Tensor], device: Device = None) -> PackedSequence:
-    if device is None:
-        device = sequences[0].device
-
-    sequence = cat_sequence(sequences=sequences, device=device)
-    return pack_catted_sequence(sequence=sequence, device=device)
+def pack_sequence(sequence: List[T]) -> P:
+    return C.new(sequence).pack()
 
 
-@torch.no_grad()
-def pack_catted_indices(token_sizes: Tensor, device: Device = None):
-    if device is None:
-        device = token_sizes.device
-
-    token_sizes = token_sizes.to(device=device)
-    acc_token_sizes = accumulate_sizes(sizes=token_sizes)
-
-    token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
-        sizes=token_sizes, device=device,
-    )
-    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
-        sizes=token_sizes,
-        major_ptr=sorted_indices,
-    )
-    indices = acc_token_sizes[batch_ptr] + token_ptr
-
-    return indices, batch_sizes, sorted_indices, unsorted_indices
+P.new = pack_sequence
+P.pack = _self
 
 
-def pack_catted_sequence(sequence: CattedSequence, device: Device = None) -> PackedSequence:
-    if device is None:
-        device = sequence.data.device
-
-    indices, batch_sizes, sorted_indices, unsorted_indices = pack_catted_indices(
-        token_sizes=sequence.token_sizes, device=device,
-    )
+def pack_t(sequence: T) -> P:
+    batch_sizes = torch.ones(sequence.size()[:1], dtype=torch.long).cpu()
+    sorted_indices = sequence.data.new_tensor([0], dtype=torch.long)
+    unsorted_indices = sequence.data.new_tensor([0], dtype=torch.long)
 
     return PackedSequence(
-        data=sequence.data[indices],
-        batch_sizes=batch_sizes.detach().cpu(),
+        data=sequence.data,
+        batch_sizes=batch_sizes,
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
 
 
-@torch.no_grad()
-def pack_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device = None):
-    if device is None:
-        device = token_sizes.device
-
-    token_sizes = token_sizes.to(device=device)
-
-    sorted_token_sizes, sorted_indices, unsorted_indices = sizes_to_sorting(
-        sizes=token_sizes, device=device,
-    )
-    token_ptr, batch_ptr, batch_sizes = minor_sizes_to_ptr(
-        sizes=sorted_token_sizes,
-        major_ptr=sorted_indices,
-    )
-
-    if batch_first:
-        indices = batch_ptr, token_ptr
-    else:
-        indices = token_ptr, batch_ptr
-    return indices, batch_sizes, sorted_indices, unsorted_indices
+T.pack = pack_t
 
 
-def pack_padded_sequence(sequence: Tensor, token_sizes: Tensor,
-                         batch_first: bool, device: Device = None) -> PackedSequence:
-    if device is None:
-        device = sequence.device
+def pack_c(sequence: C) -> P:
+    data, token_sizes = sequence
+    b, t, *sizes = sequence.size()
 
-    indices, batch_sizes, sorted_indices, unsorted_indices = pack_padded_indices(
-        token_sizes=token_sizes, batch_first=batch_first, device=device,
-    )
+    if len(sizes) > 0:
+        return sequence.idx().pack().rua(sequence)
+
+    _, sorting_indices = torch.sort(token_sizes.detach().cpu(), descending=True)
+    sorting_indices = sorting_indices.to(device=data.device)
+    unsorted_indices = invert_permutation(sorting_indices)
+
+    batch_ptr, token_ptr = sequence.ptr()
+    batch_ptr = unsorted_indices[batch_ptr]
+
+    tensor = data.new_zeros((t, b))
+    tensor[token_ptr, batch_ptr] = data
+
+    mask = torch.zeros_like(tensor, dtype=torch.long)
+    mask[token_ptr, batch_ptr] = 1
 
     return PackedSequence(
-        data=sequence[indices],
-        batch_sizes=batch_sizes.detach().cpu(),
-        sorted_indices=sorted_indices,
+        data=tensor[mask.bool()],
+        batch_sizes=mask.sum(dim=1).detach().cpu(),
+        sorted_indices=sorting_indices,
         unsorted_indices=unsorted_indices,
     )
+
+
+C.pack = pack_c
+
+
+def pack_d(sequence: D) -> P:
+    return sequence.idx().pack().rua(sequence)
+
+
+D.pack = pack_d

@@ -1,87 +1,37 @@
-from functools import singledispatch
 from typing import Union
 
 import torch
-from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device
 
-from torchrua.core import major_sizes_to_ptr, major_sizes_to_size, accumulate_sizes, CattedSequence
-
-__all__ = [
-    'segment_sequence',
-    'segment_indices',
-    'segment_catted_indices',
-    'segment_packed_indices',
-]
+from torchrua.ty import C, D, P
 
 
-@singledispatch
-def segment_indices(sizes: Union[CattedSequence, PackedSequence], token_size: int, device: Device = None):
-    raise TypeError(f'type {type(sizes)} is not supported')
+def seg_c(sequence: C, duration: Union[C, D, P], fn) -> C:
+    data, token_sizes = sequence
+    duration = duration.cat()
+
+    data = fn(data, duration.data)
+    return duration._replace(data=data)
 
 
-@segment_indices.register
-def segment_catted_indices(sizes: CattedSequence, token_size: int, device: Device = None):
-    if device is None:
-        device = sizes.data.device
-
-    sizes, token_sizes = sizes
-
-    sizes = sizes.to(device=device)
-    token_sizes = token_sizes.to(device=device)
-
-    t, b = major_sizes_to_size(sizes=token_sizes)
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-
-    out = torch.zeros((b, t + 1), dtype=torch.long, device=device)
-    out[batch_ptr, token_ptr] = sizes
-    out[:, -1] = token_size - out.sum(dim=-1)
-
-    mask = torch.zeros((b, t + 1), dtype=torch.bool, device=device)
-    mask[batch_ptr, token_ptr] = True
-    mask[:, -1] = True
-
-    acc_token_sizes = accumulate_sizes(sizes=token_sizes + 1)
-    return torch.masked_select(out, mask), acc_token_sizes[batch_ptr] + token_ptr
+C.seg = seg_c
 
 
-@segment_indices.register
-def segment_packed_indices(sizes: PackedSequence, token_size: int, device: Device = None):
-    if device is None:
-        device = sizes.data.device
+def seg_d(sequence: D, duration: Union[C, D, P], fn) -> D:
+    duration, token_sizes = duration.pad(fill_value=0)
 
-    sizes, batch_sizes, sorted_indices, _ = sizes
+    remaining = sequence.size()[1] - duration.sum(dim=1, keepdim=True)
+    duration = torch.cat([duration, remaining], dim=-1)
 
-    sizes = sizes.to(device=device)
-    batch_sizes = batch_sizes.to(device=device)
-    sorted_indices = sorted_indices.to(device=device)
-
-    b, t = major_sizes_to_size(sizes=batch_sizes)
-    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=batch_sizes)
-    batch_ptr = sorted_indices[batch_ptr]
-
-    out = torch.zeros((b, t + 1), dtype=torch.long, device=device)
-    out[batch_ptr, token_ptr] = sizes
-    out[:, -1] = token_size - out.sum(dim=-1)
-
-    mask = torch.zeros((b, t + 1), dtype=torch.bool, device=device)
-    mask[batch_ptr, token_ptr] = True
-    mask[:, -1] = True
-
-    acc_token_sizes = accumulate_sizes(sizes=mask.long().sum(dim=-1))
-    return torch.masked_select(out, mask), acc_token_sizes[batch_ptr] + token_ptr
+    data = fn(sequence._data(), duration.view(-1))
+    data = data.view((*duration.size(), *data.size()[1:]))
+    return D(data=data[:, :-1], token_sizes=token_sizes)
 
 
-def segment_sequence(sizes: Union[CattedSequence, PackedSequence], tensor: Tensor, reduce: str, batch_first: bool):
-    if batch_first:
-        _, token_size, *_ = tensor.size()
-        tensor = tensor.flatten(start_dim=0, end_dim=2)
-    else:
-        token_size, _, *_ = tensor.size()
-        tensor = tensor.transpose(0, 1).flatten(start_dim=0, end_dim=2)
+D.seg = seg_d
 
-    token_sizes, indices = segment_indices(sizes, token_size=token_size, device=tensor.device)
-    data = torch.segment_reduce(tensor, reduce=reduce, lengths=token_sizes, unsafe=True)
 
-    return sizes._replace(data=data[indices])
+def seg_p(sequence: P, duration: Union[C, D, P], fn) -> P:
+    return sequence.cat().seg(duration, fn).pack()
+
+
+P.seg = seg_p

@@ -1,84 +1,56 @@
 from typing import List
 
 import torch
-from torch import Tensor
-from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device
 
-from torchrua.core import minor_sizes_to_ptr, major_sizes_to_ptr, accumulate_sizes, CattedSequence
-
-__all__ = [
-    'cat_sequence',
-    'cat_packed_indices', 'cat_packed_sequence',
-    'cat_padded_indices', 'cat_padded_sequence',
-]
+from torchrua.core import _self
+from torchrua.ty import C, D, P, T
 
 
-def cat_sequence(sequences: List[Tensor], dtype: torch.dtype = None, device: Device = None) -> CattedSequence:
-    if device is None:
-        device = sequences[0].device
+def cat_sequence(sequence: List[T]) -> C:
+    data = torch.cat(sequence, dim=0)
+    token_sizes = [s.size()[0] for s in sequence]
+    return C(data=data, token_sizes=data.new_tensor(token_sizes, dtype=torch.long))
 
-    return CattedSequence(
-        data=torch.cat(sequences, dim=0).to(dtype=dtype, device=device),
-        token_sizes=torch.tensor([seq.size()[0] for seq in sequences], dtype=torch.long, device=device),
+
+C.new = cat_sequence
+C.cat = _self
+
+
+def cat_t(sequence: T) -> C:
+    token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
+    return C(data=sequence, token_sizes=token_sizes)
+
+
+T.cat = cat_t
+
+
+def cat_d(sequence: D) -> C:
+    return sequence.idx().rua(sequence)
+
+
+D.cat = cat_d
+
+
+def cat_p(sequence: P) -> C:
+    data, batch_sizes, sorted_indices, unsorted_indices = sequence
+    b, t, *sizes = sequence.size()
+
+    if len(sizes) > 0:
+        return sequence.idx().cat().rua(sequence)
+
+    batch_ptr, token_ptr = sequence.ptr()
+    batch_ptr = sorted_indices[batch_ptr]
+
+    tensor = data.new_zeros((b, t))
+    tensor[batch_ptr, token_ptr] = data
+
+    mask = torch.zeros_like(tensor, dtype=torch.long)
+    mask[batch_ptr, token_ptr] = 1
+
+    return C(
+        data=tensor[mask.bool()],
+        token_sizes=mask.sum(dim=1),
     )
 
 
-@torch.no_grad()
-def cat_packed_indices(batch_sizes: Tensor, unsorted_indices: Tensor, device: Device = None):
-    if device is None:
-        device = (unsorted_indices or batch_sizes).device
-
-    batch_sizes = batch_sizes.to(device=device)
-    acc_batch_sizes = accumulate_sizes(sizes=batch_sizes)
-
-    batch_ptr, token_ptr, token_sizes = minor_sizes_to_ptr(sizes=batch_sizes, minor_ptr=unsorted_indices)
-
-    return batch_ptr + acc_batch_sizes[token_ptr], token_sizes
-
-
-def cat_packed_sequence(sequence: PackedSequence, device: Device = None) -> CattedSequence:
-    if device is None:
-        device = sequence.data.device
-
-    indices, token_sizes = cat_packed_indices(
-        batch_sizes=sequence.batch_sizes,
-        unsorted_indices=sequence.unsorted_indices,
-        device=device,
-    )
-
-    return CattedSequence(
-        data=sequence.data[indices],
-        token_sizes=token_sizes,
-    )
-
-
-@torch.no_grad()
-def cat_padded_indices(token_sizes: Tensor, batch_first: bool, device: Device = None):
-    if device is None:
-        device = token_sizes.device
-
-    token_sizes = token_sizes.to(device=device)
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=token_sizes)
-
-    if batch_first:
-        return (batch_ptr, token_ptr), token_sizes
-    else:
-        return (token_ptr, batch_ptr), token_sizes
-
-
-def cat_padded_sequence(sequence: Tensor, token_sizes: Tensor,
-                        batch_first: bool = False, device: Device = None) -> CattedSequence:
-    if device is None:
-        device = sequence.device
-
-    indices, token_sizes = cat_padded_indices(
-        token_sizes=token_sizes,
-        batch_first=batch_first,
-        device=device,
-    )
-
-    return CattedSequence(
-        data=sequence[indices],
-        token_sizes=token_sizes,
-    )
+P.cat = cat_p

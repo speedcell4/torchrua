@@ -1,18 +1,20 @@
 import torch
-from hypothesis import given
+from hypothesis import given, settings, strategies as st
 from torch import nn
+from torch.nn.utils.rnn import pack_sequence
+from torchnyan import FEATURE_DIM, TINY_BATCH_SIZE, TINY_TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
-from tests.assertion import assert_close, assert_grad_close
-from tests.strategy import sizes, device, TINY_BATCH_SIZE, TINY_TOKEN_SIZE, EMBEDDING_DIM
-from torchrua import cat_sequence, pack_sequence, compose_catted_sequences
+from torchrua import C, D, P, compose
 
 
+@settings(deadline=None)
 @given(
+    data=st.data(),
     token_sizes_batch=sizes(TINY_BATCH_SIZE, TINY_BATCH_SIZE, TINY_TOKEN_SIZE),
-    input_size=sizes(EMBEDDING_DIM),
-    hidden_size=sizes(EMBEDDING_DIM),
+    input_size=sizes(FEATURE_DIM),
+    hidden_size=sizes(FEATURE_DIM),
 )
-def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size):
+def test_compose_sequences(data, token_sizes_batch, input_size, hidden_size):
     sequences = [
         [
             torch.randn((token_size, input_size), requires_grad=True, device=device)
@@ -20,9 +22,6 @@ def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size):
         ]
         for token_sizes in token_sizes_batch
     ]
-    inputs = [token for seq in sequences for token in seq]
-    catted_sequences = [cat_sequence(seq, device=device) for seq in sequences]
-    packed_sequences = [pack_sequence(seq, device=device) for seq in sequences]
 
     rnn = nn.LSTM(
         input_size=input_size,
@@ -30,14 +29,18 @@ def test_compose_catted_sequences(token_sizes_batch, input_size, hidden_size):
         bidirectional=True, bias=True,
     ).to(device=device)
 
-    _, (actual, _) = rnn(compose_catted_sequences(*catted_sequences, device=device))
+    actual_sequences = [
+        data.draw(st.sampled_from([C, D, P])).new(sequence).to(device=device)
+        for sequence in sequences
+    ]
+    _, (actual, _) = rnn(compose(actual_sequences))
     actual = actual.transpose(-3, -2).flatten(start_dim=-2)
 
-    excepted = []
-    for packed_sequence in packed_sequences:
-        _, (hidden, _) = rnn(packed_sequence)
-        excepted.append(hidden.transpose(-3, -2).flatten(start_dim=-2))
-    excepted = pack_sequence(excepted).data
+    expected = []
+    for sequence in sequences:
+        _, (hidden, _) = rnn(pack_sequence(sequence, enforce_sorted=False))
+        expected.append(hidden.transpose(-3, -2).flatten(start_dim=-2))
+    expected, _, _, _ = pack_sequence(expected, enforce_sorted=False)
 
-    assert_close(actual, excepted, check_stride=False)
-    assert_grad_close(actual, excepted, inputs=inputs)
+    assert_close(actual, expected, check_stride=False)
+    assert_grad_close(actual, expected, inputs=[token for sequence in sequences for token in sequence])

@@ -1,50 +1,29 @@
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
+from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
-from tests.assertion import assert_catted_sequence_close, assert_packed_sequence_close, assert_grad_close
-from tests.strategy import sizes, device, BATCH_SIZE, TOKEN_SIZE, EMBEDDING_DIM
-from torchrua import cat_sequence, pack_sequence, trunc_sequence
+from torchrua import C, D, P
 
 
+@settings(deadline=None)
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
+    dim=sizes(FEATURE_DIM),
+    rua_sequence=st.sampled_from([C.new, D.new, P.new]),
 )
-def test_trunc_catted_sequence(data, token_sizes, dim):
+def test_trunc_sequence(data, token_sizes, dim, rua_sequence):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
-    s = min(token_sizes)
+    s = min(token_sizes) - 1
     a = data.draw(st.integers(0, max_value=s))
     b = data.draw(st.integers(0, max_value=s - a))
 
-    actual = trunc_sequence(cat_sequence(inputs, device=device), trunc=(a, b))
-    excepted = cat_sequence([sequence[a:sequence.size()[0] - b] for sequence in inputs], device=device)
+    actual = rua_sequence(inputs).trunc((a, b)).cat()
+    expected = C.new([sequence[a:sequence.size()[0] - b] for sequence in inputs])
 
-    assert_catted_sequence_close(actual=actual, expected=excepted)
-    assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
-
-
-@given(
-    data=st.data(),
-    token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    dim=sizes(EMBEDDING_DIM),
-)
-def test_trunc_packed_sequence(data, token_sizes, dim):
-    inputs = [
-        torch.randn((token_size, dim), device=device, requires_grad=True)
-        for token_size in token_sizes
-    ]
-
-    s = min(token_sizes) - 1  # TODO: support zero-length packing
-    a = data.draw(st.integers(0, max_value=s))
-    b = data.draw(st.integers(0, max_value=s - a))
-
-    actual = trunc_sequence(pack_sequence(inputs, device=device), trunc=(a, b))
-    excepted = pack_sequence([sequence[a:sequence.size()[0] - b] for sequence in inputs], device=device)
-
-    assert_packed_sequence_close(actual=actual, expected=excepted)
-    assert_grad_close(actual=actual.data, expected=excepted.data, inputs=inputs)
+    assert_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)

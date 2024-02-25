@@ -1,54 +1,25 @@
-from functools import singledispatch
-from typing import Union
+from typing import List
 
-from torch.nn.utils.rnn import PackedSequence
-from torch.types import Device
-
-from torchrua.core import major_sizes_to_size, major_sizes_to_ptr, CattedSequence
-
-__all__ = [
-    'sequence_ptr', 'catted_sequence_ptr', 'packed_sequence_ptr',
-    'sequence_shape', 'catted_sequence_shape', 'packed_sequence_shape',
-]
+import torch
+from torch import Tensor
 
 
-@singledispatch
-def sequence_ptr(sequence: Union[CattedSequence, PackedSequence], batch_first: bool = True, device: Device = None):
-    raise TypeError(f'type {type(sequence)} is not supported')
+def with_shape(shape: torch.Size, dim: int, value: int) -> List[int]:
+    shape = list(shape)
+    shape[dim] = value
+    return shape
 
 
-@sequence_ptr.register
-def catted_sequence_ptr(sequence: CattedSequence, batch_first: bool = True, device: Device = None):
-    if device is None:
-        device = sequence.data.device
-
-    token_ptr, batch_ptr = major_sizes_to_ptr(sizes=sequence.token_sizes.to(device=device))
-    return (batch_ptr, token_ptr) if batch_first else (token_ptr, batch_ptr)
+def broadcast_shapes(*sizes: torch.Size, dim: int):
+    shape = torch.broadcast_shapes(*[with_shape(size, dim=dim, value=1) for size in sizes])
+    return [with_shape(shape, dim=dim, value=size[dim]) for size in sizes]
 
 
-@sequence_ptr.register
-def packed_sequence_ptr(sequence: PackedSequence, batch_first: bool = True, device: Device = None):
-    if device is None:
-        device = sequence.data.device
-
-    batch_ptr, token_ptr = major_sizes_to_ptr(sizes=sequence.batch_sizes.to(device=device))
-    return (batch_ptr, token_ptr) if batch_first else (token_ptr, batch_ptr)
+def broadcast_tensors(*tensors: Tensor, dim: int):
+    shapes = broadcast_shapes(*[tensor.size() for tensor in tensors], dim=dim)
+    return [tensor.expand(shape) for tensor, shape in zip(tensors, shapes)]
 
 
-@singledispatch
-def sequence_shape(sequence: Union[CattedSequence, PackedSequence], batch_first: bool = True):
-    raise TypeError(f'type {type(sequence)} is not supported')
-
-
-@sequence_shape.register
-def catted_sequence_shape(sequence: CattedSequence, batch_first: bool = True):
-    t, b = major_sizes_to_size(sizes=sequence.token_sizes)
-    n, *_ = sequence.data.size()
-    return (n, b, t) if batch_first else (n, t, b)
-
-
-@sequence_shape.register
-def packed_sequence_shape(sequence: PackedSequence, batch_first: bool = True):
-    b, t = major_sizes_to_size(sizes=sequence.batch_sizes)
-    n, *_ = sequence.data.size()
-    return (n, b, t) if batch_first else (n, t, b)
+def gather(tensor: Tensor, index: Tensor, dim: int) -> Tensor:
+    tensor, index = broadcast_tensors(tensor, index, dim=dim)
+    return tensor.gather(dim=dim, index=index)
