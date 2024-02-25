@@ -10,7 +10,7 @@
 
 **Rua** derives from the [Szechwanese](https://en.wikipedia.org/wiki/Sichuanese_dialects) character <ruby>挼<rt>
 ruá</rt></ruby> which means "pack, rumple, screw up, manipulate". TorchRua provides tons of easy-to-use functions to
-help you rua tensors with `PackedSequence` and `CattedSequence`!
+help you rua tensors with `PackedSequence`, `CattedSequence`, and `PaddedSequence`!
 
 ## Installation
 

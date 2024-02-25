@@ -16,7 +16,7 @@ setup(
     license='MIT',
     author='speedcell4',
     author_email='speedcell4@gmail.com',
-    description='Manipulate tensors with PackedSequence and CattedSequence',
+    description='rua your variable-length tensors!',
     python_requires='>=3.8',
     install_requires=install_requires,
 )
