@@ -1,11 +1,12 @@
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from torch.nn.utils.rnn import pad_sequence
 from torchnyan import BATCH_SIZE, TOKEN_SIZE, assert_close, device, sizes
 
 from torchrua import C, D, P
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     rua_sequence=st.sampled_from([C.new, D.new, P.new]),

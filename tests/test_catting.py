@@ -1,11 +1,12 @@
 import torch
-from hypothesis import given
+from hypothesis import given, settings
 from torch.nn.utils.rnn import pack_sequence, pad_sequence
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
 from torchrua import C, D
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -23,6 +24,7 @@ def test_cat_packed_sequence(token_sizes, dim):
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),

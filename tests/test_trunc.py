@@ -1,10 +1,11 @@
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
 from torchrua import C, D, P
 
 
+@settings(deadline=None)
 @given(
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),

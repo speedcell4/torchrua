@@ -7,13 +7,13 @@ from torchnyan import FEATURE_DIM, TINY_BATCH_SIZE, TINY_TOKEN_SIZE, assert_clos
 from torchrua import C, D, P, compose
 
 
+@settings(deadline=None)
 @given(
     data=st.data(),
     token_sizes_batch=sizes(TINY_BATCH_SIZE, TINY_BATCH_SIZE, TINY_TOKEN_SIZE),
     input_size=sizes(FEATURE_DIM),
     hidden_size=sizes(FEATURE_DIM),
 )
-@settings(deadline=None)
 def test_compose_sequences(data, token_sizes_batch, input_size, hidden_size):
     sequences = [
         [

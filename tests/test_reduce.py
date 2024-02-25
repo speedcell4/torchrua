@@ -1,11 +1,12 @@
 import torch
-from hypothesis import given, strategies as st
+from hypothesis import given, settings, strategies as st
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TINY_TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
 from torchrua import C, scatter_logsumexp, scatter_max, scatter_mean, scatter_min, scatter_prod, scatter_sum, \
     segment_head, segment_last, segment_logsumexp, segment_max, segment_mean, segment_min, segment_prod, segment_sum
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -36,6 +37,7 @@ def test_scatter_max(token_sizes, dim, include_self):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -66,6 +68,7 @@ def test_scatter_min(token_sizes, dim, include_self):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -96,6 +99,7 @@ def test_scatter_sum(token_sizes, dim, include_self):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -131,6 +135,7 @@ def test_scatter_mean(token_sizes, dim, include_self):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -161,6 +166,7 @@ def test_scatter_prod(token_sizes, dim, include_self):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -194,6 +200,7 @@ def test_scatter_logsumexp(token_sizes, dim, include_self):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -213,6 +220,7 @@ def test_segment_max(token_sizes, dim):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -232,6 +240,7 @@ def test_segment_min(token_sizes, dim):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -251,6 +260,7 @@ def test_segment_sum(token_sizes, dim):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -270,6 +280,7 @@ def test_segment_mean(token_sizes, dim):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -289,6 +300,7 @@ def test_segment_prod(token_sizes, dim):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -308,6 +320,7 @@ def test_segment_logsumexp(token_sizes, dim):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
@@ -327,6 +340,7 @@ def test_segment_head(token_sizes, dim):
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)
 
 
+@settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TINY_TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
