@@ -7,11 +7,7 @@ C.cat = to_self
 
 
 def to_cat(self: Union[L, P, R]) -> C:
-    z = C(
-        data=self.data,
-        token_sizes=self.token_sizes,
-    )
-
+    z = self.cat_view()
     return z._replace(data=self[z.ptr()])
 
 

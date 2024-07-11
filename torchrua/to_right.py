@@ -7,7 +7,7 @@ from torchrua.layout import C, L, P, R
 def cat_pack_to_right(self: C, fill_value: Number = 0) -> R:
     z = R(
         data=self.data.new_full(self.size(), fill_value=fill_value),
-        token_sizes=self.token_sizes,
+        token_sizes=self.cat_view().token_sizes,
     )
 
     batch_ptr, token_ptr = self.ptr()
@@ -23,7 +23,7 @@ P.right = cat_pack_to_right
 def left_to_right(self: C, fill_value: Number = 0) -> R:
     z = R(
         data=self.data.new_full(self.size(), fill_value=fill_value),
-        token_sizes=self.token_sizes,
+        token_sizes=self.cat_view().token_sizes,
     )
 
     batch_ptr, token_ptr = self.ptr()
