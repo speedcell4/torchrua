@@ -30,19 +30,6 @@ def ptr(self: P) -> Tuple[Tensor, Tensor]:
 P.ptr = ptr
 
 
-def token_sizes(self: P) -> Tensor:
-    b, t, *_ = self.size()
-    batch_ptr, token_ptr = self.ptr()
-
-    mask = self.data.new_zeros((b, t), dtype=torch.long)
-    mask[batch_ptr, token_ptr] = 1
-
-    return mask.sum(dim=1)
-
-
-P.token_sizes = token_sizes
-
-
 def idx(self) -> P:
     n, *_ = self.data.size()
     index = torch.arange(n, dtype=torch.long, device=self.data.device)

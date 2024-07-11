@@ -14,24 +14,15 @@ L.cat = left_to_cat
 
 
 def pack_to_cat(self: P) -> C:
-    b, t, *sizes = self.size()
-
-    if len(sizes) > 0:
-        return self[self.idx().cat()]
-
-    data, batch_sizes, sorted_indices, _ = self
-    batch_ptr, token_ptr = self.ptr()
-
-    tensor = data.new_zeros((b, t))
-    tensor[batch_ptr, token_ptr] = data
-
-    mask = torch.zeros_like(tensor, dtype=torch.bool)
-    mask[batch_ptr, token_ptr] = True
-
-    return C(
-        data=tensor[mask],
-        token_sizes=mask.long().sum(dim=1),
+    z = C(
+        data=torch.empty_like(self.data),
+        token_sizes=self.token_sizes,
     )
+
+    batch_ptr, token_ptr = self.ptr()
+    z[batch_ptr, token_ptr] = self.data
+
+    return z
 
 
 P.cat = pack_to_cat

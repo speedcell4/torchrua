@@ -16,4 +16,5 @@ from torchrua.to_cat import *
 from torchrua.to_left import *
 from torchrua.to_pack import *
 from torchrua.to_right import *
+from torchrua.transpose import *
 from torchrua.trunc import *
