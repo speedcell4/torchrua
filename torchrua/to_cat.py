@@ -1,31 +1,20 @@
 from typing import Union
 
-import torch
-
 from torchrua.layout import C, L, P, R
 from torchrua.utils import to_self
 
 C.cat = to_self
 
 
-def left_right_to_cat(self: Union[L, R]) -> C:
-    return self[self.idx()]
-
-
-L.cat = left_right_to_cat
-R.cat = left_right_to_cat
-
-
-def pack_to_cat(self: P) -> C:
+def to_cat(self: Union[L, P, R]) -> C:
     z = C(
-        data=torch.empty_like(self.data),
+        data=self.data,
         token_sizes=self.token_sizes,
     )
 
-    batch_ptr, token_ptr = self.ptr()
-    z[batch_ptr, token_ptr] = self.data
-
-    return z
+    return z._replace(data=self[z.ptr()])
 
 
-P.cat = pack_to_cat
+L.cat = to_cat
+R.cat = to_cat
+P.cat = to_cat
