@@ -1,9 +1,13 @@
+from typing import Union
+
 import torch
 from torch.nn.utils.rnn import PackedSequence
 
 from torchrua import to_self
 from torchrua.core import invert_permutation
 from torchrua.layout import C, L, P, R
+
+P.pack = to_self
 
 
 def cat_to_pack(self: C) -> P:
@@ -37,17 +41,9 @@ def cat_to_pack(self: C) -> P:
 C.pack = cat_to_pack
 
 
-def left_to_pack(self: L) -> P:
+def left_right_to_pack(self: Union[L, R]) -> P:
     return self[self.idx().pack()]
 
 
-L.pack = left_to_pack
-
-P.pack = to_self
-
-
-def right_to_pack(self: R) -> P:
-    return self[self.idx().pack()]
-
-
-R.pack = right_to_pack
+L.pack = left_right_to_pack
+R.pack = left_right_to_pack
