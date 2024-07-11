@@ -1,46 +1,45 @@
 import torch
 
-from torchrua.layout import C, L, P, T
+from torchrua.layout import C, L, P, R
 from torchrua.utils import to_self
 
 C.cat = to_self
 
 
-def cat_t(sequence: T) -> C:
-    token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
-    return C(data=sequence, token_sizes=token_sizes)
+def left_to_cat(self: L) -> C:
+    return self[self.idx()]
 
 
-T.cat = cat_t
+L.cat = left_to_cat
 
 
-def cat_l(sequence: L) -> C:
-    return sequence[sequence.idx()]
-
-
-L.cat = cat_l
-
-
-def cat_p(sequence: P) -> C:
-    data, batch_sizes, sorted_indices, unsorted_indices = sequence
-    b, t, *sizes = sequence.size()
+def pack_to_cat(self: P) -> C:
+    b, t, *sizes = self.size()
 
     if len(sizes) > 0:
-        return sequence[sequence.idx().cat()]
+        return self[self.idx().cat()]
 
-    batch_ptr, token_ptr = sequence.ptr()
+    data, batch_sizes, sorted_indices, _ = self
+    batch_ptr, token_ptr = self.ptr()
     batch_ptr = sorted_indices[batch_ptr]
 
     tensor = data.new_zeros((b, t))
     tensor[batch_ptr, token_ptr] = data
 
-    mask = torch.zeros_like(tensor, dtype=torch.long)
-    mask[batch_ptr, token_ptr] = 1
+    mask = torch.zeros_like(tensor, dtype=torch.bool)
+    mask[batch_ptr, token_ptr] = True
 
     return C(
-        data=tensor[mask.bool()],
-        token_sizes=mask.sum(dim=1),
+        data=tensor[mask],
+        token_sizes=mask.long().sum(dim=1),
     )
 
 
-P.cat = cat_p
+P.cat = pack_to_cat
+
+
+def right_to_cat(self: R) -> C:
+    return self[self.idx()]
+
+
+R.cat = right_to_cat

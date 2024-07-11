@@ -25,12 +25,12 @@ T.pack = pack_t
 
 
 def pack_c(sequence: C) -> P:
-    data, token_sizes = sequence
     b, t, *sizes = sequence.size()
 
     if len(sizes) > 0:
         return sequence[sequence.idx().pack()]
 
+    data, token_sizes = sequence
     _, sorting_indices = torch.sort(token_sizes.detach().cpu(), descending=True)
     sorting_indices = sorting_indices.to(device=data.device)
     unsorted_indices = invert_permutation(sorting_indices)
@@ -41,12 +41,12 @@ def pack_c(sequence: C) -> P:
     tensor = data.new_zeros((t, b))
     tensor[token_ptr, batch_ptr] = data
 
-    mask = torch.zeros_like(tensor, dtype=torch.long)
-    mask[token_ptr, batch_ptr] = 1
+    mask = torch.zeros_like(tensor, dtype=torch.bool)
+    mask[token_ptr, batch_ptr] = True
 
     return PackedSequence(
-        data=tensor[mask.bool()],
-        batch_sizes=mask.sum(dim=1).detach().cpu(),
+        data=tensor[mask],
+        batch_sizes=mask.long().sum(dim=1).detach().cpu(),
         sorted_indices=sorting_indices,
         unsorted_indices=unsorted_indices,
     )
