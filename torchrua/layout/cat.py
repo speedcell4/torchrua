@@ -13,7 +13,7 @@ class CattedSequence(NamedTuple):
     def to(self, dtype: torch.dtype = None, device: torch.device = None) -> 'CattedSequence':
         return CattedSequence(
             data=self.data.to(dtype=dtype, device=device),
-            token_sizes=self.token_sizes.to(dtype=torch.long, device=device),
+            token_sizes=self.token_sizes.to(device=device),
         )
 
     def double(self) -> 'CattedSequence':
