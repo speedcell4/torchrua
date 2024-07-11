@@ -6,6 +6,7 @@ from torchrua.head import *
 from torchrua.last import *
 from torchrua.layout import *
 from torchrua.mask import *
+from torchrua.new import *
 from torchrua.reduce import *
 from torchrua.reverse import *
 from torchrua.roll import *

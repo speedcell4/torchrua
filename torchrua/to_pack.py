@@ -1,5 +1,3 @@
-from typing import List
-
 import torch
 from torch.nn.utils.rnn import PackedSequence
 
@@ -7,12 +5,6 @@ from torchrua import to_self
 from torchrua.core import invert_permutation
 from torchrua.layout import C, L, P, T
 
-
-def pack_sequence(sequence: List[T]) -> P:
-    return C.new(sequence).pack()
-
-
-P.new = pack_sequence
 P.pack = to_self
 
 

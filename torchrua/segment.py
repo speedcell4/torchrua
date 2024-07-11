@@ -17,7 +17,7 @@ C.seg = seg_c
 
 
 def seg_d(sequence: L, duration: Union[C, L, P], fn) -> L:
-    duration, token_sizes = duration.pad(fill_value=0)
+    duration, token_sizes = duration.left(fill_value=0)
 
     remaining = sequence.size()[1] - duration.sum(dim=1, keepdim=True)
     duration = torch.cat([duration, remaining], dim=-1)

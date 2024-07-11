@@ -1,18 +1,8 @@
-from typing import List
-
 import torch
 
 from torchrua.layout import C, L, P, T
 from torchrua.utils import to_self
 
-
-def cat_sequence(sequence: List[T]) -> C:
-    data = torch.cat(sequence, dim=0)
-    token_sizes = [s.size()[0] for s in sequence]
-    return C(data=data, token_sizes=data.new_tensor(token_sizes, dtype=torch.long))
-
-
-C.new = cat_sequence
 C.cat = to_self
 
 
