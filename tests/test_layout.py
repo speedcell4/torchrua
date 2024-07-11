@@ -22,7 +22,7 @@ def test_cat(token_sizes, dim, actual_fn, expected_fn):
     ]
 
     actual = actual_fn.new(inputs).cat()
-    expected = expected_fn.expected_new(inputs).cat()
+    expected = expected_fn.expected_new(inputs, token_sizes).cat()
 
     assert_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
@@ -42,7 +42,7 @@ def test_left(token_sizes, dim, actual_fn, expected_fn):
     ]
 
     actual = actual_fn.new(inputs).left()
-    expected = expected_fn.expected_new(inputs).left()
+    expected = expected_fn.expected_new(inputs, token_sizes).left()
 
     assert_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
@@ -62,7 +62,7 @@ def test_pack(token_sizes, dim, actual_fn, expected_fn):
     ]
 
     actual = actual_fn.new(inputs).pack()
-    expected = expected_fn.expected_new(inputs).pack()
+    expected = expected_fn.expected_new(inputs, token_sizes).pack()
 
     assert_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
@@ -82,7 +82,7 @@ def test_right(token_sizes, dim, actual_fn, expected_fn):
     ]
 
     actual = actual_fn.new(inputs).right()
-    expected = expected_fn.expected_new(inputs).right()
+    expected = expected_fn.expected_new(inputs, token_sizes).right()
 
     assert_sequence_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
