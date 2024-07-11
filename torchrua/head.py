@@ -1,7 +1,7 @@
 import torch
 
 from torchrua.core import get_offsets
-from torchrua.ty import C, D, P, T
+from torchrua.layout import C, L, P, T
 
 
 def head_c(sequence: C) -> T:
@@ -15,12 +15,12 @@ def head_c(sequence: C) -> T:
 C.head = head_c
 
 
-def head_d(sequence: D) -> T:
+def head_d(sequence: L) -> T:
     data, _ = sequence
     return data[:, 0]
 
 
-D.head = head_d
+L.head = head_d
 
 
 def head_p(sequence: P) -> T:

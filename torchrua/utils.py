@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 import torch
 from torch import Tensor
@@ -23,3 +23,7 @@ def broadcast_tensors(*tensors: Tensor, dim: int):
 def gather(tensor: Tensor, index: Tensor, dim: int) -> Tensor:
     tensor, index = broadcast_tensors(tensor, index, dim=dim)
     return tensor.gather(dim=dim, index=index)
+
+
+def to_self(self: Any, *_, **__) -> Any:
+    return self

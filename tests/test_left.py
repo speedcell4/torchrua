@@ -2,23 +2,24 @@ import torch
 from hypothesis import given, settings, strategies as st
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
-from torchrua import C, L, P
+from tests.expected import left_aligned_tensors
+from torchrua import Z
 
 
 @settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([C.new, L.new, P.new]),
+    rua_sequence=st.sampled_from([z.new for z in Z.__args__]),
 )
-def test_last_sequence(token_sizes, dim, rua_sequence):
+def test_left_sequence(token_sizes, dim, rua_sequence):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
 
-    actual = rua_sequence(inputs).last()
-    expected = torch.stack([sequence[-1] for sequence in inputs], dim=0)
+    actual, _ = rua_sequence(inputs).left(0)
+    expected = left_aligned_tensors(inputs, padding_value=0)
 
     assert_close(actual=actual, expected=expected)
     assert_grad_close(actual=actual, expected=expected, inputs=inputs)

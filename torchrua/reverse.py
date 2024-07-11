@@ -1,6 +1,6 @@
 import torch
 
-from torchrua.ty import C, D, P
+from torchrua.layout import C, L, P
 
 
 def rev_c(sequence: C) -> C:
@@ -8,7 +8,7 @@ def rev_c(sequence: C) -> C:
     _, _, *sizes = sequence.size()
 
     if len(sizes) > 0:
-        return sequence.idx().rev().rua(sequence)
+        return sequence[sequence.idx().rev()]
 
     data = torch.flip(data, dims=[0])
     token_sizes = torch.flip(token_sizes, dims=[0])
@@ -20,21 +20,21 @@ def rev_c(sequence: C) -> C:
 C.rev = rev_c
 
 
-def rev_d(sequence: D) -> D:
+def rev_d(sequence: L) -> L:
     index1, _ = idx = sequence.idx()
     index2, _ = idx.rev()
 
-    data = sequence._data().clone()
+    data = sequence.raw().clone()
     data[index1] = data[index2]
 
     return sequence._replace(data=data.view_as(sequence.data))
 
 
-D.rev = rev_d
+L.rev = rev_d
 
 
 def rev_p(sequence: P) -> P:
-    return sequence.idx().cat().rev().pack().rua(sequence)
+    return sequence[sequence.idx().cat().rev().pack()]
 
 
 P.rev = rev_p

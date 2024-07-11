@@ -4,7 +4,7 @@ from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 from torchnyan import FEATURE_DIM, TINY_BATCH_SIZE, TINY_TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
-from torchrua import C, D, P, compose
+from torchrua import C, L, P, compose
 
 
 @settings(deadline=None)
@@ -30,7 +30,7 @@ def test_compose_sequences(data, token_sizes_batch, input_size, hidden_size):
     ).to(device=device)
 
     actual_sequences = [
-        data.draw(st.sampled_from([C, D, P])).new(sequence).to(device=device)
+        data.draw(st.sampled_from([C, L, P])).new(sequence).to(device=device)
         for sequence in sequences
     ]
     _, (actual, _) = rnn(compose(actual_sequences))

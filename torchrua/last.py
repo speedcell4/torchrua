@@ -1,6 +1,6 @@
 import torch
 
-from torchrua.ty import C, D, P, T
+from torchrua.layout import C, L, P, T
 
 
 def last_c(sequence: C) -> T:
@@ -11,17 +11,17 @@ def last_c(sequence: C) -> T:
 C.last = last_c
 
 
-def last_d(sequence: D) -> T:
+def last_d(sequence: L) -> T:
     b, t, *_ = sequence.size()
     batch_ptr = torch.arange(b, dtype=torch.long, device=sequence.data.device)
     return sequence.data[batch_ptr, sequence.token_sizes - 1]
 
 
-D.last = last_d
+L.last = last_d
 
 
 def last_p(sequence: P) -> T:
-    return sequence.idx().pad().last().rua(sequence)
+    return sequence[sequence.idx().left().last()]
 
 
 P.last = last_p
