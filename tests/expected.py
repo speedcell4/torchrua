@@ -11,34 +11,40 @@ from torchrua import C, L, P, R
 
 def cat_tensors(tensors: List[Tensor]) -> C:
     data = torch.cat(tensors, dim=0)
-    token_sizes = [tensor.size()[0] for tensor in tensors]
-    return C(data=data, token_sizes=data.new_tensor(token_sizes, dtype=torch.long))
+    token_sizes = data.new_tensor([tensor.size()[0] for tensor in tensors], dtype=torch.long)
+    return C(data=data, token_sizes=token_sizes)
 
 
-C.raw_new = cat_tensors
+C.expected_new = cat_tensors
 
 
 def pack_tensors(tensors: List[Tensor]) -> P:
     return pack_sequence(tensors, enforce_sorted=False)
 
 
-P.raw_new = pack_tensors
+P.expected_new = pack_tensors
 
 
-def left_aligned_tensors(tensors: List[Tensor], padding_value: Number) -> Tensor:
-    return pad_sequence(tensors, batch_first=True, padding_value=padding_value)
+def left_aligned_tensors(tensors: List[Tensor], padding_value: Number = 0) -> L:
+    data = pad_sequence(tensors, batch_first=True, padding_value=padding_value)
+    token_sizes = data.new_tensor([tensor.size()[0] for tensor in tensors], dtype=torch.long)
+    return L(data=data, token_sizes=token_sizes)
 
 
-L.raw_new = left_aligned_tensors
+L.expected_new = left_aligned_tensors
 
 
-def right_aligned_tensors(tensors: List[Tensor], padding_value: Number) -> Tensor:
+def right_aligned_tensors(tensors: List[Tensor], padding_value: Number = 0) -> R:
     token_sizes = [tensor.size()[0] for tensor in tensors]
     t = max(token_sizes)
 
-    return torch.stack([
-        F.pad(tensor, pad=[0, 0, t - tensor.size()[0], 0], value=padding_value) for tensor in tensors
-    ], dim=0)
+    data = torch.stack([F.pad(x, pad=[0, 0, t - x.size()[0], 0], value=padding_value) for x in tensors], dim=0)
+    token_sizes = data.new_tensor([tensor.size()[0] for tensor in tensors], dtype=torch.long)
+    return R(data=data, token_sizes=token_sizes)
 
 
-R.raw_new = right_aligned_tensors
+R.expected_new = right_aligned_tensors
+
+
+def install():
+    pass
