@@ -1,21 +1,26 @@
 from typing import Union
 
 import torch
+from torch import Tensor
 
-from torchrua import C, L, P, R, to_self
+from torchrua import C, L, P, R, Z, to_self
 from torchrua.core import invert_permutation
 
 
-def cat_view(self: P) -> C:
+def _get_mask(self: Z) -> Tensor:
     b, t, *_ = self.size()
     batch_ptr, token_ptr = self.ptr()
 
     mask = self.data.new_zeros((b, t), dtype=torch.long)
     mask[batch_ptr, token_ptr] = 1
 
+    return mask
+
+
+def cat_view(self: P) -> C:
     return C(
         data=self.data,
-        token_sizes=mask.sum(dim=1),
+        token_sizes=_get_mask(self).sum(dim=1),
     )
 
 
@@ -26,12 +31,6 @@ R.cat_view = cat_view
 
 
 def pack_view(self: Union[C, L, R]) -> P:
-    b, t, *_ = self.size()
-    batch_ptr, token_ptr = self.ptr()
-
-    mask = self.data.new_zeros((b, t), dtype=torch.long)
-    mask[batch_ptr, token_ptr] = 1
-
     _, index = torch.sort(self.token_sizes.detach().cpu(), descending=True)
     sorted_indices = index.to(device=self.data.device)
 
@@ -39,7 +38,7 @@ def pack_view(self: Union[C, L, R]) -> P:
 
     return P(
         data=self.data,
-        batch_sizes=mask.sum(dim=0).detach().cpu(),
+        batch_sizes=_get_mask(self).sum(dim=0).detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
