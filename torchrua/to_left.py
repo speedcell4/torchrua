@@ -2,24 +2,14 @@ import torch
 from torch.types import Number
 
 from torchrua import to_self
-from torchrua.layout import C, L, P, T
-
-L.left = to_self
+from torchrua.layout import C, L, P, R
 
 
-def left_l(sequence: T, fill_value: Number = 0) -> L:
-    token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
-    return L(data=sequence[None], token_sizes=token_sizes)
+def cat_to_left(self: C, fill_value: Number = 0) -> L:
+    data, token_sizes = self
 
-
-T.left = left_l
-
-
-def left_c(sequence: C, fill_value: Number = 0) -> L:
-    data, token_sizes = sequence
-
-    b, t, *sizes = sequence.size()
-    batch_ptr, token_ptr = sequence.ptr()
+    b, t, *sizes = self.size()
+    batch_ptr, token_ptr = self.ptr()
 
     tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
     tensor[batch_ptr, token_ptr] = data
@@ -27,14 +17,16 @@ def left_c(sequence: C, fill_value: Number = 0) -> L:
     return L(data=tensor, token_sizes=token_sizes)
 
 
-C.left = left_c
+C.left = cat_to_left
+
+L.left = to_self
 
 
-def left_p(sequence: P, fill_value: Number = 0) -> L:
-    data, _, sorted_indices, _ = sequence
+def pack_to_left(self: P, fill_value: Number = 0) -> L:
+    data, _, sorted_indices, _ = self
 
-    b, t, *sizes = sequence.size()
-    batch_ptr, token_ptr = sequence.ptr()
+    b, t, *sizes = self.size()
+    batch_ptr, token_ptr = self.ptr()
     batch_ptr = sorted_indices[batch_ptr]
 
     tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
@@ -46,4 +38,20 @@ def left_p(sequence: P, fill_value: Number = 0) -> L:
     return L(data=tensor, token_sizes=mask.sum(dim=1))
 
 
-P.left = left_p
+P.left = pack_to_left
+
+
+def right_to_left(self: R, fill_value: Number = 0) -> L:
+    data, token_sizes = self
+
+    b, t, *sizes = self.size()
+    batch_ptr, token_ptr = self.ptr()
+
+    tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
+    z = L(data=tensor, token_sizes=token_sizes)
+    z[batch_ptr, token_ptr] = self[batch_ptr, token_ptr]
+
+    return L(data=tensor, token_sizes=token_sizes)
+
+
+R.left = right_to_left
