@@ -1,4 +1,3 @@
-from torchrua.__getitem__ import *
 from torchrua.compose import *
 from torchrua.core import *
 from torchrua.decode import *
@@ -11,8 +10,8 @@ from torchrua.new import *
 from torchrua.reduce import *
 from torchrua.reverse import *
 from torchrua.roll import *
-from torchrua.rua import *
 from torchrua.segment import *
+from torchrua.set import *
 from torchrua.to_cat import *
 from torchrua.to_left import *
 from torchrua.to_pack import *

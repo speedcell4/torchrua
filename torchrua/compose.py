@@ -1,12 +1,12 @@
-from typing import List, Union
+from typing import List
 
 import torch
 
 from torchrua.core import invert_permutation
-from torchrua.layout import C, L, P
+from torchrua.layout import C, P, Z
 
 
-def compose(sequences: List[Union[C, L, P]]) -> P:
+def compose(sequences: List[Z]) -> P:
     offset, data, indices, token_sizes = 0, [], [], []
 
     for sequence in sequences:
@@ -30,4 +30,4 @@ def compose(sequences: List[Union[C, L, P]]) -> P:
         unsorted_indices=unsorted_indices,
     )
 
-    return indices.rua(torch.cat(data, dim=0))
+    return torch.cat(data, dim=0)[indices]

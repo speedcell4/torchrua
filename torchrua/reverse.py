@@ -8,7 +8,7 @@ def rev_c(sequence: C) -> C:
     _, _, *sizes = sequence.size()
 
     if len(sizes) > 0:
-        return sequence.idx().rev().rua(sequence)
+        return sequence[sequence.idx().rev()]
 
     data = torch.flip(data, dims=[0])
     token_sizes = torch.flip(token_sizes, dims=[0])
@@ -34,7 +34,7 @@ L.rev = rev_d
 
 
 def rev_p(sequence: P) -> P:
-    return sequence.idx().cat().rev().pack().rua(sequence)
+    return sequence[sequence.idx().cat().rev().pack()]
 
 
 P.rev = rev_p

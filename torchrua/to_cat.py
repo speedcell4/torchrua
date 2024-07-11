@@ -15,7 +15,7 @@ T.cat = cat_t
 
 
 def cat_l(sequence: L) -> C:
-    return sequence.idx().rua(sequence)
+    return sequence[sequence.idx()]
 
 
 L.cat = cat_l
@@ -26,7 +26,7 @@ def cat_p(sequence: P) -> C:
     b, t, *sizes = sequence.size()
 
     if len(sizes) > 0:
-        return sequence.idx().cat().rua(sequence)
+        return sequence[sequence.idx().cat()]
 
     batch_ptr, token_ptr = sequence.ptr()
     batch_ptr = sorted_indices[batch_ptr]

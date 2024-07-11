@@ -21,7 +21,7 @@ L.last = last_d
 
 
 def last_p(sequence: P) -> T:
-    return sequence.idx().left().last().rua(sequence)
+    return sequence[sequence.idx().left().last()]
 
 
 P.last = last_p

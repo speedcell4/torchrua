@@ -30,7 +30,7 @@ L.roll = roll_d
 
 
 def roll_p(sequence: P, shifts: int) -> P:
-    return sequence.idx().cat().roll(shifts).pack().rua(sequence)
+    return sequence[sequence.idx().cat().roll(shifts).pack()]
 
 
 P.roll = roll_p

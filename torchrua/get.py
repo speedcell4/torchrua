@@ -2,16 +2,23 @@ from typing import Tuple, Union
 
 from torch import Tensor
 
-from torchrua.layout import C, L, P, R, Z
+from torchrua.layout import C, L, P, R, T, Z
 
 Key = Union[int, Tensor, Tuple[Tensor, Tensor], Z]
 Value = Union[Tensor, Z]
 
 
-def cat_getitem(self: C, key: Key) -> Value:
-    if isinstance(key, int):
-        return super(C, self).__getitem__(key)
+def tensor_getitem(self: T, key: Key) -> Value:
+    if isinstance(key, Z.__args__):
+        return key._replace(data=self[key.data])
 
+    return super(T, self).__getitem__(key)
+
+
+T.__getitem__ = tensor_getitem
+
+
+def cat_getitem(self: C, key: Key) -> Value:
     if isinstance(key, Z.__args__):
         return key._replace(data=self.data[key.data])
 
@@ -21,16 +28,13 @@ def cat_getitem(self: C, key: Key) -> Value:
     if isinstance(key, Tensor):
         return self.data[key]
 
-    raise NotImplementedError()
+    return super(C, self).__getitem__(key)
 
 
 C.__getitem__ = cat_getitem
 
 
 def left_getitem(self: L, key: Key) -> Value:
-    if isinstance(key, int):
-        return super(L, self).__getitem__(key)
-
     if isinstance(key, Z.__args__):
         return key._replace(data=self.data.flatten(start_dim=0, end_dim=1)[key.data])
 
@@ -40,16 +44,13 @@ def left_getitem(self: L, key: Key) -> Value:
     if isinstance(key, Tensor):
         return self.data.flatten(start_dim=0, end_dim=1)[key]
 
-    raise NotImplementedError()
+    return super(L, self).__getitem__(key)
 
 
 L.__getitem__ = left_getitem
 
 
 def pack_getitem(self: P, key: Key) -> Value:
-    if isinstance(key, int):
-        return super(P, self).__getitem__(key)
-
     if isinstance(key, Z.__args__):
         return key._replace(data=self.data[key.data])
 
@@ -59,16 +60,13 @@ def pack_getitem(self: P, key: Key) -> Value:
     if isinstance(key, Tensor):
         return self.data[key]
 
-    raise NotImplementedError()
+    return super(P, self).__getitem__(key)
 
 
 P.__getitem__ = pack_getitem
 
 
 def right_getitem(self: R, key: Key) -> Value:
-    if isinstance(key, int):
-        return super(R, self).__getitem__(key)
-
     if isinstance(key, Z.__args__):
         return key._replace(data=self.data.flatten(start_dim=0, end_dim=1)[key.data])
 
@@ -78,7 +76,7 @@ def right_getitem(self: R, key: Key) -> Value:
     if isinstance(key, Tensor):
         return self.data.flatten(start_dim=0, end_dim=1)[key]
 
-    raise NotImplementedError()
+    return super(R, self).__getitem__(key)
 
 
 R.__getitem__ = right_getitem
