@@ -24,7 +24,6 @@ def pack_to_right(self: P, fill_value: Number = 0) -> R:
 
     b, t, *sizes = self.size()
     batch_ptr, token_ptr = self.ptr()
-    batch_ptr = sorted_indices[batch_ptr]
 
     mask = data.new_zeros((b, t), dtype=torch.long)
     mask[batch_ptr, token_ptr] = 1

@@ -3,14 +3,14 @@ from hypothesis import given, settings, strategies as st
 from torch.nn.utils.rnn import pack_sequence
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
-from torchrua import C, L, P
+from torchrua import Z
 
 
 @settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([C.new, L.new, P.new]),
+    rua_sequence=st.sampled_from([z.new for z in Z.__args__]),
 )
 def test_pack_sequence(token_sizes, dim, rua_sequence):
     inputs = [

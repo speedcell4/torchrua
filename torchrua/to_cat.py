@@ -21,7 +21,6 @@ def pack_to_cat(self: P) -> C:
 
     data, batch_sizes, sorted_indices, _ = self
     batch_ptr, token_ptr = self.ptr()
-    batch_ptr = sorted_indices[batch_ptr]
 
     tensor = data.new_zeros((b, t))
     tensor[batch_ptr, token_ptr] = data

@@ -3,14 +3,14 @@ from hypothesis import given, settings, strategies as st
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
 from tests.expected import right_aligned_tensors
-from torchrua import C, L, P, R
+from torchrua import Z
 
 
 @settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([C.new, L.new, P.new, R.new]),
+    rua_sequence=st.sampled_from([z.new for z in Z.__args__]),
 )
 def test_right_sequence(token_sizes, dim, rua_sequence):
     inputs = [

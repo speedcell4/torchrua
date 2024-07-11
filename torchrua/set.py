@@ -61,7 +61,7 @@ def pack_setitem(self: P, key: Key, value: Tensor) -> None:
         return None
 
     if isinstance(key, tuple) and isinstance(key[0], Tensor) and isinstance(key[1], Tensor):
-        key = key[0] + self.offsets()[key[1]]
+        key = self.unsorted_indices[key[0]] + self.offsets()[key[1]]
 
     if isinstance(key, Tensor):
         self.data[key] = value

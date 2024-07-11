@@ -24,7 +24,7 @@ def mask_p(sequence: Union[C, L, P], zero: Number = False, one: Number = True, d
     batch_ptr, token_ptr = sequence.ptr()
 
     mask = sequence.data.new_full((b, t), fill_value=zero, dtype=dtype)
-    mask[sequence.sorted_indices[batch_ptr], token_ptr] = one
+    mask[batch_ptr, token_ptr] = one
     return mask
 
 

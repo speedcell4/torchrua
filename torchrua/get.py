@@ -55,7 +55,7 @@ def pack_getitem(self: P, key: Key) -> Value:
         return key._replace(data=self.data[key.data])
 
     if isinstance(key, tuple) and isinstance(key[0], Tensor) and isinstance(key[1], Tensor):
-        key = key[0] + self.offsets()[key[1]]
+        key = self.unsorted_indices[key[0]] + self.offsets()[key[1]]
 
     if isinstance(key, Tensor):
         return self.data[key]
