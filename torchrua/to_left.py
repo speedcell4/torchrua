@@ -6,15 +6,13 @@ from torchrua.layout import C, L, P, R
 
 
 def cat_to_left(self: C, fill_value: Number = 0) -> L:
-    data, token_sizes = self
+    data = self.data.new_full(self.size(), fill_value=fill_value)
+    z = L(data=data, token_sizes=self.token_sizes)
 
-    b, t, *sizes = self.size()
     batch_ptr, token_ptr = self.ptr()
+    z[batch_ptr, token_ptr] = self[batch_ptr, token_ptr]
 
-    tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
-    tensor[batch_ptr, token_ptr] = data
-
-    return L(data=tensor, token_sizes=token_sizes)
+    return z
 
 
 C.left = cat_to_left
