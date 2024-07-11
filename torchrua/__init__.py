@@ -12,9 +12,6 @@ from torchrua.reverse import *
 from torchrua.roll import *
 from torchrua.segment import *
 from torchrua.set import *
-from torchrua.to_cat import *
-from torchrua.to_left import *
-from torchrua.to_pack import *
-from torchrua.to_right import *
+from torchrua.transform import *
 from torchrua.trunc import *
 from torchrua.view import *
