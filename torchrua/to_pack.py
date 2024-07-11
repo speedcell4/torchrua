@@ -3,39 +3,21 @@ from torch.nn.utils.rnn import PackedSequence
 
 from torchrua import to_self
 from torchrua.core import invert_permutation
-from torchrua.layout import C, L, P, T
-
-P.pack = to_self
+from torchrua.layout import C, L, P, R
 
 
-def pack_t(sequence: T) -> P:
-    batch_sizes = torch.ones(sequence.size()[:1], dtype=torch.long).cpu()
-    sorted_indices = sequence.data.new_tensor([0], dtype=torch.long)
-    unsorted_indices = sequence.data.new_tensor([0], dtype=torch.long)
-
-    return PackedSequence(
-        data=sequence.data,
-        batch_sizes=batch_sizes,
-        sorted_indices=sorted_indices,
-        unsorted_indices=unsorted_indices,
-    )
-
-
-T.pack = pack_t
-
-
-def pack_c(sequence: C) -> P:
-    b, t, *sizes = sequence.size()
+def cat_to_pack(self: C) -> P:
+    b, t, *sizes = self.size()
 
     if len(sizes) > 0:
-        return sequence[sequence.idx().pack()]
+        return self[self.idx().pack()]
 
-    data, token_sizes = sequence
+    data, token_sizes = self
     _, sorting_indices = torch.sort(token_sizes.detach().cpu(), descending=True)
     sorting_indices = sorting_indices.to(device=data.device)
     unsorted_indices = invert_permutation(sorting_indices)
 
-    batch_ptr, token_ptr = sequence.ptr()
+    batch_ptr, token_ptr = self.ptr()
     batch_ptr = unsorted_indices[batch_ptr]
 
     tensor = data.new_zeros((t, b))
@@ -52,11 +34,20 @@ def pack_c(sequence: C) -> P:
     )
 
 
-C.pack = pack_c
+C.pack = cat_to_pack
 
 
-def pack_l(sequence: L) -> P:
-    return sequence[sequence.idx().pack()]
+def left_to_pack(self: L) -> P:
+    return self[self.idx().pack()]
 
 
-L.pack = pack_l
+L.pack = left_to_pack
+
+P.pack = to_self
+
+
+def right_to_pack(self: R) -> P:
+    return self[self.idx().pack()]
+
+
+R.pack = right_to_pack
