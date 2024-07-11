@@ -2,24 +2,14 @@ import torch
 from torch.types import Number
 
 from torchrua import to_self
-from torchrua.layout import C, P, R, T
-
-R.right = to_self
+from torchrua.layout import C, L, P, R
 
 
-def right_l(sequence: T, fill_value: Number = 0) -> R:
-    token_sizes = sequence.new_tensor(sequence.size()[:1], dtype=torch.long)
-    return R(data=sequence[None], token_sizes=token_sizes)
+def cat_to_right(self: C, fill_value: Number = 0) -> R:
+    data, token_sizes = self
 
-
-T.right = right_l
-
-
-def right_c(sequence: C, fill_value: Number = 0) -> R:
-    data, token_sizes = sequence
-
-    b, t, *sizes = sequence.size()
-    batch_ptr, token_ptr = sequence.ptr()
+    b, t, *sizes = self.size()
+    batch_ptr, token_ptr = self.ptr()
 
     tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
     tensor[batch_ptr, token_ptr] = data
@@ -27,14 +17,30 @@ def right_c(sequence: C, fill_value: Number = 0) -> R:
     return R(data=tensor, token_sizes=token_sizes)
 
 
-C.right = right_c
+C.right = cat_to_right
 
 
-def right_p(sequence: P, fill_value: Number = 0) -> R:
-    data, _, sorted_indices, _ = sequence
+def left_to_right(self: L, fill_value: Number = 0) -> R:
+    data, token_sizes = self
 
-    b, t, *sizes = sequence.size()
-    batch_ptr, token_ptr = sequence.ptr()
+    b, t, *sizes = self.size()
+    batch_ptr, token_ptr = self.ptr()
+
+    tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
+    z = R(data=tensor, token_sizes=token_sizes)
+    z[batch_ptr, token_ptr] = self[batch_ptr, token_ptr]
+
+    return R(data=tensor, token_sizes=token_sizes)
+
+
+L.right = left_to_right
+
+
+def pack_to_right(self: P, fill_value: Number = 0) -> R:
+    data, _, sorted_indices, _ = self
+
+    b, t, *sizes = self.size()
+    batch_ptr, token_ptr = self.ptr()
     batch_ptr = sorted_indices[batch_ptr]
 
     tensor = data.new_full((b, t, *sizes), fill_value=fill_value)
@@ -46,4 +52,6 @@ def right_p(sequence: P, fill_value: Number = 0) -> R:
     return R(data=tensor, token_sizes=mask.sum(dim=1))
 
 
-P.right = right_p
+P.right = pack_to_right
+
+R.right = to_self

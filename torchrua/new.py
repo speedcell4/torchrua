@@ -29,7 +29,7 @@ P.new = tensors_to_pack
 
 
 def tensors_to_right(tensors: List[T], fill_value: Any = 0) -> R:
-    return C.new(tensors).left(fill_value=fill_value)
+    return C.new(tensors).right(fill_value=fill_value)
 
 
 R.new = tensors_to_right
