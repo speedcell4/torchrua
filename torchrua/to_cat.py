@@ -2,8 +2,8 @@ from typing import List
 
 import torch
 
-from torchrua.core import _self
-from torchrua.ty import C, D, P, T
+from torchrua.layout import C, L, P, T
+from torchrua.utils import to_self
 
 
 def cat_sequence(sequence: List[T]) -> C:
@@ -13,7 +13,7 @@ def cat_sequence(sequence: List[T]) -> C:
 
 
 C.new = cat_sequence
-C.cat = _self
+C.cat = to_self
 
 
 def cat_t(sequence: T) -> C:
@@ -24,11 +24,11 @@ def cat_t(sequence: T) -> C:
 T.cat = cat_t
 
 
-def cat_d(sequence: D) -> C:
+def cat_l(sequence: L) -> C:
     return sequence.idx().rua(sequence)
 
 
-D.cat = cat_d
+L.cat = cat_l
 
 
 def cat_p(sequence: P) -> C:

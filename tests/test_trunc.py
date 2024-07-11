@@ -2,7 +2,7 @@ import torch
 from hypothesis import given, settings, strategies as st
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
-from torchrua import C, D, P
+from torchrua import C, L, P
 
 
 @settings(deadline=None)
@@ -10,7 +10,7 @@ from torchrua import C, D, P
     data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([C.new, D.new, P.new]),
+    rua_sequence=st.sampled_from([C.new, L.new, P.new]),
 )
 def test_trunc_sequence(data, token_sizes, dim, rua_sequence):
     inputs = [

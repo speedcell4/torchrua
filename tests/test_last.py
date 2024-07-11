@@ -2,14 +2,14 @@ import torch
 from hypothesis import given, settings, strategies as st
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
-from torchrua import C, D, P
+from torchrua import C, L, P
 
 
 @settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
-    rua_sequence=st.sampled_from([C.new, D.new, P.new]),
+    rua_sequence=st.sampled_from([C.new, L.new, P.new]),
 )
 def test_last_sequence(token_sizes, dim, rua_sequence):
     inputs = [

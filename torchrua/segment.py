@@ -2,10 +2,10 @@ from typing import Union
 
 import torch
 
-from torchrua.ty import C, D, P
+from torchrua.layout import C, L, P
 
 
-def seg_c(sequence: C, duration: Union[C, D, P], fn) -> C:
+def seg_c(sequence: C, duration: Union[C, L, P], fn) -> C:
     data, token_sizes = sequence
     duration = duration.cat()
 
@@ -16,21 +16,21 @@ def seg_c(sequence: C, duration: Union[C, D, P], fn) -> C:
 C.seg = seg_c
 
 
-def seg_d(sequence: D, duration: Union[C, D, P], fn) -> D:
+def seg_d(sequence: L, duration: Union[C, L, P], fn) -> L:
     duration, token_sizes = duration.pad(fill_value=0)
 
     remaining = sequence.size()[1] - duration.sum(dim=1, keepdim=True)
     duration = torch.cat([duration, remaining], dim=-1)
 
-    data = fn(sequence._data(), duration.view(-1))
+    data = fn(sequence.raw(), duration.view(-1))
     data = data.view((*duration.size(), *data.size()[1:]))
-    return D(data=data[:, :-1], token_sizes=token_sizes)
+    return L(data=data[:, :-1], token_sizes=token_sizes)
 
 
-D.seg = seg_d
+L.seg = seg_d
 
 
-def seg_p(sequence: P, duration: Union[C, D, P], fn) -> P:
+def seg_p(sequence: P, duration: Union[C, L, P], fn) -> P:
     return sequence.cat().seg(duration, fn).pack()
 
 

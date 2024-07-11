@@ -3,7 +3,7 @@ from hypothesis import given, settings
 from torch.nn.utils.rnn import pack_sequence, pad_sequence
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
-from torchrua import C, D
+from torchrua import C, L
 
 
 @settings(deadline=None)
@@ -36,7 +36,7 @@ def test_cat_padded_sequence(token_sizes, dim):
     ]
 
     actual = C.new(inputs)
-    expected = D(
+    expected = L(
         data=pad_sequence(inputs, batch_first=True),
         token_sizes=torch.tensor(token_sizes, device=device),
     ).cat()

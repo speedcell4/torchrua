@@ -3,13 +3,13 @@ from hypothesis import given, settings, strategies as st
 from torch.nn.utils.rnn import pad_sequence
 from torchnyan import BATCH_SIZE, TOKEN_SIZE, assert_close, device, sizes
 
-from torchrua import C, D, P
+from torchrua import C, L, P
 
 
 @settings(deadline=None)
 @given(
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
-    rua_sequence=st.sampled_from([C.new, D.new, P.new]),
+    rua_sequence=st.sampled_from([C.new, L.new, P.new]),
     zero_one_dtype=st.sampled_from([
         (False, True, torch.bool),
         (-1, +2, torch.long),

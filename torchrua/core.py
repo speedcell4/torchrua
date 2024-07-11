@@ -24,7 +24,3 @@ def invert_permutation(tensor: Tensor) -> Tensor:
     permutation = torch.empty_like(index)
     permutation[tensor] = index
     return permutation
-
-
-def _self(self, *_, **__):
-    return self

@@ -2,15 +2,15 @@ from typing import List, Union
 
 import torch
 
-from torchrua import C, D, P
 from torchrua.core import invert_permutation
+from torchrua.layout import C, L, P
 
 
-def compose(sequences: List[Union[C, D, P]]) -> P:
+def compose(sequences: List[Union[C, L, P]]) -> P:
     offset, data, indices, token_sizes = 0, [], [], []
 
     for sequence in sequences:
-        data.append(sequence._data())
+        data.append(sequence.raw())
 
         idx, sizes = sequence.idx().cat()
         indices.append(idx + offset)

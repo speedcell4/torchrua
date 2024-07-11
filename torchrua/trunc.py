@@ -3,7 +3,7 @@ from typing import Tuple
 import torch
 
 from torchrua.core import major_sizes_to_ptr
-from torchrua.ty import C, D, P
+from torchrua.layout import C, L, P
 
 
 def trunc_c(sequence: C, trunc: Tuple[int, int]) -> C:
@@ -23,17 +23,17 @@ def trunc_c(sequence: C, trunc: Tuple[int, int]) -> C:
 C.trunc = trunc_c
 
 
-def trunc_d(sequence: D, trunc: Tuple[int, int]) -> D:
+def trunc_d(sequence: L, trunc: Tuple[int, int]) -> L:
     data, token_sizes = sequence
     _, t, *_ = sequence.size()
 
-    return D(
+    return L(
         data=data[:, trunc[0]:t - trunc[1]],
         token_sizes=token_sizes - trunc[0] - trunc[1],
     )
 
 
-D.trunc = trunc_d
+L.trunc = trunc_d
 
 
 def trunc_p(sequence: P, trunc: Tuple[int, int]) -> P:
