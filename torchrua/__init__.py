@@ -2,6 +2,7 @@ from torchrua.__getitem__ import *
 from torchrua.compose import *
 from torchrua.core import *
 from torchrua.decode import *
+from torchrua.get import *
 from torchrua.head import *
 from torchrua.last import *
 from torchrua.layout import *

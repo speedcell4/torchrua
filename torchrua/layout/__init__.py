@@ -6,10 +6,10 @@ from torchrua.layout.pack import *
 from torchrua.layout.right import *
 from torchrua.layout.tensor import *
 
-CLPR = Union[C, L, P, R]
+Z = Union[C, L, P, R]
 
 
-def empty(self: CLPR) -> CLPR:
+def empty(self: Z) -> Z:
     return self._replace(data=self.data.new_tensor(()))
 
 
@@ -30,7 +30,7 @@ def is_type(obj: Any, ty: Type) -> bool:
         return all(is_type(o, __args__[0]) for o in obj)
 
     if __origin__ is tuple:
-        if isinstance(obj, CLPR.__args__) or not isinstance(obj, tuple):
+        if isinstance(obj, Z.__args__) or not isinstance(obj, tuple):
             return False
 
         if len(__args__) == 2 and __args__[1] is ...:
