@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn.utils.rnn import PackedSequence
 
-from torchrua.core import get_offsets, major_sizes_to_ptr
+from torchrua.layout import get_offsets, major_sizes_to_ptr
 
 P = PackedSequence
 
@@ -41,7 +41,8 @@ P.idx = idx
 
 
 def offsets(self) -> Tensor:
-    return get_offsets(self.batch_sizes.to(device=self.data.device))
+    n, *_ = self.data.size()
+    return get_offsets(self.batch_sizes.to(device=self.data.device)).clamp_max_(n - 1)
 
 
 P.offsets = offsets

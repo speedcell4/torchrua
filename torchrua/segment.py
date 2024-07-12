@@ -1,37 +1,50 @@
-from typing import Union
-
 import torch
 
-from torchrua.layout import C, L, P
+from torchrua.layout import C, L, P, R, Z
 
 
-def seg_c(sequence: C, duration: Union[C, L, P], fn) -> C:
-    data, token_sizes = sequence
+def cat_seg(self: C, duration: Z, fn) -> C:
     duration = duration.cat()
+    data = fn(self.data, duration.data)
 
-    data = fn(data, duration.data)
     return duration._replace(data=data)
 
 
-C.seg = seg_c
+C.seg = cat_seg
 
 
-def seg_d(sequence: L, duration: Union[C, L, P], fn) -> L:
-    duration, token_sizes = duration.left(fill_value=0)
+def left_seg(self: L, duration: Z, fn) -> L:
+    duration = duration.left(0)
 
-    remaining = sequence.size()[1] - duration.sum(dim=1, keepdim=True)
-    duration = torch.cat([duration, remaining], dim=-1)
+    b, t, *sizes = self.size()
+    token_sizes = torch.cat([duration.data, t - self.token_sizes[:, None]], dim=-1).view(-1)
 
-    data = fn(sequence.raw(), duration.view(-1))
-    data = data.view((*duration.size(), *data.size()[1:]))
-    return L(data=data[:, :-1], token_sizes=token_sizes)
+    data = fn(self.data.flatten(start_dim=0, end_dim=1), token_sizes)
+    data = data.view((b, -1, *sizes))
 
-
-L.seg = seg_d
+    return L(data=data[:, :-1], token_sizes=duration.token_sizes)
 
 
-def seg_p(sequence: P, duration: Union[C, L, P], fn) -> P:
-    return sequence.cat().seg(duration, fn).pack()
+L.seg = left_seg
 
 
-P.seg = seg_p
+def pack_seg(self: P, duration: Z, fn) -> P:
+    return self.cat().seg(duration, fn).pack()
+
+
+P.seg = pack_seg
+
+
+def right_seg(self: R, duration: Z, fn) -> R:
+    duration = duration.right(0)
+
+    b, t, *sizes = self.size()
+    token_sizes = torch.cat([t - self.token_sizes[:, None], duration.data], dim=-1).view(-1)
+
+    data = fn(self.data.flatten(start_dim=0, end_dim=1), token_sizes)
+    data = data.view((b, -1, *sizes))
+
+    return R(data=data[:, +1:], token_sizes=duration.token_sizes)
+
+
+R.seg = right_seg

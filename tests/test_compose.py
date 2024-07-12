@@ -4,7 +4,7 @@ from torch import nn
 from torch.nn.utils.rnn import pack_sequence
 from torchnyan import FEATURE_DIM, TINY_BATCH_SIZE, TINY_TOKEN_SIZE, assert_close, assert_grad_close, device, sizes
 
-from torchrua import C, L, P, compose
+from torchrua import Z, compose
 
 
 @settings(deadline=None)
@@ -14,7 +14,7 @@ from torchrua import C, L, P, compose
     input_size=sizes(FEATURE_DIM),
     hidden_size=sizes(FEATURE_DIM),
 )
-def test_compose_sequences(data, token_sizes_batch, input_size, hidden_size):
+def test_compose(data, token_sizes_batch, input_size, hidden_size):
     sequences = [
         [
             torch.randn((token_size, input_size), requires_grad=True, device=device)
@@ -29,11 +29,11 @@ def test_compose_sequences(data, token_sizes_batch, input_size, hidden_size):
         bidirectional=True, bias=True,
     ).to(device=device)
 
-    actual_sequences = [
-        data.draw(st.sampled_from([C, L, P])).new(sequence).to(device=device)
+    actual = [
+        data.draw(st.sampled_from(Z.__args__)).new(sequence).to(device=device)
         for sequence in sequences
     ]
-    _, (actual, _) = rnn(compose(actual_sequences))
+    _, (actual, _) = rnn(compose(actual))
     actual = actual.transpose(-3, -2).flatten(start_dim=-2)
 
     expected = []

@@ -3,7 +3,8 @@ from hypothesis import given, settings, strategies as st
 from torch import Tensor
 from torchnyan import BATCH_SIZE, FEATURE_DIM, TOKEN_SIZE, assert_grad_close, assert_sequence_close, device, sizes
 
-from torchrua import C, L, P, segment_head, segment_last, segment_logsumexp, segment_max, segment_mean, segment_min, \
+from torchrua import C, L, Z
+from torchrua.reduce import segment_head, segment_last, segment_logsumexp, segment_max, segment_mean, segment_min, \
     segment_prod, segment_sum
 
 
@@ -68,10 +69,10 @@ def raw_segment(sequence, duration, fn):
         (segment_head, reduce_head),
         (segment_last, reduce_last),
     ]),
-    rua_sequence=st.sampled_from([C.new, L.new, P.new]),
-    rua_duration=st.sampled_from([C.new, L.new, P.new]),
+    rua_sequence=st.sampled_from(Z.__args__),
+    rua_duration=st.sampled_from(Z.__args__),
 )
-def test_segment_sequence(token_sizes, dim, fns, rua_sequence, rua_duration):
+def test_seg(token_sizes, dim, fns, rua_sequence, rua_duration):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
@@ -84,7 +85,7 @@ def test_segment_sequence(token_sizes, dim, fns, rua_sequence, rua_duration):
 
     fn1, fn2 = fns
 
-    actual = rua_sequence(inputs).seg(rua_duration(durations), fn1).cat()
+    actual = rua_sequence.new(inputs).seg(rua_duration.new(durations), fn1).cat()
     expected = C.new(raw_segment(L.new(inputs).data, durations, fn2))
 
     assert_sequence_close(actual=actual, expected=expected)

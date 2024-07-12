@@ -2,8 +2,8 @@ from typing import List
 
 import torch
 
-from torchrua.core import invert_permutation
 from torchrua.layout import C, P, Z
+from torchrua.utils import invert_permutation
 
 
 def compose(sequences: List[Z]) -> P:

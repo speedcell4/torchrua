@@ -4,11 +4,11 @@ from typing import Union
 import torch
 from torch import Tensor
 
-from torchrua import C, L, P, R, Z, to_self
-from torchrua.core import invert_permutation
+from torchrua.layout import C, L, P, R, Z
+from torchrua.utils import invert_permutation, to_self
 
 
-def _get_mask(self: Z) -> Tensor:
+def get_mask(self: Z) -> Tensor:
     b, t, *_ = self.size()
     batch_ptr, token_ptr = self.ptr()
 
@@ -21,7 +21,7 @@ def _get_mask(self: Z) -> Tensor:
 def cat_view(self: Union[L, P, R], **kwargs) -> C:
     return C(
         data=self.data,
-        token_sizes=_get_mask(self).sum(dim=1),
+        token_sizes=get_mask(self).sum(dim=1),
     )
 
 
@@ -31,10 +31,10 @@ P.cat_view = cat_view
 R.cat_view = cat_view
 
 
-def left_view(self: P, fill_value: Number) -> L:
+def left_view(self: Union[C, P, R], fill_value: Number, dtype: torch.dtype = None) -> L:
     return L(
-        data=self.data.new_full(self.size(), fill_value=fill_value),
-        token_sizes=_get_mask(self).sum(dim=1),
+        data=self.data.new_full(self.size(), fill_value=fill_value, dtype=dtype),
+        token_sizes=get_mask(self).sum(dim=1),
     )
 
 
@@ -52,7 +52,7 @@ def pack_view(self: Union[C, L, R], **kwargs) -> P:
 
     return P(
         data=self.data,
-        batch_sizes=_get_mask(self).sum(dim=0).detach().cpu(),
+        batch_sizes=get_mask(self).sum(dim=0).detach().cpu(),
         sorted_indices=sorted_indices,
         unsorted_indices=unsorted_indices,
     )
@@ -64,10 +64,10 @@ P.pack_view = to_self
 R.pack_view = pack_view
 
 
-def right_view(self: P, fill_value: Number) -> R:
+def right_view(self: Union[C, L, P], fill_value: Number, dtype: torch.dtype = None) -> R:
     return R(
-        data=self.data.new_full(self.size(), fill_value=fill_value),
-        token_sizes=_get_mask(self).sum(dim=1),
+        data=self.data.new_full(self.size(), fill_value=fill_value, dtype=dtype),
+        token_sizes=get_mask(self).sum(dim=1),
     )
 
 

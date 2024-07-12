@@ -3,7 +3,7 @@ from typing import NamedTuple, Tuple
 import torch
 from torch import Tensor
 
-from torchrua.core import get_offsets, major_sizes_to_ptr
+from torchrua.utils import get_offsets, major_sizes_to_ptr
 
 
 class CattedSequence(NamedTuple):
@@ -77,7 +77,8 @@ class CattedSequence(NamedTuple):
         return self._replace(data=index)
 
     def offsets(self) -> Tensor:
-        return get_offsets(sizes=self.token_sizes)
+        n, *_ = self.data.size()
+        return get_offsets(sizes=self.token_sizes).clamp_max_(n - 1)
 
     def raw(self) -> Tensor:
         return self.data

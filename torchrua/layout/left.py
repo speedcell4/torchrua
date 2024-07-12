@@ -3,8 +3,7 @@ from typing import NamedTuple, Tuple
 import torch
 from torch import Tensor
 
-from torchrua.core import major_sizes_to_ptr
-from torchrua.layout.cat import C
+from torchrua.layout import C, major_sizes_to_ptr
 
 
 class LeftAlignedSequence(NamedTuple):
