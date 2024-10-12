@@ -10,7 +10,7 @@ with (root_dir / 'requirements.txt').open(mode='r', encoding='utf-8') as fp:
 
 setup(
     name=name,
-    version='0.5.0',
+    version='0.5.1',
     packages=[package for package in find_packages() if package.startswith(name)],
     url='https://github.com/speedcell4/torchrua',
     license='MIT',

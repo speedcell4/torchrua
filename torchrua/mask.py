@@ -1,31 +1,38 @@
-from typing import Union
-
 import torch
-from torch.types import Number
 
-from torchrua.ty import C, D, P, T
+from torchrua.layout import C, L, P, R, T, Z
 
 
-def mask_cd(sequence: Union[C, D, P], zero: Number = False, one: Number = True, dtype: torch.dtype = torch.bool) -> T:
-    b, t, *_ = sequence.size()
-    batch_ptr, token_ptr = sequence.ptr()
+def mask(self: Z, zero, one, dtype: torch.dtype = None) -> T:
+    b, t, *_ = self.size()
 
-    mask = sequence.data.new_full((b, t), fill_value=zero, dtype=dtype)
-    mask[batch_ptr, token_ptr] = one
+    mask = self.data.new_full((b, t), fill_value=zero, dtype=dtype)
+    mask[self.ptr()] = one
+
     return mask
 
 
-C.mask = mask_cd
-D.mask = mask_cd
+C.mask = mask
+L.mask = mask
+P.mask = mask
+R.mask = mask
 
 
-def mask_p(sequence: Union[C, D, P], zero: Number = False, one: Number = True, dtype: torch.dtype = torch.bool) -> T:
-    b, t, *_ = sequence.size()
-    batch_ptr, token_ptr = sequence.ptr()
-
-    mask = sequence.data.new_full((b, t), fill_value=zero, dtype=dtype)
-    mask[sequence.sorted_indices[batch_ptr], token_ptr] = one
-    return mask
+def bmask(self: Z) -> T:
+    return self.mask(zero=False, one=True, dtype=torch.bool)
 
 
-P.mask = mask_p
+C.bmask = bmask
+L.bmask = bmask
+P.bmask = bmask
+R.bmask = bmask
+
+
+def fmask(self: Z) -> T:
+    return self.mask(zero=torch.finfo(self.data.dtype).min, one=0, dtype=self.data.dtype)
+
+
+C.fmask = fmask
+L.fmask = fmask
+P.fmask = fmask
+R.fmask = fmask
