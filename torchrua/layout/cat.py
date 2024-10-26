@@ -60,7 +60,7 @@ class CattedSequence(NamedTuple):
 
     def size(self) -> Tuple[int, ...]:
         b, *_ = self.token_sizes.size()
-        t = self.token_sizes.max().item()
+        t = self.token_sizes.max().detach().cpu().item()
         _, *data_size = self.data.size()
 
         return b, t, *data_size

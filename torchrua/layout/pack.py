@@ -10,7 +10,7 @@ P = PackedSequence
 
 
 def size(self: P) -> Tuple[int, ...]:
-    b = self.batch_sizes.max().item()
+    b = self.batch_sizes.max().detach().cpu().item()
     t, *_ = self.batch_sizes.size()
     _, *data_size = self.data.size()
 
