@@ -17,6 +17,6 @@ setup(
     author='speedcell4',
     author_email='speedcell4@gmail.com',
     description='rua your variable-length tensors!',
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     install_requires=install_requires,
 )
