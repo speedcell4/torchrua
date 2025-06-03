@@ -8,21 +8,23 @@ from torchrua import C, Z
 
 @settings(deadline=None)
 @given(
+    data=st.data(),
     token_sizes=sizes(BATCH_SIZE, TOKEN_SIZE),
     dim=sizes(FEATURE_DIM),
     rua=st.sampled_from(Z.__args__),
 )
-def test_head(token_sizes, dim, rua):
+def test_head(data, token_sizes, dim, rua):
     inputs = [
         torch.randn((token_size, dim), device=device, requires_grad=True)
         for token_size in token_sizes
     ]
+    n = data.draw(st.integers(1, min(token_sizes)))
 
-    actual = rua.new(inputs).head()
-    expected = torch.stack([tensor[0] for tensor in inputs], dim=0)
+    actual = rua.new(inputs).head(n=n).cat()
+    expected = C.new([tensor[:n] for tensor in inputs])
 
-    assert_close(actual=actual, expected=expected)
-    assert_grad_close(actual=actual, expected=expected, inputs=inputs)
+    assert_sequence_close(actual=actual, expected=expected)
+    assert_grad_close(actual=actual.data, expected=expected.data, inputs=inputs)
 
 
 @settings(deadline=None)
