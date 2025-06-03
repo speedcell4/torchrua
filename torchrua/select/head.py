@@ -4,7 +4,7 @@ from torch import Tensor
 from torchrua.layout import C, L, P, R, Z
 
 
-def cat_head(self: C, n: int = 1) -> C:
+def cat_head(self: C, n: int) -> C:
     data, token_sizes1 = self
     token_sizes0 = torch.full_like(token_sizes1, fill_value=n)
 
@@ -20,6 +20,20 @@ def cat_head(self: C, n: int = 1) -> C:
 C.head = cat_head
 
 
+def pack_head(self: P, n: int) -> P:
+    data, batch_sizes, sorted_indices, unsorted_indices = self
+
+    return P(
+        data=data[:batch_sizes[0].detach().cpu().item() * n],
+        batch_sizes=batch_sizes[:n],
+        sorted_indices=sorted_indices,
+        unsorted_indices=unsorted_indices,
+    )
+
+
+P.head = pack_head
+
+
 def head(self: Z) -> Tensor:
     b, *_ = self.size()
 
@@ -30,5 +44,13 @@ def head(self: Z) -> Tensor:
 
 
 L.head = head
-P.head = head
+# P.head = head
 R.head = head
+
+if __name__ == '__main__':
+    c = P.new([
+        torch.arange(5),
+        torch.arange(2),
+        torch.arange(3),
+    ])
+    print(c.head(2))
