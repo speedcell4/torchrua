@@ -62,7 +62,7 @@ def segment_logsumexp(tensor: T, segment_sizes: T) -> T:
 
 
 def segment_head(tensor: T, segment_sizes: T) -> T:
-    return C(data=tensor, token_sizes=segment_sizes).head()
+    return C(data=tensor, token_sizes=segment_sizes).head(n=1).data
 
 
 def segment_last(tensor: T, segment_sizes: T) -> T:
