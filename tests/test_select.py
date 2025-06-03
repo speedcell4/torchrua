@@ -18,7 +18,7 @@ def test_head(token_sizes, dim, rua):
         for token_size in token_sizes
     ]
 
-    actual = rua.new(inputs).head()
+    actual, _ = rua.new(inputs).head(n=1).left(0)
     expected = torch.stack([tensor[0] for tensor in inputs], dim=0)
 
     assert_close(actual=actual, expected=expected)

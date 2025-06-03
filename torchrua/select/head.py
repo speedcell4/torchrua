@@ -1,15 +1,14 @@
 import torch
-from torch import Tensor
 
-from torchrua.layout import C, L, P, R, Z
+from torchrua.layout import C, L, P, R
 
 
 def cat_head(self: C, n: int) -> C:
     data, token_sizes1 = self
     token_sizes0 = torch.full_like(token_sizes1, fill_value=n)
 
-    split_sizes = torch.stack([token_sizes0, token_sizes1 - token_sizes0], dim=-1).view(-1)
-    split_sizes = split_sizes.detach().cpu().tolist()
+    split_sizes = torch.stack([token_sizes0, token_sizes1 - token_sizes0], dim=-1)
+    split_sizes = split_sizes.view(-1).detach().cpu().tolist()
 
     data = torch.split_with_sizes(data, split_sizes=split_sizes, dim=0)
     data = torch.cat(data[0::2], dim=0)
@@ -34,23 +33,35 @@ def pack_head(self: P, n: int) -> P:
 P.head = pack_head
 
 
-def head(self: Z) -> Tensor:
-    b, *_ = self.size()
+def left_head(self: L, n: int) -> L:
+    data, token_sizes = self
 
-    batch_ptr = torch.arange(b, dtype=torch.long, device=self.data.device)
-    token_ptr = torch.zeros_like(batch_ptr)
+    return L(
+        data=data[:, :n],
+        token_sizes=torch.full_like(token_sizes, n),
+    )
 
-    return self[batch_ptr, token_ptr]
+
+L.head = left_head
 
 
-L.head = head
-# P.head = head
-R.head = head
+def right_head(self: R, n: int) -> R:
+    data, token_sizes2 = self
 
-if __name__ == '__main__':
-    c = P.new([
-        torch.arange(5),
-        torch.arange(2),
-        torch.arange(3),
-    ])
-    print(c.head(2))
+    b, t, *_ = data.size()
+    token_sizes0 = torch.full_like(token_sizes2, fill_value=t)
+    token_sizes1 = torch.full_like(token_sizes2, fill_value=n)
+
+    split_sizes = torch.stack([token_sizes0 - token_sizes2, token_sizes1, token_sizes2 - n], dim=-1)
+    split_sizes = split_sizes.view(-1).detach().cpu().tolist()
+
+    data = torch.split_with_sizes(data.flatten(end_dim=1), split_sizes=split_sizes, dim=0)
+    data = torch.stack(data[1::3], dim=0)
+
+    return R(
+        data=data,
+        token_sizes=token_sizes1,
+    )
+
+
+R.head = right_head
