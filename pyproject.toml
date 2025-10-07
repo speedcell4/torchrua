@@ -7,3 +7,10 @@ requires-python = ">=3.10"
 dependencies = [
     "torch",
 ]
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.140.3",
+    "pytest>=8.4.2",
+    "torchnyan>=0.1.3",
+]
